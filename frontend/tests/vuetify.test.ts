@@ -12,6 +12,12 @@ function luminance(hex: string): number {
   return 0.2126 * r + 0.7152 * g + 0.0722 * b;
 }
 
+// Vuetify allows a colour to be an object; ours are all #rrggbb strings, and this checks it.
+function hex(color: unknown): string {
+  if (typeof color !== "string") throw new Error("expected a #rrggbb colour");
+  return color;
+}
+
 function contrast(a: string, b: string): number {
   const [light, dark] = [luminance(a), luminance(b)].sort((x, y) => y - x);
   return ((light ?? 0) + 0.05) / ((dark ?? 0) + 0.05);
@@ -28,7 +34,7 @@ describe("themes", () => {
     ["daylight", daylight],
   ])("%s keeps its main colours readable on its surface (WCAG AA, 4.5:1)", (_name, theme) => {
     const colors = theme.colors ?? {};
-    const surface = colors.surface ?? "#000000";
+    const surface = hex(colors.surface);
     const main = [
       colors.primary,
       colors.secondary,
@@ -39,7 +45,7 @@ describe("themes", () => {
     ];
     expect(main).toHaveLength(6);
     for (const color of main) {
-      expect(contrast(color ?? "#000000", surface)).toBeGreaterThanOrEqual(4.5);
+      expect(contrast(hex(color), surface)).toBeGreaterThanOrEqual(4.5);
     }
   });
 

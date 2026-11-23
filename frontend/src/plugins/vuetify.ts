@@ -37,9 +37,14 @@ export const daylight: ThemeDefinition = {
 };
 
 export function createBlindspotVuetify(defaultTheme: "midnight" | "daylight" = "midnight") {
+  const nonce = cspNonce();
   return createVuetify({
     icons: { defaultSet: "mdi", aliases, sets: { mdi } },
-    theme: { defaultTheme, themes: { midnight, daylight }, cspNonce: cspNonce() },
+    theme: {
+      defaultTheme,
+      themes: { midnight, daylight },
+      ...(nonce === undefined ? {} : { cspNonce: nonce }),
+    },
     defaults: {
       VBtn: { rounded: "lg" },
       VCard: { rounded: "lg" },
