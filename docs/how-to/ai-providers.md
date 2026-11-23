@@ -87,6 +87,37 @@ The address is checked again on every call, because a host name can start resolv
 private address after it was saved. The HTTP client never follows redirects and has a 30 second
 timeout (10 to connect). The SDKs retry rate limits and server errors twice.
 
+## The AI providers page
+
+`/ai-providers` (System menu) is where administrators set this up; viewers see the same page
+without the buttons that change things.
+
+1. **Add provider.** Pick the kind, give it a name, check the address, paste the key and
+   optionally set a monthly budget with whether to stop at the limit. A kind that needs
+   no key (local Ollama) can be saved without one.
+2. **Test.** The card's Test button asks the provider to list its models. The result says
+   _Connected_ and how many models are on offer, or names the failure: the key was rejected, the
+   address cannot be reached, the provider is rate limiting, and so on. It never shows the
+   response.
+3. **Models.** Open a card's models, press _Fetch models_ and tick the ones to add. Prices come
+   from the built-in catalog; edit a model to override any of them. Local models are free. A model
+   the catalog does not know is saved with unknown prices and shown as such. The switch on each
+   row turns a model on or off, and a disabled model cannot be a default.
+4. **Defaults for roles.** Choose the model each role uses: the Commander, the category agents,
+   the test agents, the reporter and the chat. Changing a default saves immediately.
+
+The budget bar on a card is this month's spend against its budget, from the usage ledger.
+
+### Ollama on the same machine
+
+Blindspot runs inside a container, so `localhost` there is the container itself. To reach Ollama on
+the Docker host:
+
+- Keep the default address `http://host.docker.internal:11434`.
+- Make Ollama listen beyond loopback: set `OLLAMA_HOST=0.0.0.0` for the Ollama service.
+- On Linux, start the container with `--add-host=host.docker.internal:host-gateway`. Docker
+  Desktop does this for you.
+
 ## Running prompts
 
 `app/ai/engine.py` turns a stored provider into a Pydantic AI model: Anthropic's Messages API,

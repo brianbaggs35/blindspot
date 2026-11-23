@@ -73,6 +73,14 @@ the session in the app and returns to sign-in. Sign-in failures use one message 
 password was wrong or the account is locked. Passkeys need a host name (`localhost`), not an IP
 address, and a certificate the browser accepts.
 
+## AI providers
+
+| Page         | Path            | What it does                                                                                                       |
+| ------------ | --------------- | ------------------------------------------------------------------------------------------------------------------ |
+| AI providers | `/ai-providers` | Providers, their models and prices, and the default model for each role. Administrators change it; viewers read it |
+
+See [AI providers and spend](ai-providers.md#the-ai-providers-page) for the steps.
+
 ## Users and the audit log (administrators)
 
 | Page      | Path     | What it does                                                                                                                               |
