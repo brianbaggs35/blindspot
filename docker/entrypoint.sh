@@ -141,9 +141,10 @@ stopping=0
 # and leave the database to be killed in the middle of its own shutdown.
 stop_service() {
   service="$1"
+  patience="$2"
   dir="/run/s6/services/$service"
   s6-svc -d "$dir" || log "could not signal $service ($?)"
-  if ! s6-svwait -d -t "$2" "$dir"; then
+  if ! s6-svwait -d -t "$patience" "$dir"; then
     pid="$(s6-svstat -o pid "$dir" 2> /dev/null || true)"
     log "$service did not stop in time: $(s6-svstat "$dir" 2>&1)"
     if [ -n "$pid" ] && [ -r "/proc/$pid/status" ]; then
