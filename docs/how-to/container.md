@@ -36,7 +36,7 @@ Everything else in the container is read-only. Back up the `data` volume.
 
 ## How it is locked down
 
-- **Read-only file system**, `no-new-privileges`, a process limit, and every capability dropped except `CHOWN`, `DAC_OVERRIDE`, `FOWNER`, `SETUID` and `SETGID`.
+- **Read-only file system**, `no-new-privileges`, a process limit, and every capability dropped except `CHOWN`, `DAC_OVERRIDE`, `FOWNER`, `SETUID`, `SETGID` and `KILL`. `KILL` is there because the root supervisor must be able to stop the API and PostgreSQL, which run as other users. Without it the signal is refused, and the container cannot stop cleanly.
 - **Little runs as root.** The entrypoint, s6 and nginx's master process (which opens the logs and reads the key, as nginx always does) are root. The API runs as `blindspot`, PostgreSQL as `postgres`, started with `setpriv`, and nginx's workers, the processes that handle requests, as `nginx`. This is why Trivy's "image runs as root" finding is ignored in `.trivyignore.yaml`, with this reason and an expiry date.
 - **Ports above 1024 inside** (8443 and 8080), so binding them needs no capability. Compose publishes them as 443 and 80.
 - **Only nginx listens on TCP.** The API listens on `/run/blindspot/api.sock` (readable by nginx only) and PostgreSQL on `/run/postgresql` (readable by the API only). The smoke test in CI fails if anything else listens.

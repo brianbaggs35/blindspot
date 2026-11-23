@@ -15,7 +15,7 @@ docker run --detach --name "$name" \
   --tmpfs /run:rw,noexec,nosuid,nodev,size=64m \
   --tmpfs /tmp:rw,noexec,nosuid,nodev,size=64m \
   --cap-drop ALL \
-  --cap-add CHOWN --cap-add DAC_OVERRIDE --cap-add FOWNER --cap-add SETUID --cap-add SETGID \
+  --cap-add CHOWN --cap-add DAC_OVERRIDE --cap-add FOWNER --cap-add SETUID --cap-add SETGID --cap-add KILL \
   --security-opt no-new-privileges:true \
   --pids-limit 512 \
   --volume "$name-data:/data" \
