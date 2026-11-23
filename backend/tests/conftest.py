@@ -129,3 +129,10 @@ def another_browser(client: TestClient, username: str, password: str = GOOD_PASS
     answer = browser.post("/api/auth/login", json={"username": username, "password": password})
     assert answer.status_code == 200, answer.text
     return browser
+
+
+@pytest.fixture
+def admin(api: TestClient) -> TestClient:
+    """The app with first-run setup done, signed in as the administrator."""
+    set_up(api)
+    return api

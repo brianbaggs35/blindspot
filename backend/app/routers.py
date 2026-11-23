@@ -11,6 +11,7 @@ from app.auth.routes import router as auth_router
 from app.auth.users import router as users_router
 from app.health import router as health_router
 from app.methodology.routes import router as methodology_router
+from app.pentests.gate import router as gate_router
 from app.pentests.routes import router as pentests_router
 
 ROUTERS: list[APIRouter] = [
@@ -22,5 +23,6 @@ ROUTERS: list[APIRouter] = [
     ai_router,
     connect_router,
     methodology_router,
+    gate_router,
     pentests_router,
 ]

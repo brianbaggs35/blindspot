@@ -10,7 +10,7 @@ import psycopg
 import pytest
 import yaml
 from fastapi.testclient import TestClient
-from tests.conftest import add_account, another_browser, app_of, set_up
+from tests.conftest import add_account, another_browser, app_of
 from tests.methodology_helpers import METHODOLOGY, PLAYBOOK, TOOLS, playbook, write_pack
 
 from app.ai.adapters.factory import get_http_client_factory
@@ -61,12 +61,6 @@ def serve_json(api: TestClient, document: object) -> list[str]:
 def packs_in(api: TestClient, folder: Path) -> Path:
     app_of(api).dependency_overrides[get_packs_dir] = lambda: folder
     return folder
-
-
-@pytest.fixture
-def admin(api: TestClient) -> TestClient:
-    set_up(api)
-    return api
 
 
 def test_the_first_look_stores_wstg_and_listing_is_idempotent(admin: TestClient) -> None:
