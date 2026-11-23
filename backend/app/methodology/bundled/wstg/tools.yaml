@@ -1,0 +1,669 @@
+# Which tools can do each WSTG test, and how. Generated from docs/research/wstg-tool-map.md.
+# `risk` is the most intrusive thing a listed tool may do for the test. `manual_review` marks
+# judgement work the agent does with the browser and HTTP client and a person should check.
+tests:
+  WSTG-INFO-01:
+    tools: [b.osint, p.osint, o.searxng]
+    risk: safe
+    manual_review: false
+    approach: "Search-engine dorks, cached/archived pages, public code and paste sites; passive"
+  WSTG-INFO-02:
+    tools: [b.http, p.pd, c.nmap]
+    risk: active
+    manual_review: false
+    approach: "Banner, header ordering and error-page fingerprints; nmap -sV"
+  WSTG-INFO-03:
+    tools: [b.http, b.spider]
+    risk: active
+    manual_review: false
+    approach: "robots.txt, sitemap.xml, security.txt, humans.txt, meta tags"
+  WSTG-INFO-04:
+    tools: [c.amass, p.pd, b.dns, c.nmap, b.osint]
+    risk: active
+    manual_review: false
+    approach: "Subdomains, ports, virtual hosts, certificates (CT logs), cloud assets"
+  WSTG-INFO-05:
+    tools: [b.spider, b.jsstatic, c.whitebox, c.trufflehog]
+    risk: active
+    manual_review: false
+    approach: "Comments, metadata, source maps, secrets in JS; Gitleaks on supplied source"
+  WSTG-INFO-06:
+    tools: [b.spider, b.browser, b.params]
+    risk: active
+    manual_review: false
+    approach: "Forms, parameters, headers, cookies, API calls seen in the browser"
+  WSTG-INFO-07:
+    tools: [b.browser, b.spider, p.zap]
+    risk: intrusive
+    manual_review: false
+    approach: "Authenticated and unauthenticated crawl, state graph of pages and flows"
+  WSTG-INFO-08:
+    tools: [p.pd, o.whatweb, p.retire, b.http]
+    risk: active
+    manual_review: false
+    approach: "Framework and CMS fingerprints, library versions"
+  WSTG-INFO-09:
+    tools: [b.http, p.waf, b.dns, p.pd]
+    risk: active
+    manual_review: false
+    approach: "CDN, WAF, load balancer, proxies, backends; hand-off to the architecture graph"
+  WSTG-CONF-01:
+    tools: [c.nmap, b.tls, b.headers]
+    risk: active
+    manual_review: false
+    approach: "Exposed services, management ports, server config"
+  WSTG-CONF-02:
+    tools: [c.nuclei, b.http, p.wapiti, o.nikto]
+    risk: intrusive
+    manual_review: false
+    approach: "Default pages, debug endpoints, known misconfigs (templates)"
+  WSTG-CONF-03:
+    tools: [p.ffuf, c.gobuster, c.nuclei, b.http, o.nikto]
+    risk: active
+    manual_review: false
+    approach: "Backup, old, temp and unreferenced files; exposed .git/.env"
+  WSTG-CONF-04:
+    tools: [p.ffuf, c.nuclei, p.403, b.http]
+    risk: active
+    manual_review: false
+    approach: "Admin paths and consoles, then access-control bypass variations"
+  WSTG-CONF-05:
+    tools: [b.http, c.nmap]
+    risk: active
+    manual_review: false
+    approach: "OPTIONS, TRACE, PUT/DELETE probes (destructive methods only against test resources you name)"
+  WSTG-CONF-06:
+    tools: [b.headers, b.tls]
+    risk: active
+    manual_review: false
+    approach: "HSTS presence, max-age, includeSubDomains, preload"
+  WSTG-CONF-07:
+    tools: [c.whitebox, p.checkov]
+    risk: safe
+    manual_review: false
+    approach: "File permissions in source/containers (white box); black box: exposed file listing"
+  WSTG-CONF-08:
+    tools: [b.dns, c.nuclei, p.pd]
+    risk: active
+    manual_review: false
+    approach: "Dangling CNAME/NS/A records against provider fingerprints. Replaces dnsReaper (last commit 2025-10)"
+  WSTG-CONF-09:
+    tools: [p.osint, c.nuclei, b.http]
+    risk: active
+    manual_review: false
+    approach: "Public bucket discovery and ACL checks (read-only)"
+  WSTG-CONF-10:
+    tools: [b.headers, b.browser]
+    risk: active
+    manual_review: false
+    approach: "CSP evaluation and violation reports"
+  WSTG-CONF-11:
+    tools: [b.http, b.cache, c.nuclei]
+    risk: intrusive
+    manual_review: false
+    approach: "Path confusion, delimiter and normalization differences"
+  WSTG-CONF-12:
+    tools: [b.headers, b.browser]
+    risk: active
+    manual_review: false
+    approach: "Referrer-Policy, Permissions-Policy, COOP/COEP/CORP, X-Content-Type-Options"
+  WSTG-CONF-13:
+    tools: [b.jsstatic, b.http, b.browser]
+    risk: active
+    manual_review: false
+    approach: "Client-side flag stores, flag endpoints, bypass attempts"
+  WSTG-CONF-14:
+    tools: [b.cache, b.params]
+    risk: intrusive
+    manual_review: false
+    approach: "Unkeyed inputs, poisoning and deception with cache busters"
+  WSTG-IDNT-01:
+    tools: [b.http, b.browser]
+    risk: active
+    manual_review: true
+    approach: "Role matrix from docs and observed behavior (grey/white box)"
+  WSTG-IDNT-02:
+    tools: [b.browser, b.http]
+    risk: active
+    manual_review: true
+    approach: "Registration rules, validation, duplicates, self-assigned roles"
+  WSTG-IDNT-03:
+    tools: [b.browser, b.http]
+    risk: active
+    manual_review: true
+    approach: "Provisioning and approval flows, privilege of new accounts"
+  WSTG-IDNT-04:
+    tools: [b.http, b.session]
+    risk: active
+    manual_review: false
+    approach: "Response, timing and error differences for valid vs invalid users"
+  WSTG-IDNT-05:
+    tools: [b.http, b.browser]
+    risk: active
+    manual_review: false
+    approach: "Verification link entropy, reuse, expiry, bypass"
+  WSTG-ATHN-01:
+    tools: [c.nuclei, c.hydra, b.http]
+    risk: intrusive
+    manual_review: false
+    approach: "Vendor default-credential templates; tiny, rate-limited, approval required"
+  WSTG-ATHN-02:
+    tools: [b.http, c.hydra]
+    risk: intrusive
+    manual_review: false
+    approach: "Lockout thresholds measured with throwaway accounts"
+  WSTG-ATHN-03:
+    tools: [b.http, b.browser, p.403]
+    risk: active
+    manual_review: false
+    approach: "Forced browsing, parameter tampering, direct page access"
+  WSTG-ATHN-04:
+    tools: [b.browser, b.session]
+    risk: active
+    manual_review: false
+    approach: "Remember-me tokens, autocomplete, storage"
+  WSTG-ATHN-05:
+    tools: [b.headers, b.browser]
+    risk: active
+    manual_review: false
+    approach: "Cache-Control on authenticated pages, back-button and storage leakage"
+  WSTG-ATHN-06:
+    tools: [b.http, b.browser]
+    risk: active
+    manual_review: false
+    approach: "Weak auth methods, basic auth, password policy"
+  WSTG-ATHN-07:
+    tools: [b.http, b.browser]
+    risk: active
+    manual_review: false
+    approach: "Security-question flows"
+  WSTG-ATHN-08:
+    tools: [b.http, b.browser, b.oast]
+    risk: active
+    manual_review: false
+    approach: "Reset token entropy/expiry/reuse, host-header poisoning of reset links"
+  WSTG-ATHN-09:
+    tools: [b.http, b.browser]
+    risk: active
+    manual_review: false
+    approach: "Mobile/API/legacy endpoints with weaker checks"
+  WSTG-ATHN-10:
+    tools: [b.browser, b.http, b.session]
+    risk: active
+    manual_review: false
+    approach: "MFA bypass, rate limits, backup codes, enrollment flow"
+  WSTG-ATHN-11:
+    tools: [b.saml]
+    risk: active
+    manual_review: false
+    approach: "SAML signature, replay and binding checks"
+  WSTG-ATHN-12:
+    tools: [b.webauthn, b.browser]
+    risk: active
+    manual_review: false
+    approach: "Virtual authenticator tests, fallbacks"
+  WSTG-ATHN-13:
+    tools: [b.oidc]
+    risk: active
+    manual_review: false
+    approach: "OIDC relying-party checks"
+  WSTG-ATHZ-01:
+    tools: [b.http, c.nuclei, b.inject]
+    risk: intrusive
+    manual_review: false
+    approach: "Traversal and file-include payload families with encoding variants"
+  WSTG-ATHZ-02:
+    tools: [b.http, b.session, p.403]
+    risk: active
+    manual_review: false
+    approach: "Replay each request as other roles and as anonymous"
+  WSTG-ATHZ-03:
+    tools: [b.http, b.session]
+    risk: active
+    manual_review: false
+    approach: "Role/parameter tampering across the role matrix"
+  WSTG-ATHZ-04:
+    tools: [b.http, b.session]
+    risk: active
+    manual_review: false
+    approach: "Object-id swapping between two accounts (grey box)"
+  WSTG-ATHZ-05:
+    tools: [b.oidc]
+    risk: active
+    manual_review: false
+    approach: "OAuth 2 flow checks"
+  WSTG-SESS-01:
+    tools: [b.session, b.http]
+    risk: active
+    manual_review: false
+    approach: "Token entropy, structure, rotation"
+  WSTG-SESS-02:
+    tools: [b.headers, b.browser]
+    risk: active
+    manual_review: false
+    approach: "Secure, HttpOnly, SameSite, Domain, Path, prefixes"
+  WSTG-SESS-03:
+    tools: [b.session]
+    risk: active
+    manual_review: false
+    approach: "Token before and after login"
+  WSTG-SESS-04:
+    tools: [b.http, b.browser]
+    risk: active
+    manual_review: false
+    approach: "Tokens in URLs, logs, referrers, storage"
+  WSTG-SESS-05:
+    tools: [b.csrf]
+    risk: active
+    manual_review: false
+    approach: "Cross-origin replay of state-changing requests"
+  WSTG-SESS-06:
+    tools: [b.session, b.browser]
+    risk: active
+    manual_review: false
+    approach: "Server-side invalidation after logout"
+  WSTG-SESS-07:
+    tools: [b.session]
+    risk: active
+    manual_review: false
+    approach: "Idle and absolute timeouts"
+  WSTG-SESS-08:
+    tools: [b.session, b.http]
+    risk: active
+    manual_review: true
+    approach: "Cross-flow variable reuse"
+  WSTG-SESS-09:
+    tools: [b.session, b.headers]
+    risk: active
+    manual_review: false
+    approach: "Transport and cookie scope; no interception is performed"
+  WSTG-SESS-10:
+    tools: [b.jwt]
+    risk: active
+    manual_review: false
+    approach: "JWT analyzer"
+  WSTG-SESS-11:
+    tools: [b.session]
+    risk: active
+    manual_review: false
+    approach: "Parallel logins and token behavior"
+  WSTG-INJT-01:
+    tools: [p.dalfox, b.browser, p.wapiti, p.zap, b.oast]
+    risk: intrusive
+    manual_review: false
+    approach: "Reflection context analysis, then browser-verified payloads"
+  WSTG-INJT-02:
+    tools: [p.dalfox, b.browser, b.oast]
+    risk: intrusive
+    manual_review: false
+    approach: "Write then revisit with unique markers; browser-verified"
+  WSTG-INJT-03:
+    tools: [b.inject]
+    risk: intrusive
+    manual_review: false
+    approach: "Duplicate-parameter handling"
+  WSTG-INJT-04:
+    tools: [c.sqlmap, p.wapiti, p.zap, c.nuclei, b.http]
+    risk: intrusive
+    manual_review: false
+    approach: "Detection first; exploitation levels need approval"
+  WSTG-INJT-05:
+    tools: [b.inject, c.nuclei]
+    risk: intrusive
+    manual_review: false
+    approach: "LDAP filter metacharacter probes"
+  WSTG-INJT-06:
+    tools: [b.inject, b.oast]
+    risk: intrusive
+    manual_review: false
+    approach: "XML/XXE, entity expansion (bounded), SOAP"
+  WSTG-INJT-07:
+    tools: [b.inject, c.nuclei]
+    risk: intrusive
+    manual_review: false
+    approach: "SSI directives"
+  WSTG-INJT-08:
+    tools: [b.inject]
+    risk: intrusive
+    manual_review: false
+    approach: "XPath boolean/error probes"
+  WSTG-INJT-09:
+    tools: [b.inject, b.oast]
+    risk: intrusive
+    manual_review: false
+    approach: "Mail header injection"
+  WSTG-INJT-10:
+    tools: [b.inject, c.nuclei, b.oast]
+    risk: intrusive
+    manual_review: false
+    approach: "Server-side evaluation probes"
+  WSTG-INJT-11:
+    tools: [p.commix, b.inject, b.oast]
+    risk: intrusive
+    manual_review: false
+    approach: "Time- and OAST-based detection"
+  WSTG-INJT-12:
+    tools: [b.inject]
+    risk: intrusive
+    manual_review: false
+    approach: "Format-string probes"
+  WSTG-INJT-13:
+    tools: [b.inject, b.oast, b.browser]
+    risk: intrusive
+    manual_review: false
+    approach: "Stored payload with delayed trigger tracking"
+  WSTG-INJT-14:
+    tools: [b.inject]
+    risk: intrusive
+    manual_review: false
+    approach: "CRLF in headers and redirects"
+  WSTG-INJT-15:
+    tools: [b.smuggle]
+    risk: intrusive
+    manual_review: false
+    approach: "Desync probes with safe differential detection"
+  WSTG-INJT-16:
+    tools: [b.inject, b.cache]
+    risk: intrusive
+    manual_review: false
+    approach: "Host/X-Forwarded-Host handling, cache and reset-link poisoning"
+  WSTG-INJT-17:
+    tools: [p.sstimap, b.inject, c.nuclei]
+    risk: intrusive
+    manual_review: false
+    approach: "Engine fingerprint, then bounded proof"
+  WSTG-INJT-18:
+    tools: [b.oast, b.inject, c.nuclei]
+    risk: intrusive
+    manual_review: false
+    approach: "Callback-based detection; cloud-metadata targets blocked by default"
+  WSTG-INJT-19:
+    tools: [b.inject, b.http]
+    risk: intrusive
+    manual_review: false
+    approach: "Extra-field and role-field injection"
+  WSTG-INJT-20:
+    tools: [b.inject]
+    risk: intrusive
+    manual_review: false
+    approach: "Formula injection in exports"
+  WSTG-INJT-21:
+    tools: [b.inject, b.browser, b.jsstatic]
+    risk: intrusive
+    manual_review: false
+    approach: "Server merge probes and client gadget search"
+  WSTG-INJT-22:
+    tools: [p.ysoserial, b.inject, b.oast, c.nuclei]
+    risk: intrusive
+    manual_review: false
+    approach: "Format detection, canary payloads only"
+  WSTG-INJT-23:
+    tools: [b.redirect]
+    risk: active
+    manual_review: false
+    approach: "Open redirect"
+  WSTG-INJT-24:
+    tools: [b.inject]
+    risk: intrusive
+    manual_review: false
+    approach: "Normalization and case-mapping differentials"
+  WSTG-INJT-25:
+    tools: [b.inject]
+    risk: intrusive
+    manual_review: false
+    approach: "Parser differential suite (duplicate keys, comments, big numbers)"
+  WSTG-INJT-26:
+    tools: [b.oast, b.inject]
+    risk: intrusive
+    manual_review: false
+    approach: "HTML-to-PDF and image renderers: SSRF/LFI canaries"
+  WSTG-INJT-27:
+    tools: [b.redos, b.jsstatic]
+    risk: active
+    manual_review: false
+    approach: "Regex extraction then bounded timing"
+  WSTG-ERRH-01:
+    tools: [b.http, b.inject, c.nuclei]
+    risk: intrusive
+    manual_review: false
+    approach: "Malformed input to trigger errors; stack-trace/secret detection"
+  WSTG-CRYP-01:
+    tools: [b.tls, p.testssl]
+    risk: active
+    manual_review: false
+    approach: "Protocols, ciphers, certs, known attacks"
+  WSTG-CRYP-02:
+    tools: [b.padding]
+    risk: active
+    manual_review: false
+    approach: "Detection-only oracle check"
+  WSTG-CRYP-03:
+    tools: [b.http, b.spider, b.headers]
+    risk: active
+    manual_review: false
+    approach: "Mixed content, forms over HTTP, sensitive data in URLs"
+  WSTG-CRYP-04:
+    tools: [b.jsstatic, b.session, c.whitebox]
+    risk: active
+    manual_review: false
+    approach: "Weak algorithms, constants, token quality; Semgrep on source"
+  WSTG-BUSL-01:
+    tools: [b.http, b.browser]
+    risk: active
+    manual_review: true
+    approach: "Boundary and type abuse guided by the agent from the app model"
+  WSTG-BUSL-02:
+    tools: [b.http, b.session]
+    risk: active
+    manual_review: true
+    approach: "Hidden-field and request forging checks"
+  WSTG-BUSL-03:
+    tools: [b.http, b.browser]
+    risk: active
+    manual_review: true
+    approach: "Tamper with signed/checked values"
+  WSTG-BUSL-04:
+    tools: [b.race, b.http]
+    risk: intrusive
+    manual_review: true
+    approach: "Timing windows"
+  WSTG-BUSL-05:
+    tools: [b.race]
+    risk: intrusive
+    manual_review: true
+    approach: "Limit bypass with parallel requests"
+  WSTG-BUSL-06:
+    tools: [b.browser, b.http]
+    risk: active
+    manual_review: true
+    approach: "Skip/reorder workflow steps"
+  WSTG-BUSL-07:
+    tools: [b.http, b.session]
+    risk: active
+    manual_review: true
+    approach: "Abuse detection and rate controls"
+  WSTG-BUSL-08:
+    tools: [b.upload]
+    risk: intrusive
+    manual_review: false
+    approach: "Allowed and disallowed type handling"
+  WSTG-BUSL-09:
+    tools: [b.upload]
+    risk: intrusive
+    manual_review: false
+    approach: "EICAR and benign polyglots only"
+  WSTG-BUSL-10:
+    tools: [b.browser, b.http]
+    risk: active
+    manual_review: true
+    approach: "Test-mode payment flows only, with explicit scope"
+  WSTG-BUSL-11:
+    tools: [b.race, b.http]
+    risk: intrusive
+    manual_review: true
+    approach: "Cart/hold exhaustion on a test item, bounded"
+  WSTG-CLNT-01:
+    tools: [b.browser, b.jsstatic, p.dalfox]
+    risk: intrusive
+    manual_review: false
+    approach: "Source-to-sink taint tracing in a real browser"
+  WSTG-CLNT-02:
+    tools: [b.browser, b.jsstatic]
+    risk: active
+    manual_review: false
+    approach: "Dynamic code execution sinks"
+  WSTG-CLNT-03:
+    tools: [b.browser, b.inject]
+    risk: intrusive
+    manual_review: false
+    approach: "Unsanitized HTML rendering"
+  WSTG-CLNT-04:
+    tools: [b.redirect, b.browser]
+    risk: active
+    manual_review: false
+    approach: "DOM-based redirect"
+  WSTG-CLNT-05:
+    tools: [b.browser, b.inject]
+    risk: intrusive
+    manual_review: false
+    approach: "CSS injection and data exfil via selectors"
+  WSTG-CLNT-06:
+    tools: [b.browser, b.jsstatic]
+    risk: active
+    manual_review: false
+    approach: "Attacker-controlled resource URLs"
+  WSTG-CLNT-07:
+    tools: [b.headers, b.http]
+    risk: safe
+    manual_review: false
+    approach: "Reflected/null origins, credentials, preflight handling"
+  WSTG-CLNT-08:
+    tools: [b.headers, b.browser]
+    risk: active
+    manual_review: false
+    approach: "Frame-ancestors/X-Frame-Options, framed-page proof screenshot"
+  WSTG-CLNT-09:
+    tools: [b.ws, b.browser]
+    risk: active
+    manual_review: false
+    approach: "Origin, auth, message injection"
+  WSTG-CLNT-10:
+    tools: [b.browser, b.jsstatic]
+    risk: active
+    manual_review: false
+    approach: "postMessage origin checks and handlers"
+  WSTG-CLNT-11:
+    tools: [b.browser]
+    risk: active
+    manual_review: false
+    approach: "localStorage, sessionStorage, IndexedDB, cache contents"
+  WSTG-CLNT-12:
+    tools: [b.http, b.browser]
+    risk: active
+    manual_review: false
+    approach: "Script inclusion of authenticated data cross-origin"
+  WSTG-CLNT-13:
+    tools: [b.spider, b.browser]
+    risk: active
+    manual_review: false
+    approach: "target=_blank without noopener"
+  WSTG-CLNT-14:
+    tools: [b.browser, b.jsstatic]
+    risk: active
+    manual_review: false
+    approach: "Framework template sinks (AngularJS, Vue)"
+  WSTG-CLNT-15:
+    tools: [b.browser, b.jsstatic]
+    risk: active
+    manual_review: false
+    approach: "Named-element clobbering of globals"
+  WSTG-CLNT-16:
+    tools: [b.browser, b.headers]
+    risk: active
+    manual_review: false
+    approach: "Cross-site leak oracles, COOP/COEP"
+  WSTG-CLNT-17:
+    tools: [b.browser, b.jsstatic]
+    risk: active
+    manual_review: false
+    approach: "Client-side path traversal in fetch paths"
+  WSTG-CLNT-18:
+    tools: [b.browser, b.jsstatic]
+    risk: active
+    manual_review: false
+    approach: "Service-worker scope, caching, importScripts"
+  WSTG-CLNT-19:
+    tools: [b.dns, b.http]
+    risk: safe
+    manual_review: false
+    approach: "Host validation against rebinding"
+  WSTG-CLNT-20:
+    tools: [b.ws]
+    risk: active
+    manual_review: false
+    approach: "SSE auth, CORS, event injection"
+  WSTG-APIT-01:
+    tools: [b.openapi, b.browser, b.params, p.ffuf]
+    risk: active
+    manual_review: false
+    approach: "Spec import, traffic-derived endpoints, versions, docs endpoints"
+  WSTG-APIT-02:
+    tools: [b.http, b.session, p.schemathesis]
+    risk: intrusive
+    manual_review: false
+    approach: "Two-account object swap (grey box)"
+  WSTG-APIT-03:
+    tools: [b.http, b.session]
+    risk: active
+    manual_review: false
+    approach: "Response fields vs UI needs"
+  WSTG-APIT-04:
+    tools: [b.http, b.session, p.403]
+    risk: active
+    manual_review: false
+    approach: "Function calls across roles"
+  WSTG-APIT-05:
+    tools: [b.jwt, b.oidc, b.http]
+    risk: active
+    manual_review: false
+    approach: "API keys, bearer tokens, token lifecycle"
+  WSTG-APIT-06:
+    tools: [b.http, b.race, p.schemathesis]
+    risk: intrusive
+    manual_review: false
+    approach: "Rate limits, pagination caps, expensive queries"
+  WSTG-APIT-07:
+    tools: [b.inject, p.schemathesis]
+    risk: intrusive
+    manual_review: false
+    approach: "Field injection from schema"
+  WSTG-APIT-09:
+    tools: [b.http, b.oast]
+    risk: active
+    manual_review: false
+    approach: "Signature validation, replay, SSRF via callbacks"
+  WSTG-APIT-10:
+    tools: [b.grpc, c.grpcurl]
+    risk: active
+    manual_review: false
+    approach: "Reflection and method fuzz"
+  WSTG-APIT-99:
+    tools: [b.graphql, p.graphql]
+    risk: active
+    manual_review: false
+    approach: "Introspection, batching, depth, authorization"
+  WSTG-WASM-01:
+    tools: [b.wasm, b.browser]
+    risk: active
+    manual_review: false
+    approach: "Find and extract modules and loaders"
+  WSTG-WASM-02:
+    tools: [b.wasm, c.wasmtools]
+    risk: safe
+    manual_review: false
+    approach: "Decompile, imports/exports, memory"
+  WSTG-WASM-03:
+    tools: [b.wasm, b.browser]
+    risk: active
+    manual_review: false
+    approach: "Instrumented execution and fuzzed exports"

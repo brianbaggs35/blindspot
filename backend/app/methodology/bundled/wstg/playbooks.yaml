@@ -1,0 +1,307 @@
+# Hand-written playbooks for the highest-value WSTG tests. Every other test gets a playbook
+# generated from its category. An administrator can override any of them on the Methodologies page.
+
+WSTG-INFO-02:
+  summary: Name the web server, its version and anything in front of it, from how it behaves.
+  instructions: |
+    Identify the web server software and version, and any proxy, CDN or load balancer in front
+    of it. Do not rely on the Server header alone: it is easy to change.
+
+    1. Read the Server, Via, X-Powered-By and other identifying headers on several paths.
+    2. Compare the order and capitalisation of the response headers, the default error pages for
+       a missing file, a bad method and an over-long URL, and how malformed requests are refused.
+    3. Check whether the answers differ between paths, which suggests more than one system.
+    4. Only when the scope allows port probing, run service-version detection against the web ports.
+
+    Report each conclusion with how sure you are and which observation supports it.
+  tools: [b.http, p.pd, c.nmap]
+  safe_steps:
+    - Read the identifying headers on the home page and two other paths
+    - Compare the default error pages for a missing path and a bad method
+  active_steps:
+    - Send one malformed request and one over-long URL and compare the refusals
+    - Run service-version detection on the web ports, when the scope allows it
+  evidence:
+    - The headers and error pages compared, side by side
+    - The server, version and any proxy named, each with its supporting observation
+  success: The server and what is in front of it are identified, or the answers are consistent enough to say nothing more can be learned safely.
+  failure: A precise product and version is exposed (a header, banner or error page) that can be matched to known vulnerabilities.
+  not_applicable:
+    - The target is not reachable over HTTP or HTTPS
+
+WSTG-ATHN-02:
+  summary: Find out whether repeated wrong sign-ins are slowed, blocked or noticed, and what that costs a real user.
+  instructions: |
+    Measure the lock-out behaviour with throwaway accounts only. Never use a real person's
+    account, and stop at once if the application begins to refuse legitimate users.
+
+    1. Find the sign-in endpoint and how it reports a wrong password.
+    2. With an account you own, send wrong passwords one at a time and record after how many
+       attempts, if any, the account is locked, delayed, challenged (CAPTCHA, MFA) or alerted.
+    3. Record the lock-out duration, whether it resets on success, and whether the unlock path
+       (email, support, time) can itself be abused.
+    4. Check whether the limit is per account, per address or both, and whether changing a
+       header, case or whitespace in the username avoids it.
+    5. Check that the lock-out does not let anyone lock another person out at will.
+
+    Ask for approval before any step that would send more than twenty attempts.
+  tools: [b.http, c.hydra]
+  safe_steps:
+    - Find the sign-in endpoint and read how a wrong password is reported
+  active_steps:
+    - Send wrong passwords for an account you own, one at a time, up to the point a control appears
+    - Check whether the limit follows the account, the address or both
+  intrusive_steps:
+    - Send more than twenty attempts, only after approval and only against a throwaway account
+  evidence:
+    - The number of attempts before a control appeared, and which control
+    - The lock-out duration and the unlock path
+    - Whether the control can be avoided or used to lock out someone else
+  success: A limit applies within a small number of attempts, cannot be avoided, and cannot be used to lock out another person.
+  failure: There is no limit, the limit is high or avoidable, or the lock-out can be used against other people.
+  not_applicable:
+    - The application has no password sign-in
+    - Only single sign-in through another provider is used, and that provider is out of scope
+
+WSTG-ATHZ-04:
+  summary: Check whether one user can reach another user's objects by changing an identifier.
+  instructions: |
+    This needs two accounts of the same role that you own (grey box), each with at least one
+    object of their own: an order, document, profile or message.
+
+    1. As account A, list and open A's objects and note every identifier in URLs, bodies,
+       headers and cookies.
+    2. As account B, request A's objects by those identifiers, for reading, changing and
+       deleting. Try the other methods the endpoint accepts.
+    3. Try guessable and sequential identifiers, and identifiers taken from other responses.
+    4. Try the same requests with no sign-in at all.
+    5. Never change or delete anything that is not test data you created.
+
+    A refusal that still returns the object's data, size or existence is a weakness too.
+  tools: [b.http, b.session]
+  safe_steps:
+    - List the objects each account can see and note every identifier
+  active_steps:
+    - Request the other account's objects by identifier, for reading
+    - Repeat with no sign-in
+  intrusive_steps:
+    - Change or delete another account's test object, to show write access
+  evidence:
+    - Both accounts and the object each owns
+    - The request made as the other account and the response
+    - What differs between a refusal and a success
+  success: Every request for another account's object is refused in the same way as for an object that does not exist.
+  failure: An object, or any detail of it, can be read, changed or removed by someone who does not own it.
+  not_applicable:
+    - Objects are not tied to individual users
+    - Only one account can be created and no second account is available
+
+WSTG-SESS-02:
+  summary: Check the attributes on the session cookies and any other cookies that matter.
+  instructions: |
+    List every cookie the application sets, before and after signing in, and judge each one
+    that carries a session or a decision.
+
+    - Secure is set, so the cookie is never sent over plain HTTP.
+    - HttpOnly is set on anything a script has no need to read.
+    - SameSite is Lax or Strict (or None with a reason).
+    - Domain is as narrow as possible and Path is sensible; the __Host- or __Secure- prefix is
+      used where it can be.
+    - The lifetime fits the cookie's purpose.
+
+    Read the cookies from the response headers and from the browser's cookie store, because
+    scripts can set cookies that never appear in a response.
+  tools: [b.headers, b.browser]
+  safe_steps:
+    - Record every cookie set before sign-in and after
+    - Check each attribute against the list in the instructions
+  active_steps:
+    - Request the application over plain HTTP, when it is reachable, and see whether the cookie is sent
+  evidence:
+    - Each cookie with its attributes, from the response header
+    - The cookies seen in the browser store that never appeared in a header
+  success: Every session cookie has Secure, HttpOnly and an appropriate SameSite, and a narrow scope.
+  failure: A session cookie is missing a protective attribute, is scoped too widely, or lives too long.
+  not_applicable:
+    - The application sets no cookies and keeps no session
+
+WSTG-SESS-10:
+  summary: Check how JSON Web Tokens are built, signed, checked and expired.
+  instructions: |
+    Find every JWT the application issues or accepts (cookies, headers, storage, URLs) and test
+    each one against the analyzer's checks. Use tokens from accounts you own.
+
+    1. Decode the header and claims. Note the algorithm, key id, issuer, audience and expiry.
+    2. Check that the signature is verified: a token with a changed claim, an unsigned token
+       (alg none) and a token signed with a different algorithm must all be refused.
+    3. For HMAC tokens, test the secret against a list of common secrets, offline.
+    4. Check kid, jku, x5u and jwk headers cannot point the server at a key you control.
+    5. Check expiry, not-before and audience are enforced, and that logout or a password
+       change invalidates the token.
+    6. Check no secret or personal data is placed in the claims.
+  tools: [b.jwt]
+  safe_steps:
+    - Decode every token and list its algorithm and claims
+    - Test an HMAC secret against a common-secret list, offline
+  active_steps:
+    - Replay changed, unsigned and re-signed tokens and see which are accepted
+    - Replay an expired token
+  evidence:
+    - The decoded token with the secret parts removed
+    - Each altered token sent and the response
+  success: Only correctly signed, unexpired tokens for this audience are accepted, and the key cannot be redirected.
+  failure: A token that should be refused is accepted, the secret is weak, or a header redirects key lookup.
+  not_applicable:
+    - The application does not use JWTs
+
+WSTG-INJT-01:
+  summary: Find where input is reflected into a page and whether it can run as script in the visitor's browser.
+  instructions: |
+    Work from understanding to proof.
+
+    1. Find every parameter, header and path segment whose value appears in a response.
+    2. For each, send a harmless unique marker and note exactly where it lands: HTML body,
+       attribute, script block, URL, style, comment, JSON.
+    3. From the context, choose the smallest payload that would run there, and send it in a
+       real browser so the result is a fact, not a guess.
+    4. Check what the page's content security policy and the application's encoding already stop.
+
+    Stop at the smallest proof, usually a harmless dialog-free marker action. Never steal
+    cookies, data or sessions, and never send a payload that persists.
+  tools: [p.dalfox, b.browser, p.wapiti, p.zap, b.oast]
+  safe_steps:
+    - List every input that is reflected in a response
+    - Send a unique harmless marker and record the context it lands in
+  active_steps:
+    - Send the smallest context-specific payload in an instrumented browser
+  intrusive_steps:
+    - Use out-of-band callbacks for blind cases, only when the scope allows traffic to leave the target
+  evidence:
+    - The input, the context and the exact response
+    - The browser's record showing the script ran
+  success: Every reflected input is encoded for its context, or the policy stops script from running.
+  failure: Script supplied through an input runs in a page of the application.
+  not_applicable:
+    - No input is reflected in any response
+
+WSTG-INJT-04:
+  summary: Find whether input reaches a SQL query as code, and show the smallest proof if it does.
+  instructions: |
+    Detect first. Exploit only with approval and only as far as the proof needs.
+
+    1. List every input that could reach a database: query strings, form fields, JSON fields,
+       headers and cookies.
+    2. For each, send one-at-a-time probes that change the meaning of a query without harming
+       it: quotes, boolean pairs, and arithmetic that returns the same value.
+    3. Compare the response, status, length and timing against a baseline. Confirm any
+       difference with a second, different probe.
+    4. Name the database from how it reacts, not from a guess.
+    5. For a confirmed injection, show that data can be read with the least intrusive technique,
+       using test data where there is some. Never modify or delete data.
+
+    Time-based probes must be short and are never repeated in a loop.
+  tools: [c.sqlmap, p.wapiti, p.zap, c.nuclei, b.http]
+  safe_steps:
+    - List every input that could reach a database
+  active_steps:
+    - Send boolean and arithmetic probes one at a time and compare with a baseline
+    - Confirm each difference with a second, different probe
+  intrusive_steps:
+    - Read one harmless value to prove injection, after approval, with the lowest level and risk
+  evidence:
+    - The input and the pair of requests that differ
+    - The database named and how it was recognised
+    - The single harmless value read, if approved
+  success: No input changes a query's meaning and every probe matches the baseline.
+  failure: An input changes a query, shown by two independent probes.
+  not_applicable:
+    - The application stores nothing in a database that input can reach
+
+WSTG-INJT-18:
+  summary: Find whether the server can be made to send requests to places the visitor chooses.
+  instructions: |
+    Find every feature that fetches a URL or host on the visitor's behalf: link previews,
+    importers, webhooks, image and PDF fetchers, proxies and redirects.
+
+    1. For each, point it at an address you control (the out-of-band listener) and check that a
+       request arrives, and from where.
+    2. If it does, check what it will fetch: other schemes, other ports, redirects, names that
+       resolve to private addresses, and encodings of those addresses.
+    3. Never aim a probe at the cloud metadata address or any system outside the scope. Blocked
+       by default; ask first.
+    4. Record what the response gives away: the body, the status, the timing, or nothing at all.
+  tools: [b.oast, b.inject, c.nuclei]
+  safe_steps:
+    - List every feature that fetches something on the visitor's behalf
+  active_steps:
+    - Point each one at the out-of-band listener and note whether and from where a request arrives
+  intrusive_steps:
+    - Try redirects, other ports and private addresses inside the scope, after approval
+  evidence:
+    - The feature, the address given and the callback that arrived
+    - What the response revealed about what was fetched
+  success: The server only fetches allowed destinations, follows no redirects to others, and reveals nothing about refused ones.
+  failure: The server can be made to request an address the visitor picks, including one that is not meant to be reachable.
+  not_applicable:
+    - The application never fetches a URL or host supplied by a visitor
+
+WSTG-CRYP-01:
+  summary: Check the protocols, ciphers and certificates that protect traffic to the target.
+  instructions: |
+    Audit every TLS endpoint in scope: the web site and any other port the application serves.
+
+    1. Record the protocol versions accepted. TLS 1.2 and 1.3 are expected; anything older is a
+       finding.
+    2. Record the cipher suites, whether the server picks the order, and whether forward
+       secrecy is used.
+    3. Check the certificate chain, validity, names, key size, signature algorithm and
+       revocation information.
+    4. Check HSTS, and that plain HTTP redirects to HTTPS without leaking content first.
+    5. Check the known attacks the analyzer covers: renegotiation, compression, Heartbleed and
+       ROBOT, and weak key exchange.
+  tools: [b.tls, p.testssl]
+  safe_steps:
+    - List the TLS endpoints in scope
+    - Read the certificate chain
+  active_steps:
+    - Probe protocol versions and cipher suites
+    - Run the known-attack checks
+  evidence:
+    - The accepted protocols and ciphers
+    - The certificate details
+    - The result of each attack check
+  success: Only current protocols and strong ciphers are accepted, the certificate is valid for the names in use, and plain HTTP is redirected.
+  failure: An old protocol or weak cipher is accepted, the certificate is invalid or weak, or a known attack applies.
+  not_applicable:
+    - The service is not served over TLS and does not carry sensitive data
+
+WSTG-APIT-02:
+  summary: Check whether an API call for one object can be made to return or change another user's.
+  instructions: |
+    This is the API form of broken object access, with two accounts you own.
+
+    1. From the API description or from traffic, list every endpoint that takes an object
+       identifier in the path, query, body or a header.
+    2. As account A, create and read A's own objects. As account B, call the same endpoints with
+       A's identifiers for every method the endpoint accepts.
+    3. Try identifiers that are sequential, guessable, in another format, or wrapped in an
+       array or object, and nested objects reached through a parent.
+    4. Compare the refusal for an object that exists with one that does not, since a difference
+       tells an attacker which exist.
+    5. Change or delete only test objects you created.
+  tools: [b.http, b.session, p.schemathesis]
+  safe_steps:
+    - List every endpoint that takes an object identifier
+  active_steps:
+    - Call each endpoint as the other account with the first account's identifiers, for reading
+    - Compare the refusal for an existing object and a missing one
+  intrusive_steps:
+    - Change or delete the first account's test object as the second account, to show write access
+  evidence:
+    - The endpoint, both accounts and the identifier used
+    - The request and response as the other account
+  success: Every call for another account's object is refused, and the refusal looks the same as for a missing object.
+  failure: An object can be read, changed or removed by an account that does not own it.
+  not_applicable:
+    - The API has no endpoints that take an object identifier
+    - Only one account can be created

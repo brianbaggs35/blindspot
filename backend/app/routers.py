@@ -10,6 +10,7 @@ from app.auth.passkey_routes import router as passkey_router
 from app.auth.routes import router as auth_router
 from app.auth.users import router as users_router
 from app.health import router as health_router
+from app.methodology.routes import router as methodology_router
 
 ROUTERS: list[APIRouter] = [
     health_router,
@@ -19,4 +20,5 @@ ROUTERS: list[APIRouter] = [
     audit_router,
     ai_router,
     connect_router,
+    methodology_router,
 ]
