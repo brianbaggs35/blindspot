@@ -1,7 +1,7 @@
 # Blindspot: `make` lists every command.
 SHELL := /bin/bash
 .DEFAULT_GOAL := help
-.PHONY: help lint lint-backend lint-frontend lint-infra audit-workflows format format-check test test-ci-scripts \
+.PHONY: secret-key rotate-secret-key help lint lint-backend lint-frontend lint-infra audit-workflows format format-check test test-ci-scripts \
 	test-backend test-frontend e2e e2e-host audit scan-source clean
 
 # Linters run from images pinned by digest, not from third-party GitHub Actions, so the same
@@ -85,6 +85,13 @@ audit: ## Check dependencies for known vulnerabilities (the frontend fails on cr
 scan-source: ## Trivy: vulnerable dependencies, leaked secrets and Dockerfile mistakes
 	docker run --rm -v blindspot-trivy-cache:/root/.cache/trivy -v "$(CURDIR):/src:ro" -w /src $(TRIVY_IMAGE) fs $(TRIVY_FLAGS) \
 		--scanners vuln,secret,misconfig --ignorefile .trivyignore.yaml .
+
+## ---- Secrets (docs/how-to/secrets.md) -----------------------------------------------
+secret-key: ## Print a new app secret key to keep somewhere safe
+	@$(BACKEND) uv run --no-sync python -m app.vault generate
+
+rotate-secret-key: ## Seal every stored secret again with BLINDSPOT_SECRET_KEY (old key in BLINDSPOT_PREVIOUS_SECRET_KEY)
+	@$(BACKEND) uv run --no-sync python -m app.vault rotate
 
 clean: ## Remove local build and test artifacts
 	rm -rf backend/.pytest_cache backend/.ruff_cache backend/.coverage backend/coverage.xml \

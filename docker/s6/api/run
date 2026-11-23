@@ -1,6 +1,10 @@
 #!/bin/sh
 # The API, listening on a unix socket that only nginx (the blindspot group) can use.
 umask 007
+# The entrypoint made a key here unless one was supplied (see docker/entrypoint.sh).
+if [ -z "${BLINDSPOT_SECRET_KEY:-}" ] && [ -z "${BLINDSPOT_SECRET_KEY_FILE:-}" ]; then
+  export BLINDSPOT_SECRET_KEY_FILE=/data/secrets/secret.key
+fi
 exec setpriv --reuid=blindspot --regid=blindspot --init-groups --no-new-privs -- \
   uvicorn --factory app.main:create_app \
   --uds /run/blindspot/api.sock \

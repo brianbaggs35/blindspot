@@ -24,6 +24,10 @@ services:
       BLINDSPOT_HOSTNAMES: "${BLINDSPOT_HOSTNAMES:-}"
       # Set to 1 once https works for the whole host name (HSTS can't be undone for a year).
       BLINDSPOT_HSTS: "${BLINDSPOT_HSTS:-0}"
+      # The key that seals stored credentials (docs/how-to/secrets.md). Left empty, one is made
+      # on first start and kept in the data volume.
+      BLINDSPOT_SECRET_KEY: "${BLINDSPOT_SECRET_KEY:-}"
+      BLINDSPOT_SECRET_KEY_FILE: "${BLINDSPOT_SECRET_KEY_FILE:-}"
     volumes:
       - data:/data
       # - ./certs:/certs:ro

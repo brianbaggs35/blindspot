@@ -24,6 +24,24 @@ chown postgres:postgres "$PGDATA"
 chmod 0700 "$PGDATA"
 chown blindspot:blindspot "$DATA/evidence" "$DATA/reports" "$DATA/backups"
 
+# --- Secret key -----------------------------------------------------------------------------
+# The key that seals every stored credential. When it is supplied (BLINDSPOT_SECRET_KEY, or
+# BLINDSPOT_SECRET_KEY_FILE for a Docker secret) nothing is made here. Otherwise one is made the
+# first time and kept in /data/secrets, readable only by the API. That copy sits next to the data
+# it protects, so a backup of /data holds both: supply the key, and keep it apart from backups.
+if [ -z "${BLINDSPOT_SECRET_KEY:-}" ] && [ -z "${BLINDSPOT_SECRET_KEY_FILE:-}" ]; then
+  SECRETS="$DATA/secrets"
+  mkdir -p "$SECRETS"
+  if [ ! -s "$SECRETS/secret.key" ]; then
+    log "creating the secret key"
+    head -c 48 /dev/urandom | od -An -v -tx1 | tr -d ' \n' > "$SECRETS/secret.key.new"
+    mv "$SECRETS/secret.key.new" "$SECRETS/secret.key"
+  fi
+  chown -R blindspot:blindspot "$SECRETS"
+  chmod 0700 "$SECRETS"
+  chmod 0400 "$SECRETS/secret.key"
+fi
+
 # /run is a tmpfs, so these are rebuilt on every start.
 mkdir -p /run/postgresql /run/blindspot /run/nginx /run/s6 "$TLS"
 chown postgres:pgsock /run/postgresql
