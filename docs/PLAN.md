@@ -145,7 +145,7 @@ Your rule is: latest versions, nothing stale, nothing nobody uses, and TypeScrip
 3. **Adoption.** No near-zero-star or near-zero-download packages. Star counts need `api.deps.dev` and download counts need `api.npmjs.org` and `pypistats.org`, which are not on this session's allow-list yet. Until then adoption is recorded as *pending*, and the scaffold PR does not merge a dependency without that column filled in.
 4. **Enforced in CI, not just once.** Dependabot (weekly), `pip-audit`, `npm audit`, OSV-Scanner and Trivy on every PR, and a small `dependency-freshness` check that fails when a pinned dependency has a newer stable release outside an allow-listed exception, or when its latest release is older than 12 months and it is not on the exception list.
 
-Known exceptions, found while checking this list: `defusedxml` (last release 2021-03-08) is **dropped**; XML from tools is parsed with `lxml` 6.1.3 using a hardened parser (no entity resolution, no network, no DTD loading). `graphology` 0.26.0 (2025-01-26) is the current release and a required peer of sigma.js 4, so it stays, noted as a watch item. `argon2-cffi` 25.1.0 (2025-06-03) is the current release; the vault ticket checks whether the `cryptography` package's own Argon2 support makes it unnecessary. `httpx` (below) is a transitive dependency of the AI SDKs.
+Known exceptions, found while checking this list: `defusedxml` (last release 2021-03-08) is **dropped**; XML from tools is parsed with `lxml` 6.1.3 using a hardened parser (no entity resolution, no network, no DTD loading). `graphology` 0.26.0 (2025-01-26) is the current release and a required peer of sigma.js 4, so it stays, noted as a watch item. `argon2-cffi` 25.1.0 (2025-06-03) is the current release; the vault ticket checks whether the `cryptography` package's own Argon2 support makes it unnecessary. `httpx` is replaced by its maintained successor `httpx2` (see the note below).
 
 ### Backend
 
@@ -167,7 +167,7 @@ Known exceptions, found while checking this list: `defusedxml` (last release 202
 | Packaging | uv | 0.13.9 |
 | Quality | pytest 9.2.0, pytest-asyncio 1.5.0, pytest-cov 7.1.0, pytest-recording 0.15.0 (vcrpy 9.4.2), ruff 0.17.6, pyright 1.1.414, bandit 1.9.4, pip-audit 2.10.1 | |
 
-Note: `httpx` has not had a release since 2024-12-06 (v0.28.1). Pydantic AI and the provider SDKs depend on it, so it stays, but the scaffold ticket records the maintenance risk and checks whether `aiohttp` should handle our own outbound calls.
+Note: `httpx` has had no release since 2024-12-06 (0.28.1). Its maintained successor **`httpx2`** (2.16.2, 2026-11-16, from the Pydantic team) is what Pydantic AI, the Anthropic and OpenAI SDKs, `mcp` and Starlette's `TestClient` now depend on, so the plain `httpx` risk no longer applies and our own outbound calls can use `httpx2`. The pentest HTTP client keeps `aiohttp` and `h2` because it needs raw request and response control.
 
 ### Frontend
 
@@ -878,7 +878,7 @@ Order notes: **BLI-1 (CI) is the first build PR**, as you asked, so the scaffold
 | Third-party APIs change or rate-limit | Local cache, token buckets, provider fallbacks, stale-data banner |
 | Model and price churn | Catalog file with dates and user overrides; model lists fetched from APIs |
 | Scope creep: 36 PRs is a lot | Strict vertical slices; each PR runs on its own; the early foundation PRs make later ones small |
-| `httpx` has had no release since 2024-12-06 | Recorded in the scaffold ticket; our own outbound calls use aiohttp, httpx stays only as the AI SDKs' transitive dependency |
+| `httpx` has had no release since 2024-12-06 | Resolved: the ecosystem moved to its successor `httpx2` (verified in the dependency metadata of pydantic-ai-slim, anthropic, openai, mcp), which the scaffold uses |
 | Tool images pulled automatically could be tampered with or fail midway | Digest-pinned lock file, signature check, allow-listed registries, classified errors, no half-pulled image marked ready |
 | Stale or unmaintained security tools | Version and last-release check in CI, replacement list in the [tool map](research/wstg-tool-map.md), built-ins instead of abandoned tools |
 | Star and download counts not yet verified | Hosts requested; the scaffold PR is blocked on filling the adoption column |

@@ -1,0 +1,20 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+.coverage
+coverage.xml
+
+# Node
+node_modules/
+frontend/dist/
+frontend/coverage/
+frontend/e2e-results/
+frontend/*.tsbuildinfo
+
+# Local files
+.env
+*.log
+.DS_Store

@@ -28,7 +28,7 @@ lint: lint-backend lint-frontend lint-infra format-check ## Run every linter and
 
 lint-backend: ## ruff, pyright and bandit (skipped until the backend exists)
 	@if [ -f backend/pyproject.toml ]; then \
-		$(BACKEND) uv run ruff check . && uv run ruff format --check . && uv run pyright && uv run bandit -c pyproject.toml -r app migrations -q; \
+		$(BACKEND) uv run ruff check . && uv run ruff format --check . && uv run pyright && uv run bandit -c pyproject.toml -r app -q; \
 	else echo "No backend yet: skipped."; fi
 
 lint-frontend: ## ESLint, Prettier and vue-tsc (skipped until the web app exists)

@@ -1,0 +1,76 @@
+[project]
+name = "blindspot"
+version = "0.0.0"
+description = "A self-hosted platform for web application penetration tests with AI agents"
+readme = "../README.md"
+requires-python = ">=3.14"
+dependencies = [
+  "fastapi==0.165.0",
+  "uvicorn==0.54.0",
+  "pydantic-settings==2.16.3",
+  "structlog==26.1.0",
+]
+
+[dependency-groups]
+dev = [
+  "pytest==9.2.0",
+  "pytest-asyncio==1.5.0",
+  "pytest-cov==7.1.0",
+  "httpx2==2.16.2", # the successor to httpx; FastAPI's TestClient uses it
+  "ruff==0.17.6",
+  "pyright==1.1.414",
+  "bandit==1.9.4",
+  "pip-audit==2.10.1",
+]
+
+[tool.uv]
+# Prebuilt wheels only, so installing runs none of the packages' own build code.
+no-build = true
+
+[tool.ruff]
+line-length = 100
+target-version = "py314"
+src = ["app", "tests"]
+
+[tool.ruff.lint]
+select = [
+  "E", "F", "W", "I", "N", "UP", "B", "A", "C4", "SIM", "RET", "PT", "PL", "RUF", "S", "ASYNC",
+  "T20", "TID", "PERF", "ARG", "ERA",
+]
+ignore = ["PLR2004"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["app"]
+
+[tool.ruff.lint.pylint]
+max-args = 7
+max-positional-args = 5
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S101", "PLR2004", "ARG"]
+
+[tool.pyright]
+include = ["app", "tests"]
+pythonVersion = "3.14"
+typeCheckingMode = "strict"
+venvPath = "."
+venv = ".venv"
+
+[tool.bandit]
+exclude_dirs = ["tests", ".venv"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+addopts = "--cov=app --cov-branch --cov-report=term-missing --cov-report=xml --cov-fail-under=95 -ra --strict-markers"
+
+[tool.coverage.run]
+source = ["app"]
+
+[tool.coverage.report]
+# Target 100%; the build fails below 95%.
+show_missing = true
+skip_covered = true
+exclude_also = ["if TYPE_CHECKING:", "raise NotImplementedError"]
