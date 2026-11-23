@@ -45,14 +45,15 @@ ARG BUILT_AT=unknown
 ARG APK_REFRESH=dev
 ARG IMAGE_REFRESH=dev
 
-# python: the API. nginx: TLS and the web app. postgresql-18: the database. s6: supervises the
-# three. setpriv: drops each service to its own user. tini: the first process. openssl: the first-start certificate.
-# curl: the health check. All upgraded at build time.
+# python: the API. nginx: TLS and the web app. postgresql-18: the database; its client (pg_dump)
+# copies the database before a migration. s6: supervises the three. setpriv: drops each service
+# to its own user. tini: the first process. openssl: the first-start certificate. curl: the
+# health check. All upgraded at build time.
 # hadolint ignore=DL3018
 RUN echo "$APK_REFRESH $IMAGE_REFRESH" > /dev/null \
     && apk upgrade --no-cache \
     && apk add --no-cache ca-certificates-bundle curl nginx-mainline nginx-mainline-mime-types \
-        openssl postgresql-18 python-3.14 s6 setpriv tini \
+        openssl postgresql-18 postgresql-18-client python-3.14 s6 setpriv tini \
     # One user per service. nginx reaches the API's socket through the blindspot group; the
     # API and the database share the pgsock group, which owns the database socket.
     && addgroup -S -g 10001 blindspot \

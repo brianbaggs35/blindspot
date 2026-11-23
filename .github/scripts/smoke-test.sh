@@ -32,8 +32,22 @@ check() {
 }
 
 check /api/health 200
+check /api/ready 200
 check / 200
 check /api/does-not-exist 404
+
+# The migrations ran, and the tool that backs the database up before the next one is there.
+revision="$(docker exec --user blindspot "$container" psql --host /run/postgresql --dbname blindspot \
+  --no-psqlrc --tuples-only --no-align --command 'SELECT version_num FROM alembic_version')"
+if [[ -z "$revision" ]]; then
+  echo "::error::The database has not been migrated."
+  exit 1
+fi
+echo "Database revision: $revision"
+# Only the app's own role may read the database, and pg_dump (the pre-upgrade backup) works as it.
+docker exec --user blindspot "$container" pg_dump --host /run/postgresql --dbname blindspot \
+  --schema-only --no-password | grep -q 'CREATE TABLE public.alembic_version'
+echo "pg_dump works"
 
 # Nothing may listen on TCP except nginx: the API and the database use unix sockets.
 listening="$(docker exec "$container" cat /proc/net/tcp /proc/net/tcp6 | while read -r _ local _ state _; do

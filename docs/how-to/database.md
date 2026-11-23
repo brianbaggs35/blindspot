@@ -26,6 +26,7 @@ For development, point `BLINDSPOT_DATABASE_URL` at any PostgreSQL 18 server.
 | `app/db/events.py`           | `notify` and `listen`: live events between the worker and the API with PostgreSQL's `LISTEN` and `NOTIFY`          |
 | `app/db/ensure.py`           | `ensure_table`, `ensure_column`, `ensure_index`, `ensure_unique_constraint`, `drop_table_if_exists`                |
 | `app/db/migrate.py`          | `python -m app.db.migrate` upgrades to the newest revision, holding an advisory lock so only one process migrates  |
+| `app/db/backup.py`           | `pg_dump` into `/data/backups` before a migration changes an existing database; the newest five are kept           |
 | `migrations/`, `alembic.ini` | The migrations                                                                                                     |
 
 Ids are UUIDv7: random, but they sort by creation time. Times are stored in UTC and always have
@@ -35,6 +36,22 @@ a time zone. A deleted row (`SoftDelete`) is hidden with `deleted_at`; filter wi
 Health and readiness: `GET /api/health` answers while the server runs. `GET /api/ready` also
 needs the database to answer, and gives a 503 problem document (`database_unavailable`)
 otherwise.
+
+## Migrations in the container, and the backup before them
+
+The API's start script runs `python -m app.db.migrate` before it starts the server. It waits for
+the database to accept connections, and then:
+
+- on a new database it just migrates;
+- on a database already at the newest revision it does nothing;
+- on a database at an older revision it first writes `/data/backups/pre-upgrade-<time>-<revision>.dump`
+  (a `pg_dump` custom-format file, restorable with `pg_restore`), and then migrates. The newest five
+  copies are kept.
+
+If the copy or the migration fails, the API does not start, and the logs say why: a failed
+upgrade never runs on top of data that has no copy. To go back, stop the container, restore the
+dump into an empty database with `pg_restore --dbname blindspot --clean --if-exists`, and run the
+previous release.
 
 ## Adding a table or a column
 
