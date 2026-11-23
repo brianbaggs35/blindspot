@@ -31,6 +31,7 @@ from app.vault.seal import Purpose
 from app.vault.types import SealedString
 
 METHODOLOGY_ID = "methodology.id"
+PENTEST_ID = "pentest.id"
 
 __all__ = [
     "AiModel",
@@ -361,7 +362,7 @@ class PentestAccount(UUIDPrimaryKey, Timestamps, Base):
     __table_args__ = (UniqueConstraint("pentest_id", "label"),)
 
     pentest_id: Mapped[uuid.UUID] = mapped_column(
-        Uuid, ForeignKey("pentest.id", ondelete="CASCADE"), index=True
+        Uuid, ForeignKey(PENTEST_ID, ondelete="CASCADE"), index=True
     )
     label: Mapped[str] = mapped_column(String(80))
     username: Mapped[str] = mapped_column(String(200))
@@ -379,7 +380,7 @@ class PentestAttestation(UUIDPrimaryKey, Base):
     __tablename__ = "pentest_attestation"
 
     pentest_id: Mapped[uuid.UUID] = mapped_column(
-        Uuid, ForeignKey("pentest.id", ondelete="CASCADE"), index=True
+        Uuid, ForeignKey(PENTEST_ID, ondelete="CASCADE"), index=True
     )
     attested_by: Mapped[uuid.UUID | None] = mapped_column(Uuid, default=None)
     attested_by_name: Mapped[str] = mapped_column(String(64))
@@ -402,7 +403,7 @@ class PentestLetter(Base):
     __tablename__ = "pentest_letter"
 
     pentest_id: Mapped[uuid.UUID] = mapped_column(
-        Uuid, ForeignKey("pentest.id", ondelete="CASCADE"), primary_key=True
+        Uuid, ForeignKey(PENTEST_ID, ondelete="CASCADE"), primary_key=True
     )
     filename: Mapped[str] = mapped_column(String(200))
     content_type: Mapped[str] = mapped_column(String(40))
