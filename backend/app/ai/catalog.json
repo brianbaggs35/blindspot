@@ -9,11 +9,7 @@
       "name": "Claude Opus 5.5",
       "context": 1000000,
       "max_output": 128000,
-      "capabilities": [
-        "tools",
-        "thinking",
-        "vision"
-      ],
+      "capabilities": ["tools", "thinking", "vision"],
       "price": {
         "input": "4",
         "output": "20",
@@ -28,11 +24,7 @@
       "name": "Claude Sonnet 5.5",
       "context": 1000000,
       "max_output": 128000,
-      "capabilities": [
-        "tools",
-        "thinking",
-        "vision"
-      ],
+      "capabilities": ["tools", "thinking", "vision"],
       "price": {
         "input": "2",
         "output": "10",
@@ -47,11 +39,7 @@
       "name": "Claude Haiku 5.5",
       "context": 1000000,
       "max_output": 128000,
-      "capabilities": [
-        "tools",
-        "thinking",
-        "vision"
-      ],
+      "capabilities": ["tools", "thinking", "vision"],
       "price": {
         "input": "0.10",
         "output": "0.50",
@@ -76,11 +64,7 @@
       "name": "Claude Fable 5.2",
       "context": 1000000,
       "max_output": 128000,
-      "capabilities": [
-        "tools",
-        "thinking",
-        "vision"
-      ],
+      "capabilities": ["tools", "thinking", "vision"],
       "price": {
         "input": "8",
         "output": "40",
@@ -95,10 +79,7 @@
       "name": "GPT-6 Luna",
       "context": 1050000,
       "max_output": 128000,
-      "capabilities": [
-        "tools",
-        "thinking"
-      ],
+      "capabilities": ["tools", "thinking"],
       "price": {
         "input": "0.10",
         "output": "0.50",
@@ -123,10 +104,7 @@
       "name": "GPT-6.1 Terra",
       "context": 1050000,
       "max_output": 128000,
-      "capabilities": [
-        "tools",
-        "thinking"
-      ],
+      "capabilities": ["tools", "thinking"],
       "price": {
         "input": "1",
         "output": "5",
@@ -151,10 +129,7 @@
       "name": "GPT-6.2 Sol",
       "context": 1050000,
       "max_output": 128000,
-      "capabilities": [
-        "tools",
-        "thinking"
-      ],
+      "capabilities": ["tools", "thinking"],
       "price": {
         "input": "2",
         "output": "10",
@@ -179,10 +154,7 @@
       "name": "GPT-6.2 Astra",
       "context": 1050000,
       "max_output": 128000,
-      "capabilities": [
-        "tools",
-        "thinking"
-      ],
+      "capabilities": ["tools", "thinking"],
       "price": {
         "input": "8",
         "output": "40",
@@ -207,9 +179,7 @@
       "name": "GPT-5.4 mini",
       "context": null,
       "max_output": null,
-      "capabilities": [
-        "tools"
-      ],
+      "capabilities": ["tools"],
       "price": {
         "input": "0.75",
         "output": "4.50",
@@ -224,9 +194,7 @@
       "name": "GPT-5.4 nano",
       "context": null,
       "max_output": null,
-      "capabilities": [
-        "tools"
-      ],
+      "capabilities": ["tools"],
       "price": {
         "input": "0.20",
         "output": "1.25",

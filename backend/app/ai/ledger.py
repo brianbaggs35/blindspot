@@ -33,7 +33,7 @@ def overrides_of(model: AiModel | None) -> Price | None:
     )
 
 
-async def record_usage(  # noqa: PLR0913  # a call has this many facts; keywords keep them clear
+def record_usage(  # noqa: PLR0913  # a call has this many facts; keywords keep them clear
     session: AsyncSession,
     provider: AiProvider,
     model_id: str,

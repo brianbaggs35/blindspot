@@ -399,5 +399,5 @@ def test_the_provider_routes_are_part_of_the_app() -> None:
     assert router in ROUTERS
 
 
-async def test_host_names_are_looked_up_by_the_system_unless_a_test_says_otherwise() -> None:
-    assert await get_resolver() is system_resolver
+def test_host_names_are_looked_up_by_the_system_unless_a_test_says_otherwise() -> None:
+    assert get_resolver() is system_resolver

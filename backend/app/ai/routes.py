@@ -38,7 +38,7 @@ from app.errors import AppError
 router = APIRouter(prefix="/api", tags=["ai"])
 
 
-async def get_resolver() -> Resolver:
+def get_resolver() -> Resolver:
     """How host names are looked up (the tests replace this one)."""
     return system_resolver
 
@@ -302,15 +302,16 @@ async def add_model(
     when it knows the model."""
     provider = await _provider(session, provider_id)
     known = load_catalog().find(ProviderKind(provider.kind), body.model_id)
+    capabilities = body.capabilities
+    if capabilities is None:
+        capabilities = list(known.capabilities) if known else []
     model = AiModel(
         provider_id=provider.id,
         model_id=body.model_id,
         display_name=body.display_name or (known.name if known else body.model_id),
         context_tokens=body.context_tokens or (known.context if known else None),
         max_output_tokens=body.max_output_tokens or (known.max_output if known else None),
-        capabilities=body.capabilities
-        if body.capabilities is not None
-        else list(known.capabilities if known else []),
+        capabilities=capabilities,
         enabled=body.enabled,
         price_input=body.price_input,
         price_output=body.price_output,

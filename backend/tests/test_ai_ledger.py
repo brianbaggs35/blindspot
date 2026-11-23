@@ -74,7 +74,7 @@ def timezone_of(hours: int):
 async def test_a_call_is_recorded_with_its_cost(session: AsyncSession) -> None:
     made = await provider(session, ProviderKind.ANTHROPIC, "A")
     run = uuid.uuid4()
-    entry = await record_usage(
+    entry = record_usage(
         session,
         made,
         "claude-opus-5-5",
@@ -107,7 +107,7 @@ async def test_a_price_set_on_the_model_wins_over_the_catalog(session: AsyncSess
     await session.flush()
     assert overrides_of(None) is None
     assert overrides_of(model) is not None
-    entry = await record_usage(
+    entry = record_usage(
         session, made, "gpt-6-luna", Usage(input_tokens=1_000_000), latency_ms=1, model=model
     )
     assert entry.cost_usd == Decimal(10)
@@ -115,11 +115,11 @@ async def test_a_price_set_on_the_model_wins_over_the_catalog(session: AsyncSess
 
 async def test_unknown_and_free_models(session: AsyncSession) -> None:
     hosted = await provider(session, name="H")
-    unknown = await record_usage(
+    unknown = record_usage(
         session, hosted, "nobody-knows", Usage(input_tokens=5, output_tokens=5), latency_ms=1
     )
     local = await provider(session, ProviderKind.OLLAMA_LOCAL, "L")
-    free = await record_usage(
+    free = record_usage(
         session, local, "llama3.3", Usage(input_tokens=5, output_tokens=5), latency_ms=1
     )
     assert unknown.cost_usd is None
@@ -133,11 +133,11 @@ async def test_spend_counts_this_month_only_and_skips_unknown_prices(
     one = await provider(session, name="One")
     two = await provider(session, name="Two")
     spend = Usage(input_tokens=1_000_000)  # gpt-6-luna input price is in the catalog
-    first = await record_usage(session, one, "gpt-6-luna", spend, latency_ms=1)
-    await record_usage(session, one, "gpt-6-luna", spend, latency_ms=1)
-    await record_usage(session, two, "gpt-6-luna", spend, latency_ms=1)
-    await record_usage(session, one, "nobody-knows", spend, latency_ms=1)
-    old = await record_usage(session, one, "gpt-6-luna", spend, latency_ms=1)
+    first = record_usage(session, one, "gpt-6-luna", spend, latency_ms=1)
+    record_usage(session, one, "gpt-6-luna", spend, latency_ms=1)
+    record_usage(session, two, "gpt-6-luna", spend, latency_ms=1)
+    record_usage(session, one, "nobody-knows", spend, latency_ms=1)
+    old = record_usage(session, one, "gpt-6-luna", spend, latency_ms=1)
     await session.flush()
     await session.execute(
         text("UPDATE usage_ledger SET created_at = :then WHERE id = :id"),
@@ -156,7 +156,7 @@ async def test_a_deleted_providers_calls_stay_in_the_ledger_but_not_in_spend(
     session: AsyncSession,
 ) -> None:
     made = await provider(session)
-    await record_usage(session, made, "gpt-6-luna", Usage(input_tokens=1_000_000), latency_ms=1)
+    record_usage(session, made, "gpt-6-luna", Usage(input_tokens=1_000_000), latency_ms=1)
     await session.commit()
     await session.delete(made)
     await session.commit()
@@ -175,7 +175,7 @@ async def test_the_budget_stops_calls_only_when_it_is_used_up_and_set_to_stop(
     no_budget = await provider(session, name="NoBudget", hard_stop=True)
     hard = await provider(session, name="Hard", monthly_budget_usd=Decimal(1000), hard_stop=True)
     for one in (unlimited, soft, no_budget, hard):
-        await record_usage(session, one, "gpt-6-luna", spend, latency_ms=1)
+        record_usage(session, one, "gpt-6-luna", spend, latency_ms=1)
     await session.commit()
     for one in (unlimited, soft, no_budget, hard):
         await check_budget(session, one, now)  # none of these must refuse
@@ -189,7 +189,7 @@ async def test_the_budget_stops_calls_only_when_it_is_used_up_and_set_to_stop(
 
 async def test_a_new_month_starts_with_a_clean_budget(session: AsyncSession) -> None:
     made = await provider(session, monthly_budget_usd=Decimal("0.01"), hard_stop=True)
-    await record_usage(session, made, "gpt-6-luna", Usage(input_tokens=1_000_000), latency_ms=1)
+    record_usage(session, made, "gpt-6-luna", Usage(input_tokens=1_000_000), latency_ms=1)
     await session.commit()
     next_month = month_start(utc_now() + timedelta(days=40))
     await check_budget(session, made, next_month)
