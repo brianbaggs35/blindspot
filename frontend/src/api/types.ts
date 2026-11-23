@@ -135,3 +135,106 @@ export interface RoleDefault {
   provider_name: string | null;
   model_id: string | null;
 }
+
+export type RiskClass = "safe" | "active" | "intrusive";
+export type PlaybookSource = "generated" | "authored" | "custom";
+
+export interface Methodology {
+  id: string;
+  name: string;
+  source_url: string;
+  license: string;
+  origin: "bundled" | "folder";
+  enabled: boolean;
+  version_number: number;
+  version_label: string;
+  content_hash: string;
+  categories: number;
+  tests: number;
+  authored_playbooks: number;
+  custom_playbooks: number;
+  manual_review_tests: number;
+  imported_at: string;
+  can_update_from_upstream: boolean;
+}
+
+export interface TestSummary {
+  id: string;
+  name: string;
+  reference: string | null;
+  risk_class: RiskClass;
+  tags: string[];
+  requires: string[];
+  tools: string[];
+  manual_review: boolean;
+  playbook_source: PlaybookSource;
+}
+
+export interface MethodologyCategory {
+  id: string;
+  name: string;
+  reporting_label: string | null;
+  tests: TestSummary[];
+}
+
+export interface MethodologyDetail extends Methodology {
+  category_list: MethodologyCategory[];
+}
+
+export interface Playbook {
+  summary: string;
+  instructions: string;
+  tools: string[];
+  manual_review: boolean;
+  safe_steps: string[];
+  active_steps: string[];
+  intrusive_steps: string[];
+  evidence: string[];
+  success: string;
+  failure: string;
+  not_applicable: string[];
+}
+
+export interface MethodologyTest {
+  id: string;
+  name: string;
+  reference: string | null;
+  objectives: string[];
+  tags: string[];
+  risk_class: RiskClass;
+  requires: string[];
+  approach: string | null;
+  playbook: Playbook;
+  playbook_source: PlaybookSource;
+}
+
+export interface TestDetail {
+  methodology_id: string;
+  category_id: string;
+  category_name: string;
+  test: MethodologyTest;
+}
+
+export interface SpecDiff {
+  added: string[];
+  removed: string[];
+  changed: { id: string; fields: string[] }[];
+  categories_added: string[];
+  categories_removed: string[];
+  details_changed: string[];
+}
+
+export interface UpdateCheck {
+  source: string;
+  current_hash: string;
+  candidate_hash: string;
+  candidate_label: string;
+  changed: boolean;
+  diff: SpecDiff;
+}
+
+export interface ReloadResult {
+  added: string[];
+  updates_available: string[];
+  problems: Record<string, string>;
+}

@@ -2,6 +2,7 @@ import {
   mdiAccountCircleOutline,
   mdiAccountGroupOutline,
   mdiBrain,
+  mdiClipboardListOutline,
   mdiHistory,
   mdiRadar,
 } from "@mdi/js";
@@ -29,6 +30,15 @@ export const routes: RouteRecordRaw[] = [
     name: "sign-in",
     component: () => import("../views/SignInView.vue"),
     meta: { title: "Sign in", access: "public", layout: "bare" },
+  },
+  {
+    path: "/methodologies",
+    name: "methodologies",
+    component: () => import("../views/MethodologiesView.vue"),
+    meta: {
+      title: "Methodologies",
+      nav: { label: "Methodologies", group: "work", order: 50, icon: mdiClipboardListOutline },
+    },
   },
   {
     path: "/ai-providers",

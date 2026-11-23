@@ -127,6 +127,30 @@ Every document is checked against a schema with no unknown fields, so a typo is 
 silent default. The schema is `MethodologySpec.model_json_schema()` (and `Playbook`, `Draft` and
 `ToolsFile` for the pieces) in `backend/app/methodology/`.
 
+## The Methodologies page
+
+`/methodologies` (Work menu) shows what each test checks and exactly what its agent is told to
+do. Everyone signed in can read it. Only administrators see the buttons that change anything.
+
+1. **Pick a methodology.** With more than one installed there is a tab for each. The card shows
+   the counts, the version in use, the licence and where it comes from.
+2. **Find a test.** Search by id, name or tool, and narrow by risk class (Safe, Active,
+   Intrusive). Each category folds out to its tests, each with its risk and whether its playbook
+   is generated, hand-written or changed here.
+3. **Read a playbook.** Open a test to see its objectives, the instruction the agent is given,
+   its tools, the steps by risk class, the evidence it must bring back, and when it passes,
+   reports a finding or does not apply.
+4. **Change a playbook (administrators).** _Edit the playbook_ replaces what the agent is told.
+   The original is kept: _Put the original back_ returns it. Lists take one entry per line.
+   A playbook that is not valid is refused with the reason, and what was typed stays.
+5. **Turn a methodology on or off (administrators).** The switch decides whether it is offered
+   for new pentests.
+6. **Read the packs folder (administrators).** Picks up packs added to
+   `<data dir>/methodologies` and reports packs it skipped, with the reason for each.
+7. **Check for updates (administrators).** Shows what an update would change before anything
+   changes. Applying names the exact update that was shown, so a different one is never applied;
+   playbooks changed here stay as written and the old version is kept.
+
 ## API
 
 Anyone signed in can read. Everything that changes anything needs an administrator.
