@@ -7,8 +7,8 @@
 # Build:  docker build --target runtime -t blindspot .
 # Run:    see compose.yaml (or .github/scripts/run-container.sh for the hardened flags)
 
-# The base image is pinned by digest by Dependabot's docker updates (see docs/how-to/container.md).
-ARG WOLFI_IMAGE=cgr.dev/chainguard/wolfi-base:latest
+# The base image is pinned by digest; Dependabot's docker updates keep the digest current.
+ARG WOLFI_IMAGE=cgr.dev/chainguard/wolfi-base@sha256:baf6138eb8c37644800c7c913fba051e840ebb9ba13eaf92d92ef9a1712d0b4c
 
 # ---- The web app ---------------------------------------------------------------------------
 FROM ${WOLFI_IMAGE} AS web
@@ -51,8 +51,8 @@ ARG IMAGE_REFRESH=dev
 # hadolint ignore=DL3018
 RUN echo "$APK_REFRESH $IMAGE_REFRESH" > /dev/null \
     && apk upgrade --no-cache \
-    && apk add --no-cache python-3.14 nginx-mainline nginx-mainline-mime-types postgresql-18 \
-        s6 setpriv openssl curl ca-certificates-bundle \
+    && apk add --no-cache ca-certificates-bundle curl nginx-mainline nginx-mainline-mime-types \
+        openssl postgresql-18 python-3.14 s6 setpriv \
     # One user per service. nginx reaches the API's socket through the blindspot group; the
     # API and the database share the pgsock group, which owns the database socket.
     && addgroup -S -g 10001 blindspot \
@@ -96,8 +96,9 @@ VOLUME /data
 HEALTHCHECK --interval=15s --timeout=8s --start-period=60s --retries=3 \
     CMD ["/usr/local/bin/blindspot-healthcheck"]
 
-# The entrypoint and s6 run as root, and nothing else does: it prepares /data, then every service
-# is started as its own unprivileged user with setpriv. The container is run with every
+# The entrypoint and s6 run as root, and so does nginx's master process (which is how nginx works):
+# the entrypoint prepares /data, then the API and PostgreSQL are started as their own unprivileged
+# users with setpriv, and nginx's workers run as the nginx user. The container is run with every
 # capability dropped except the five that takes (see compose.yaml).
 # hadolint ignore=DL3002
 USER 0:0

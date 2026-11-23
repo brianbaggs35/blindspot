@@ -14,6 +14,7 @@ HTTPS_PORT="${BLINDSPOT_PUBLIC_HTTPS_PORT:-443}"
 
 case "$HTTPS_PORT" in
   '' | *[!0-9]*) log "BLINDSPOT_PUBLIC_HTTPS_PORT must be a port number, not '$HTTPS_PORT'"; exit 64 ;;
+  *) ;;
 esac
 
 # --- Directories --------------------------------------------------------------------------
@@ -51,6 +52,7 @@ else
       for name in $(echo "$BLINDSPOT_HOSTNAMES" | tr ',' ' '); do
         case "$name" in
           *[!A-Za-z0-9.:-]* | '') log "ignoring '$name' in BLINDSPOT_HOSTNAMES"; continue ;;
+          *) ;;
         esac
         if echo "$name" | grep -Eq '^[0-9.]+$|:'; then names="$names,IP:$name"; else names="$names,DNS:$name"; fi
       done
