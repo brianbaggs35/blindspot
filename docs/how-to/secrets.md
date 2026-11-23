@@ -1,6 +1,6 @@
 # Secrets and the vault
 
-Passwords are hashed and can never be read back. Everything else that must stay secret (AI
+Passwords are hashed (with a secret pepper that is itself sealed: see [Accounts](accounts.md)) and can never be read back. Everything else that must stay secret (AI
 provider keys, credentials for the systems being tested, credentials found during a test, and
 evidence marked sensitive) is **sealed** before it reaches the database. Nothing sensitive is
 stored in the clear.
@@ -9,7 +9,7 @@ stored in the clear.
 
 - **AES-256-GCM** with a random 96-bit nonce for every value. GCM also detects any change: an
   edited value is refused, never decrypted to something else.
-- Each purpose (`providers`, `target-credentials`, `discovered-credentials`, `evidence`) has its
+- Each purpose (`auth`, `providers`, `target-credentials`, `discovered-credentials`, `evidence`) has its
   own key, derived from the app secret key with **HKDF-SHA256**. The purpose is also bound into
   the authenticated data, so a value sealed for one purpose cannot be opened as another.
 - A sealed value is a text envelope: `v1:<key id>:<nonce>:<ciphertext>`. The key id is a short

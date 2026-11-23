@@ -3,6 +3,7 @@
 import os
 import uuid
 from collections.abc import Iterator
+from typing import cast
 
 import psycopg
 import pytest
@@ -10,8 +11,10 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from psycopg import sql
 
+from app.auth.setup_code import SetupGate
 from app.config import get_settings
 from app.db.events import connection_string
+from app.db.migrate import upgrade
 from app.main import create_app
 from app.vault import set_vault
 
@@ -63,3 +66,66 @@ def database_url(monkeypatch: pytest.MonkeyPatch) -> Iterator[str]:
     finally:
         with psycopg.connect(connection_string(server), autocommit=True) as admin:
             admin.execute(sql.SQL("DROP DATABASE {} WITH (FORCE)").format(sql.Identifier(name)))
+
+
+SAME_SITE = {"Origin": "https://testserver", "Sec-Fetch-Site": "same-origin"}
+GOOD_PASSWORD = "correct horse battery staple"
+
+
+@pytest.fixture
+def api(database_url: str) -> Iterator[TestClient]:
+    """The app on a migrated database, reached the way a browser reaches it: over https and
+    from its own pages (so the cross-site check passes)."""
+    upgrade(database_url)
+    with TestClient(
+        create_app(),
+        base_url="https://testserver",
+        raise_server_exceptions=False,
+        headers=SAME_SITE,
+    ) as client:
+        yield client
+
+
+def app_of(client: TestClient) -> FastAPI:
+    """The app a test client is talking to."""
+    return cast("FastAPI", client.app)
+
+
+def setup_code(client: TestClient) -> str:
+    """The code the app printed for first-run setup."""
+    gate = cast("SetupGate", app_of(client).state.setup_gate)
+    assert gate.code is not None
+    return gate.code
+
+
+def set_up(client: TestClient, username: str = "admin", password: str = GOOD_PASSWORD) -> None:
+    """Do first-run setup, which also signs the client in as the new administrator."""
+    answer = client.post(
+        "/api/auth/setup",
+        json={"setup_code": setup_code(client), "username": username, "password": password},
+    )
+    assert answer.status_code == 200, answer.text
+
+
+def add_account(
+    client: TestClient, username: str, role: str = "viewer", password: str = GOOD_PASSWORD
+) -> str:
+    """Add an account as the signed-in administrator; returns its id."""
+    answer = client.post(
+        "/api/users", json={"username": username, "role": role, "password": password}
+    )
+    assert answer.status_code == 201, answer.text
+    return answer.json()["id"]
+
+
+def another_browser(client: TestClient, username: str, password: str = GOOD_PASSWORD) -> TestClient:
+    """A second browser (its own cookies) on the same app, signed in as an account."""
+    browser = TestClient(
+        app_of(client),
+        base_url="https://testserver",
+        raise_server_exceptions=False,
+        headers=SAME_SITE,
+    )
+    answer = browser.post("/api/auth/login", json={"username": username, "password": password})
+    assert answer.status_code == 200, answer.text
+    return browser

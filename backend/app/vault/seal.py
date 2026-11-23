@@ -27,6 +27,7 @@ _SALT = b"blindspot-vault-v1"
 class Purpose(StrEnum):
     """What a sealed value is for. Each purpose has its own key."""
 
+    AUTH = "auth"
     PROVIDERS = "providers"
     TARGET_CREDENTIALS = "target-credentials"
     DISCOVERED_CREDENTIALS = "discovered-credentials"

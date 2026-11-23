@@ -40,6 +40,17 @@ class Settings(BaseSettings):
     # While rotating, the key the data is sealed with now.
     previous_secret_key: SecretStr | None = None
     database_url: str = Field(default_factory=lambda: SOCKET_DATABASE_URL)
+    # Sessions: signed out after this long without a request, and at the latest after the total.
+    session_idle_minutes: int = Field(default=60, ge=1, le=1440)
+    session_total_hours: int = Field(default=12, ge=1, le=720)
+    # The session cookie is only sent over https. Turn this off only for development over http.
+    cookie_secure: bool = True
+    # An account locks for `lockout_minutes` after this many wrong passwords in a row.
+    lockout_attempts: int = Field(default=5, ge=3, le=50)
+    lockout_minutes: int = Field(default=15, ge=1, le=1440)
+    # An address that fails this many times in `throttle_window_minutes` waits for the window.
+    throttle_failures: int = Field(default=10, ge=3, le=1000)
+    throttle_window_minutes: int = Field(default=5, ge=1, le=60)
 
 
 @lru_cache
