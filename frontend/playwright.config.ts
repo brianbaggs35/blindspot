@@ -20,9 +20,20 @@ export default defineConfig({
   ...(ci ? { workers: 2 } : {}),
   timeout: 30_000,
   expect: { timeout: 7_500 },
-  // A blob report per shard is merged into one HTML report by the workflow.
+  // A blob report per shard is merged into one HTML report by the workflow. The host and the
+  // container jobs both run shards 1 to 3, so the mode is in the name; otherwise their reports
+  // overwrite each other when downloaded together.
   reporter: ci
-    ? [["blob", { outputDir: "e2e-results/blob" }], ["github"]]
+    ? [
+        [
+          "blob",
+          {
+            outputDir: "e2e-results/blob",
+            fileName: `report-${container ? "container" : "host"}-${process.env["SHARD"] ?? "1"}.zip`,
+          },
+        ],
+        ["github"],
+      ]
     : [["list"], ["html", { open: "never", outputFolder: "e2e-results/report" }]],
   globalSetup: "./e2e/global-setup.ts",
   globalTeardown: "./e2e/global-teardown.ts",

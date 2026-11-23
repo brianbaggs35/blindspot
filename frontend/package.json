@@ -19,6 +19,8 @@
     "build:e2e": "vue-tsc -b && BLINDSPOT_SOURCEMAP=inline vite build --outDir dist-e2e --emptyOutDir",
     "preview:e2e": "vite preview --host 127.0.0.1 --port 4173 --strictPort --outDir dist-e2e",
     "e2e": "playwright test",
+    "e2e:install": "playwright install --with-deps chromium",
+    "e2e:report": "playwright merge-reports --reporter=html e2e-blobs",
     "e2e:coverage": "E2E_COVERAGE=1 playwright test",
     "e2e:merge": "node e2e/scripts/merge-coverage.mjs"
   },
