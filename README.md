@@ -29,6 +29,7 @@ Blindspot is a self-hosted platform for **web application penetration testing wi
 | [Platform plan](docs/PLAN.md) | Architecture, agents, tools, security, UI, CI, the PR stack and open questions |
 | [Agent framework comparison](docs/research/agent-frameworks.md) | Why Pydantic AI, and what else was considered |
 | [How pentest agents are built](docs/research/pentest-agents.md) | What open-source projects do, and what Blindspot borrows |
+| [WSTG tool map](docs/research/wstg-tool-map.md) | Every one of the 133 WSTG tests mapped to verified tools, plus the tools rejected as stale |
 | [Models and pricing](docs/research/models-and-pricing.md) | Verified model IDs, prices and caching rules for Anthropic, OpenAI and Ollama |
 
 How-to guides (quick start, running your first pentest, providers, operations) are added to `docs/` with the features they describe.
