@@ -23,7 +23,8 @@ else
 fi
 
 sonar() {
-  curl --silent --show-error --fail-with-body -H "Authorization: Bearer $token" "$api/$1&$scope"
+  local endpoint="$1"
+  curl --silent --show-error --fail-with-body -H "Authorization: Bearer $token" "$api/$endpoint&$scope"
 }
 
 # Prints the heading and the lines piped in, or nothing when there are none.
