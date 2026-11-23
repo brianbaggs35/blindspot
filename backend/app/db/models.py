@@ -15,6 +15,7 @@ from sqlalchemy import (
     LargeBinary,
     Numeric,
     String,
+    Text,
     UniqueConstraint,
     Uuid,
     false,
@@ -25,7 +26,7 @@ from sqlalchemy import (
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.db.base import Base, Timestamps, UUIDPrimaryKey, utc_now
+from app.db.base import Base, CreatedBy, SoftDelete, Timestamps, UUIDPrimaryKey, utc_now
 from app.vault.seal import Purpose
 from app.vault.types import SealedString
 
@@ -40,6 +41,8 @@ __all__ = [
     "Methodology",
     "MethodologyVersion",
     "Passkey",
+    "Pentest",
+    "PentestAccount",
     "PlaybookOverride",
     "Role",
     "UsageLedger",
@@ -297,4 +300,68 @@ class PlaybookOverride(Base):
     updated_by: Mapped[uuid.UUID | None] = mapped_column(Uuid, default=None)
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=utc_now, onupdate=utc_now, server_default=func.now()
+    )
+
+
+class PentestStatus(StrEnum):
+    """Where a pentest is in its life. Only `draft` is used until the authorization gate arrives."""
+
+    DRAFT = "draft"
+    AUTHORIZED = "authorized"
+    RUNNING = "running"
+    PAUSED = "paused"
+    COMPLETE = "complete"
+
+
+class Box(StrEnum):
+    """How much the testers know going in."""
+
+    BLACK = "black"
+    GREY = "grey"
+    WHITE = "white"
+
+
+class Pentest(UUIDPrimaryKey, Timestamps, SoftDelete, CreatedBy, Base):
+    """One engagement: what is to be tested, under what rules and by which methodology. The scope
+    and the rules are stored as written; the compiled allow-list is rebuilt from them whenever it
+    is needed, so a change to how scope is read applies to old pentests too."""
+
+    __tablename__ = "pentest"
+    __table_args__ = (
+        CheckConstraint("box IN ('black', 'grey', 'white')", name="box"),
+        CheckConstraint(
+            "status IN ('draft', 'authorized', 'running', 'paused', 'complete')", name="status"
+        ),
+    )
+
+    name: Mapped[str] = mapped_column(String(120))
+    client: Mapped[str | None] = mapped_column(String(120), default=None)
+    description: Mapped[str] = mapped_column(Text, default="", server_default="")
+    methodology_id: Mapped[str] = mapped_column(
+        String(32), ForeignKey("methodology.id", ondelete="RESTRICT"), index=True
+    )
+    # The snapshot of the methodology this pentest was made against.
+    methodology_version: Mapped[int] = mapped_column(Integer)
+    box: Mapped[str] = mapped_column(String(8), default=Box.BLACK.value)
+    status: Mapped[str] = mapped_column(String(16), default=PentestStatus.DRAFT.value)
+    scope: Mapped[Any] = mapped_column(JSONB)
+    rules: Mapped[Any] = mapped_column(JSONB)
+    archived_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), default=None)
+
+
+class PentestAccount(UUIDPrimaryKey, Timestamps, Base):
+    """An account on the target that agents may sign in with. The secret is sealed and never
+    returned by the API."""
+
+    __tablename__ = "pentest_account"
+    __table_args__ = (UniqueConstraint("pentest_id", "label"),)
+
+    pentest_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid, ForeignKey("pentest.id", ondelete="CASCADE"), index=True
+    )
+    label: Mapped[str] = mapped_column(String(80))
+    username: Mapped[str] = mapped_column(String(200))
+    role_hint: Mapped[str] = mapped_column(String(80), default="", server_default="")
+    secret: Mapped[str | None] = mapped_column(
+        SealedString(Purpose.TARGET_CREDENTIALS), default=None
     )
