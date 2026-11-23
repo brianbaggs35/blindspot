@@ -135,8 +135,9 @@ async def test_anthropic_failures_are_named_and_never_quote_the_response(
             headers={"x-should-retry": "false"},
         )
 
+    adapter = anthropic_adapter(handler)
     with pytest.raises(UpstreamError) as raised:
-        await anthropic_adapter(handler).list_models()
+        await adapter.list_models()
     assert raised.value.failure is failure
     assert SECRET not in raised.value.detail
     assert "leaked" not in raised.value.detail
@@ -146,22 +147,25 @@ async def test_anthropic_that_cannot_be_reached_or_answers_nonsense() -> None:
     def down(request: httpx2.Request) -> httpx2.Response:
         raise httpx2.ConnectError("no route", request=request)
 
+    adapter = anthropic_adapter(down)
     with pytest.raises(UpstreamError) as unreachable:
-        await anthropic_adapter(down).list_models()
+        await adapter.list_models()
     assert unreachable.value.failure is Failure.UNREACHABLE
 
     def slow(request: httpx2.Request) -> httpx2.Response:
         raise httpx2.ReadTimeout("too slow", request=request)
 
+    adapter = anthropic_adapter(slow)
     with pytest.raises(UpstreamError) as timed_out:
-        await anthropic_adapter(slow).list_models()
+        await adapter.list_models()
     assert timed_out.value.failure is Failure.UNREACHABLE
 
     def nonsense(_request: httpx2.Request) -> httpx2.Response:
         return httpx2.Response(200, content=b"<html>not json</html>")
 
+    adapter = anthropic_adapter(nonsense)
     with pytest.raises(UpstreamError) as bad:
-        await anthropic_adapter(nonsense).list_models()
+        await adapter.list_models()
     assert bad.value.failure is Failure.BAD_RESPONSE
 
 
@@ -222,8 +226,9 @@ async def test_openai_failures_are_named(status: int, failure: Failure) -> None:
             status, json={"error": {"message": SECRET}}, headers={"x-should-retry": "false"}
         )
 
+    adapter = openai_adapter(handler)
     with pytest.raises(UpstreamError) as raised:
-        await openai_adapter(handler).list_models()
+        await adapter.list_models()
     assert raised.value.failure is failure
     assert SECRET not in raised.value.detail
 
@@ -232,8 +237,9 @@ async def test_openai_that_cannot_be_reached() -> None:
     def down(request: httpx2.Request) -> httpx2.Response:
         raise httpx2.ConnectError("no route", request=request)
 
+    adapter = openai_adapter(down)
     with pytest.raises(UpstreamError) as raised:
-        await openai_adapter(down).list_models()
+        await adapter.list_models()
     assert raised.value.failure is Failure.UNREACHABLE
 
 
@@ -300,8 +306,9 @@ async def test_ollama_failures_are_named(status: int, failure: Failure) -> None:
     def handler(_request: httpx2.Request) -> httpx2.Response:
         return httpx2.Response(status, text=SECRET)
 
+    adapter = ollama_adapter(handler)
     with pytest.raises(UpstreamError) as raised:
-        await ollama_adapter(handler).list_models()
+        await adapter.list_models()
     assert raised.value.failure is failure
     assert SECRET not in raised.value.detail
 
@@ -315,8 +322,9 @@ async def test_ollama_failures_are_named(status: int, failure: Failure) -> None:
     ],
 )
 async def test_ollama_answering_nonsense_is_a_bad_response(answer: httpx2.Response) -> None:
+    adapter = ollama_adapter(lambda _request: answer)
     with pytest.raises(UpstreamError) as raised:
-        await ollama_adapter(lambda _request: answer).list_models()
+        await adapter.list_models()
     assert raised.value.failure is Failure.BAD_RESPONSE
 
 
@@ -324,8 +332,9 @@ async def test_ollama_that_cannot_be_reached() -> None:
     def down(request: httpx2.Request) -> httpx2.Response:
         raise httpx2.ConnectError("refused", request=request)
 
+    adapter = ollama_adapter(down)
     with pytest.raises(UpstreamError) as raised:
-        await ollama_adapter(down).list_models()
+        await adapter.list_models()
     assert raised.value.failure is Failure.UNREACHABLE
 
 
@@ -350,6 +359,7 @@ async def test_openai_answering_with_something_that_is_not_json() -> None:
     def nonsense(_request: httpx2.Request) -> httpx2.Response:
         return httpx2.Response(200, content=b"<html>not json</html>")
 
+    adapter = openai_adapter(nonsense)
     with pytest.raises(UpstreamError) as raised:
-        await openai_adapter(nonsense).list_models()
+        await adapter.list_models()
     assert raised.value.failure is Failure.BAD_RESPONSE

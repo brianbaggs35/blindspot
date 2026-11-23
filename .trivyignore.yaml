@@ -10,4 +10,12 @@ misconfigurations:
       - Dockerfile
     statement: Only the supervisor and nginx's master process run as root; the API, PostgreSQL and the nginx workers run as their own users.
     expired_at: 2027-06-01
-secrets: []
+secrets:
+  # The Anthropic SDK's own docstrings for the beta agents API quote an example service-account
+  # object (execution_identity). Trivy matches it as a Google key, but it holds no key: the
+  # characters are a placeholder in documentation. Nothing of ours is in these files.
+  - id: gcp-service-account
+    paths:
+      - "**/site-packages/anthropic/**"
+    statement: Example text in the Anthropic SDK's docstrings, not a credential.
+    expired_at: 2027-06-01
