@@ -1,12 +1,7 @@
 import type { BrowserContext, Page } from "@playwright/test";
 import { container, SIGNED_OUT } from "./accounts";
 import { expect, test } from "./fixtures";
-import {
-  alertOn,
-  newPerson,
-  signInThroughThePage,
-  signOutThroughThePage,
-} from "./people";
+import { alertOn, newPerson, signInThroughThePage, signOutThroughThePage } from "./people";
 
 test.use({ storageState: SIGNED_OUT });
 
