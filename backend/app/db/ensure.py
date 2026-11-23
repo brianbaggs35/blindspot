@@ -41,6 +41,13 @@ def ensure_unique_constraint(name: str, table: str, columns: Sequence[str]) -> N
         op.create_unique_constraint(name, table, list(columns))
 
 
+def drop_column_if_exists(table: str, column: str) -> None:
+    """Drop the column if the table has it."""
+    inspector = _inspector()
+    if inspector.has_table(table) and column in {c["name"] for c in inspector.get_columns(table)}:
+        op.drop_column(table, column)
+
+
 def drop_table_if_exists(name: str) -> None:
     """Drop the table if it exists."""
     if _inspector().has_table(name):
