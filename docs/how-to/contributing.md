@@ -37,3 +37,7 @@ make audit  # known-vulnerable dependencies
 ```
 
 `make` on its own lists every command. Most commands skip a part of the project that does not exist yet, so they work from the first commit.
+
+## Writing a dialog
+
+Every dialog needs a name a screen reader can say, so give its `v-dialog` an `aria-label` equal to its title (`FormDialog` does this for you). Headings inside a dialog start at `h2`, because the title is not a heading. `frontend/e2e/dialogs.spec.ts` opens a dialog of each kind in both themes and runs axe on it; a new kind of dialog adds a case there.

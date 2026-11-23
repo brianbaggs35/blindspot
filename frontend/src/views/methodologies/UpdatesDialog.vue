@@ -75,7 +75,13 @@ async function apply() {
 </script>
 
 <template>
-  <v-dialog v-model="open" max-width="640" scrollable :persistent="busy">
+  <v-dialog
+    v-model="open"
+    max-width="640"
+    scrollable
+    :persistent="busy"
+    :aria-label="`Update ${methodology.name}`"
+  >
     <v-card :title="`Update ${methodology.name}`">
       <v-card-text>
         <v-alert v-if="failure" type="error" variant="tonal" class="mb-4" role="alert">
@@ -110,12 +116,12 @@ async function apply() {
             </p>
             <template v-for="part in parts" :key="part.title">
               <section v-if="part.items.length > 0" class="mb-2">
-                <h3 class="text-subtitle-2">{{ part.title }} ({{ part.items.length }})</h3>
+                <h2 class="text-subtitle-2">{{ part.title }} ({{ part.items.length }})</h2>
                 <p class="text-body-2">{{ part.items.join(", ") }}</p>
               </section>
             </template>
             <section v-if="checked.diff.changed.length > 0" class="mb-2">
-              <h3 class="text-subtitle-2">Tests changed ({{ checked.diff.changed.length }})</h3>
+              <h2 class="text-subtitle-2">Tests changed ({{ checked.diff.changed.length }})</h2>
               <ul class="ps-6 text-body-2">
                 <li v-for="one in checked.diff.changed" :key="one.id">
                   {{ one.id }}: {{ one.fields.join(", ") }}

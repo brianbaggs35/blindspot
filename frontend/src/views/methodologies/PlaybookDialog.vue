@@ -73,7 +73,13 @@ async function save() {
 </script>
 
 <template>
-  <v-dialog v-model="open" max-width="760" scrollable :persistent="busy">
+  <v-dialog
+    v-model="open"
+    max-width="760"
+    scrollable
+    :persistent="busy"
+    aria-label="Edit the playbook"
+  >
     <v-card title="Edit the playbook">
       <v-form @submit.prevent="save">
         <v-card-text>

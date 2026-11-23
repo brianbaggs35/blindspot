@@ -15,7 +15,7 @@ import MethodologiesView from "../src/views/MethodologiesView.vue";
 import PlaybookDialog from "../src/views/methodologies/PlaybookDialog.vue";
 import TestDialog from "../src/views/methodologies/TestDialog.vue";
 import UpdatesDialog from "../src/views/methodologies/UpdatesDialog.vue";
-import { dialogButton, mockApi, mountWithApp, viewer } from "./helpers";
+import { dialogButton, dialogName, mockApi, mountWithApp, viewer } from "./helpers";
 
 type Handlers = Parameters<typeof mockApi>[0];
 
@@ -503,6 +503,7 @@ describe("MethodologiesView", () => {
     expect(dialog.props("testId")).toBe("WSTG-INFO-01");
     const text = document.body.textContent;
     expect(text).toContain("WSTG-INFO-01 · Search engine discovery");
+    expect(dialogName()).toBe("WSTG-INFO-01 · Search engine discovery");
     expect(text).toContain("Look at what search engines know.");
     expect(text).toContain("Request robots.txt");
   });
@@ -690,6 +691,7 @@ describe("TestDialog", () => {
     });
     expect(alertText()).toContain("Gone");
     expect(document.body.textContent).toContain("Loading the test");
+    expect(dialogName()).toBe("Loading the test");
     expect(dialogButton("Edit the playbook")).toBeUndefined();
   });
 
@@ -815,6 +817,7 @@ describe("TestDialog", () => {
     });
     await press("Edit the playbook");
     expect(wrapper.getComponent(PlaybookDialog).props("modelValue")).toBe(true);
+    expect(dialogName()).toBe("Edit the playbook");
     await press("Save playbook");
     expect(wrapper.emitted("changed")).toHaveLength(1);
     expect(document.body.textContent).toContain("Renamed by the server");
@@ -961,6 +964,7 @@ describe("UpdatesDialog", () => {
     await updates();
     const text = document.body.textContent;
     expect(text).toContain("Update OWASP Web Security Testing Guide");
+    expect(dialogName()).toBe("Update OWASP Web Security Testing Guide");
     expect(text).toContain("Now in use: snapshot 2026-11-23 (version 1)");
     expect(text).toContain("The latest checklist published by OWASP");
   });

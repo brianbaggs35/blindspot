@@ -29,7 +29,7 @@ import {
   pentest,
   saml,
 } from "./pentest-fixtures";
-import { dialogButton, mockApi, mountWithApp, submitDialog, viewer } from "./helpers";
+import { dialogButton, dialogName, mockApi, mountWithApp, submitDialog, viewer } from "./helpers";
 
 type Handlers = Parameters<typeof mockApi>[0];
 
@@ -490,6 +490,7 @@ describe("CheckDialog", () => {
     expect(document.body.querySelector(".v-dialog a")?.getAttribute("href")).toBe(
       "https://owasp.org/wstg/info-01",
     );
+    expect(dialogName()).toBe(item().name);
   });
 
   it("changes a custom test's name and category", async () => {

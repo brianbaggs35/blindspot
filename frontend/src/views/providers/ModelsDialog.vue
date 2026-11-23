@@ -158,7 +158,7 @@ async function remove() {
 </script>
 
 <template>
-  <v-dialog v-model="open" max-width="760" scrollable>
+  <v-dialog v-model="open" max-width="760" scrollable :aria-label="`Models of ${provider.name}`">
     <v-card :title="`Models of ${provider.name}`">
       <v-card-text>
         <v-alert v-if="notice" type="info" variant="tonal" class="mb-4" density="compact">

@@ -86,7 +86,7 @@ function afterReset() {
 </script>
 
 <template>
-  <v-dialog v-model="open" max-width="640" scrollable :persistent="busy">
+  <v-dialog v-model="open" max-width="640" scrollable :persistent="busy" :aria-label="item.name">
     <v-card :title="item.name" :subtitle="item.test_id">
       <v-form @submit.prevent="save">
         <v-card-text>

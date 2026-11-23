@@ -96,6 +96,13 @@ export function mockApi(handlers: Record<string, Handler>) {
 }
 
 // Dialogs and menus are teleported to the body, outside the wrapper, so they are found there.
+/** What a screen reader calls the open dialog: the name on the dialog itself. */
+export function dialogName() {
+  return Array.from(document.body.querySelectorAll(".v-overlay--active[aria-label]"))
+    .at(-1)
+    ?.getAttribute("aria-label");
+}
+
 export function dialogButton(label: string) {
   // The newest dialog is last in the page; one that was closed may still be there.
   return Array.from(document.body.querySelectorAll<HTMLButtonElement>(".v-dialog button")).findLast(
