@@ -8,7 +8,7 @@
 # Run:    see compose.yaml (or .github/scripts/run-container.sh for the hardened flags)
 
 # The base image is pinned by digest; Dependabot's docker updates keep the digest current.
-ARG WOLFI_IMAGE=cgr.dev/chainguard/wolfi-base@sha256:baf6138eb8c37644800c7c913fba051e840ebb9ba13eaf92d92ef9a1712d0b4c
+ARG WOLFI_IMAGE=cgr.dev/chainguard/wolfi-base@sha256:be019c1c74fe69204a42c4e10bc4d886a49bf5403ffa74374ef7baa408fc9a26
 
 # ---- The web app ---------------------------------------------------------------------------
 FROM ${WOLFI_IMAGE} AS web
