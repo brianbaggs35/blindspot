@@ -61,11 +61,16 @@ sonar "hotspots/search?projectKey=$project&status=TO_REVIEW$new_code&ps=500" | j
   section "Security hotspots to review:"
 
 # A pull request's analysis only has issues in its own changes, so the ones already on the
-# branch it merges into are listed too, for fixing along the way.
+# branch it merges into are listed too, for fixing along the way. SonarQube Cloud only serves
+# the main branch to this organization, so a pull request stacked on another pull request's
+# branch has nothing to list, and that is not a failure.
 if [[ -n "$pull_request" && -n "$base_branch" ]]; then
-  curl --silent --show-error --fail-with-body -H "Authorization: Bearer $token" \
-    "$api/issues/search?componentKeys=$project&issueStatuses=OPEN,CONFIRMED&ps=500&branch=$base_branch" |
-    list_issues | section "Open issues on $base_branch:"
+  if base_issues="$(curl --silent --show-error --fail-with-body -H "Authorization: Bearer $token" \
+    "$api/issues/search?componentKeys=$project&issueStatuses=OPEN,CONFIRMED&ps=500&branch=$base_branch" 2>/dev/null)"; then
+    list_issues <<<"$base_issues" | section "Open issues on $base_branch:"
+  else
+    echo "SonarQube does not list issues on $base_branch (only the main branch is available), so only this pull request's own issues are checked."
+  fi
 fi
 
 # Marking an issue accepted or a false positive in SonarQube Cloud takes it off the list.
