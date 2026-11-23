@@ -5,7 +5,18 @@ from datetime import datetime
 from enum import StrEnum
 from typing import Any
 
-from sqlalchemy import CheckConstraint, DateTime, ForeignKey, String, Uuid, func, text, true
+from sqlalchemy import (
+    CheckConstraint,
+    DateTime,
+    ForeignKey,
+    Integer,
+    LargeBinary,
+    String,
+    Uuid,
+    func,
+    text,
+    true,
+)
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -13,7 +24,16 @@ from app.db.base import Base, Timestamps, UUIDPrimaryKey, utc_now
 from app.vault.seal import Purpose
 from app.vault.types import SealedString
 
-__all__ = ["AppSetting", "AuditEvent", "AuthSession", "Base", "Role", "User"]
+__all__ = [
+    "AppSetting",
+    "AuditEvent",
+    "AuthSession",
+    "Base",
+    "Passkey",
+    "Role",
+    "User",
+    "WebAuthnChallenge",
+]
 
 
 class AppSetting(Base):
@@ -99,3 +119,35 @@ class AuditEvent(UUIDPrimaryKey, Base):
     ip_address: Mapped[str | None] = mapped_column(String(45), default=None)
     user_agent: Mapped[str | None] = mapped_column(String(256), default=None)
     detail: Mapped[dict[str, Any] | None] = mapped_column(JSONB, default=None)
+
+
+class Passkey(UUIDPrimaryKey, Base):
+    """A passkey (WebAuthn credential) that lets a person sign in. Only the public key is kept."""
+
+    __tablename__ = "passkey"
+
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid, ForeignKey("app_user.id", ondelete="CASCADE"), index=True
+    )
+    credential_id: Mapped[bytes] = mapped_column(LargeBinary, unique=True)
+    public_key: Mapped[bytes] = mapped_column(LargeBinary)
+    sign_count: Mapped[int] = mapped_column(Integer, default=0)
+    transports: Mapped[list[str]] = mapped_column(JSONB, default=list)
+    name: Mapped[str] = mapped_column(String(64))
+    backup_eligible: Mapped[bool] = mapped_column(default=False)
+    backed_up: Mapped[bool] = mapped_column(default=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utc_now, server_default=func.now()
+    )
+    last_used_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), default=None)
+
+
+class WebAuthnChallenge(UUIDPrimaryKey, Base):
+    """A challenge handed to a browser. It works once and for a few minutes."""
+
+    __tablename__ = "webauthn_challenge"
+
+    challenge: Mapped[bytes] = mapped_column(LargeBinary)
+    purpose: Mapped[str] = mapped_column(String(16))
+    user_id: Mapped[uuid.UUID | None] = mapped_column(Uuid, default=None)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))

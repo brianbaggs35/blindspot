@@ -10,13 +10,13 @@ docker compose up -d
 
 Then open <https://localhost>. The first start makes a self-signed certificate, so the browser warns once.
 
-| Setting                     | Default | What it does                                                                                                                                   |
-| --------------------------- | ------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| `BLINDSPOT_HTTPS_PORT`      | `443`   | The port https is published on. `http://` on `BLINDSPOT_HTTP_PORT` (`80`) redirects to it                                                      |
-| `BLINDSPOT_HOSTNAMES`       | none    | Comma-separated names and addresses the self-signed certificate is valid for (besides `localhost`)                                             |
-| `BLINDSPOT_HSTS`            | `0`     | `1` sends `Strict-Transport-Security`. It covers the whole host name and lasts a year, so it is opt-in                                         |
-| `BLINDSPOT_SECRET_KEY`      | none    | The key that seals stored credentials (32 characters or more). Empty: one is made on first start in `/data/secrets`. See [Secrets](secrets.md) |
-| `BLINDSPOT_SECRET_KEY_FILE` | none    | The same key, read from a file (a Docker secret), instead of the variable                                                                      |
+| Setting                     | Default | What it does                                                                                                                                                                                                         |
+| --------------------------- | ------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `BLINDSPOT_HTTPS_PORT`      | `443`   | The port https is published on. `http://` on `BLINDSPOT_HTTP_PORT` (`80`) redirects to it                                                                                                                            |
+| `BLINDSPOT_HOSTNAMES`       | none    | Comma-separated names and addresses the self-signed certificate is valid for (besides `localhost`). The first one is also the name passkeys belong to, so changing it invalidates them (see [Accounts](accounts.md)) |
+| `BLINDSPOT_HSTS`            | `0`     | `1` sends `Strict-Transport-Security`. It covers the whole host name and lasts a year, so it is opt-in                                                                                                               |
+| `BLINDSPOT_SECRET_KEY`      | none    | The key that seals stored credentials (32 characters or more). Empty: one is made on first start in `/data/secrets`. See [Secrets](secrets.md)                                                                       |
+| `BLINDSPOT_SECRET_KEY_FILE` | none    | The same key, read from a file (a Docker secret), instead of the variable                                                                                                                                            |
 
 Set them in the shell or in a `.env` file next to `compose.yaml`.
 

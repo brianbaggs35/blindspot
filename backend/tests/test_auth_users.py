@@ -206,6 +206,13 @@ def test_every_route_says_who_may_use_it(api: TestClient) -> None:
         ("POST", "/api/auth/password"): "user",
         ("GET", "/api/auth/sessions"): "user",
         ("DELETE", "/api/auth/sessions/{session_id}"): "user",
+        ("GET", "/api/auth/passkeys"): "user",
+        ("POST", "/api/auth/passkeys/register/options"): "user",
+        ("POST", "/api/auth/passkeys/register"): "user",
+        ("PATCH", "/api/auth/passkeys/{passkey_id}"): "user",
+        ("DELETE", "/api/auth/passkeys/{passkey_id}"): "user",
+        ("POST", "/api/auth/passkeys/login/options"): "public",
+        ("POST", "/api/auth/passkeys/login"): "public",
         ("GET", "/api/users"): "admin",
         ("POST", "/api/users"): "admin",
         ("PATCH", "/api/users/{user_id}"): "admin",
@@ -226,6 +233,11 @@ def test_every_route_that_changes_something_needs_an_administrator_or_is_about_y
         "/api/auth/sessions/{session_id}",
         "/api/auth/login",
         "/api/auth/setup",
+        "/api/auth/passkeys/register/options",
+        "/api/auth/passkeys/register",
+        "/api/auth/passkeys/{passkey_id}",
+        "/api/auth/passkeys/login/options",
+        "/api/auth/passkeys/login",
     }
     for route in routes():
         if (route.methods or set()) & {"POST", "PUT", "PATCH", "DELETE"}:
