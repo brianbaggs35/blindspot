@@ -21,7 +21,7 @@ For development, point `BLINDSPOT_DATABASE_URL` at any PostgreSQL 18 server.
 | File                         | What it does                                                                                                       |
 | ---------------------------- | ------------------------------------------------------------------------------------------------------------------ |
 | `app/db/base.py`             | `Base` with a naming convention, and the shared columns: `UUIDPrimaryKey`, `Timestamps`, `SoftDelete`, `CreatedBy` |
-| `app/db/models.py`           | The tables (`app_user`, `auth_session`, `audit_event`, `app_setting`)                               |     |
+| `app/db/models.py`           | The tables (`app_user`, `auth_session`, `audit_event`, `app_setting`)                                              |     |
 | `app/db/session.py`          | `Database` (the pool) and `SessionDep`, one session per request: committed on success, rolled back on error        |
 | `app/db/events.py`           | `notify` and `listen`: live events between the worker and the API with PostgreSQL's `LISTEN` and `NOTIFY`          |
 | `app/db/ensure.py`           | `ensure_table`, `ensure_column`, `ensure_index`, `ensure_unique_constraint`, `drop_table_if_exists`                |
