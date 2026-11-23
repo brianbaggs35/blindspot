@@ -172,3 +172,17 @@ pre,
 .bs-facts dt {
   color: rgba(var(--v-theme-on-surface), var(--v-medium-emphasis-opacity));
 }
+
+/* The audit log's filters: one row where there is room, a column on a phone. */
+.bs-filters {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(200px, 100%), 1fr));
+  gap: 12px;
+  align-items: center;
+}
+
+.bs-filter-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}

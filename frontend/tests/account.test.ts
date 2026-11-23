@@ -4,7 +4,7 @@ import { PasskeyCancelled } from "../src/passkeys";
 import AccountView from "../src/views/AccountView.vue";
 import ChangePasswordCard from "../src/views/account/ChangePasswordCard.vue";
 import SessionsCard from "../src/views/account/SessionsCard.vue";
-import { mockApi, mountWithApp, viewer } from "./helpers";
+import { dialogButton, fillDialog, mockApi, mountWithApp, submitDialog, viewer } from "./helpers";
 
 const GOOD = "violet harbour lantern 2026";
 const passkey = {
@@ -167,29 +167,6 @@ describe("SessionsCard", () => {
 });
 
 describe("PasskeysCard", () => {
-  function dialogButton(label: string) {
-    return Array.from(document.body.querySelectorAll<HTMLButtonElement>(".v-dialog button")).find(
-      (button) => button.textContent.trim() === label,
-    );
-  }
-
-  async function fillDialog(values: Record<string, string>) {
-    for (const [selector, value] of Object.entries(values)) {
-      const input = document.body.querySelector<HTMLInputElement>(`.v-dialog ${selector}`);
-      if (input === null) throw new Error(`no ${selector} in the dialog`);
-      input.value = value;
-      input.dispatchEvent(new Event("input"));
-    }
-    await flushPromises();
-  }
-
-  async function submitDialog() {
-    document.body
-      .querySelector<HTMLFormElement>(".v-dialog form")
-      ?.dispatchEvent(new Event("submit", { cancelable: true }));
-    await flushPromises();
-  }
-
   async function card(
     supported = true,
     addPasskey: () => Promise<unknown> = () => Promise.resolve({}),
