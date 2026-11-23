@@ -2,9 +2,10 @@
 import { mdiEye, mdiEyeOff } from "@mdi/js";
 import { ref } from "vue";
 
-defineProps<{
+const props = defineProps<{
   label: string;
-  autocomplete: "current-password" | "new-password";
+  /** Which password this is: the one already set, or a new one (browsers offer to fill or to generate). */
+  purpose: "current" | "new";
   errorMessages?: string;
   disabled?: boolean;
 }>();
@@ -18,7 +19,7 @@ const visible = ref(false);
     v-model="model"
     :label="label"
     :type="visible ? 'text' : 'password'"
-    :autocomplete="autocomplete"
+    :autocomplete="props.purpose === 'new' ? 'new-password' : 'current-password'"
     :error-messages="errorMessages ?? null"
     :disabled="disabled"
     required

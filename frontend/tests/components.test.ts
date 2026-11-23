@@ -63,7 +63,7 @@ describe("PasswordField", () => {
     const { wrapper } = await mountWithApp(PasswordField, "/", {
       modelValue: "secret",
       label: "Password",
-      autocomplete: "current-password",
+      purpose: "current",
     });
     expect(wrapper.get("input").attributes("type")).toBe("password");
     await wrapper.get("[aria-label='Show the password']").trigger("click");
