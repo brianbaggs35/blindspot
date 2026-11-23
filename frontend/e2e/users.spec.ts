@@ -23,14 +23,19 @@ async function choose(page: Page, username: string, action: string) {
 }
 
 /** A second browser, signed in as `person`: what they would see while an administrator works. */
-async function browserFor(browser: Browser, baseURL: string | undefined, person: Person) {
+async function browserFor(
+  browser: Browser,
+  baseURL: string | undefined,
+  person: Person,
+  landsOn?: string,
+) {
   const context = await browser.newContext({
     baseURL: baseURL ?? "",
     storageState: SIGNED_OUT,
     ignoreHTTPSErrors: true,
   });
   const page = await context.newPage();
-  await signInThroughThePage(page, person);
+  await signInThroughThePage(page, person, { landsOn });
   return { context, page };
 }
 
@@ -47,7 +52,16 @@ test.describe("Users (administrator)", () => {
     await dialog.getByRole("button", { name: "Add user" }).click();
     await expect(row(page, username)).toContainText("viewer");
     await expect(page.getByText(`Added ${username}.`)).toBeVisible();
-    const other = await browserFor(browser, baseURL, { username, password: PASSWORD });
+    // A new account reads and accepts the terms of use before it sees the app.
+    const other = await browserFor(
+      browser,
+      baseURL,
+      { username, password: PASSWORD },
+      "Terms of use",
+    );
+    await other.page.getByRole("checkbox", { name: /I have read these terms/ }).check();
+    await other.page.getByRole("button", { name: "Accept and continue" }).click();
+    await expect(other.page.getByRole("heading", { name: "Overview", level: 1 })).toBeVisible();
     await expect(other.page.getByRole("link", { name: "Users" })).toHaveCount(0);
     await other.context.close();
   });

@@ -119,6 +119,7 @@ add their own events. Administrators read it with `GET /api/audit`, newest first
 | `POST /api/users/{id}/password`                            | admin     | Set a new password                             |
 | `POST /api/users/{id}/sign-out`                            | admin     | Sign the account out everywhere                |
 | `GET /api/audit`                                           | admin     | The audit trail                                |
+| `GET /api/terms`, `POST /api/terms/accept`                 | signed in | Read and accept the [terms of use](terms.md)   |
 
 An administrator cannot change the role or status of, or delete, their own account, so there is
 always one administrator who can sign in.

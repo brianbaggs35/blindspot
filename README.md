@@ -6,7 +6,7 @@
 
 Blindspot is a self-hosted platform for **web application penetration testing with AI agents**. It follows the [OWASP Web Security Testing Guide](https://owasp.org/www-project-web-security-testing-guide/) (WSTG) test by test, shows you what has and has not been tested, and explains every result in plain language, with the raw tool output one click away for experts.
 
-> **Use Blindspot only on systems you own or have written permission to test.** It can launch real attacks. The authors accept no liability for misuse. See the [disclaimer section of the plan](docs/PLAN.md#127-authorization-and-no-liability-warnings).
+> **Use Blindspot only on systems you own or have written permission to test.** It can launch real attacks. The authors accept no liability for misuse. Read the [terms of use](DISCLAIMER.md) and the [acceptable use](ACCEPTABLE_USE.md) page; the app asks everyone to accept the terms before they can use it.
 
 ## Status
 
@@ -36,6 +36,7 @@ Blindspot is a self-hosted platform for **web application penetration testing wi
 | [Methodologies](docs/how-to/methodologies.md)                   | WSTG import, playbooks, adding a methodology as files, reviewed updates and the API                       |
 | [Pentests](docs/how-to/pentests.md)                             | What a pentest holds, how scope is written and compiled, clone, trash, export and the API                 |
 | [The app shell](docs/how-to/app-shell.md)                       | The look, the menu, the command palette, effects, sign-in and account pages, users and the audit log      |
+| [Terms and warnings](docs/how-to/terms.md)                      | The terms of use screen, how acceptance is kept and enforced, and the legal files in the repository       |
 | [Platform plan](docs/PLAN.md)                                   | Architecture, agents, tools, security, UI, CI, the PR stack and open questions                            |
 | [Agent framework comparison](docs/research/agent-frameworks.md) | Why Pydantic AI, and what else was considered                                                             |
 | [How pentest agents are built](docs/research/pentest-agents.md) | What open-source projects do, and what Blindspot borrows                                                  |

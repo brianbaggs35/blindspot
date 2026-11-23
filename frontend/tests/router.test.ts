@@ -31,6 +31,7 @@ describe("router", () => {
       "/",
       "/setup",
       "/sign-in",
+      "/terms",
       "/pentests",
       "/pentests/:id",
       "/pentests/:id/checklist",

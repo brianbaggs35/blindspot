@@ -76,6 +76,20 @@ describe("auth store", () => {
     expect(auth.user).toBeNull();
   });
 
+  it("records that the terms were accepted, for the person signed in", async () => {
+    const { calls } = mockApi({ "POST /api/terms/accept": { json: {} } });
+    const auth = useAuthStore();
+    auth.$patch({ user: { ...admin, terms_accepted: false } });
+    expect(auth.termsAccepted).toBe(false);
+    await auth.acceptTerms("v1");
+    expect(calls[0]?.body).toEqual({ version: "v1" });
+    expect(auth.termsAccepted).toBe(true);
+    auth.$patch({ user: null });
+    await auth.acceptTerms("v1");
+    expect(auth.user).toBeNull();
+    expect(auth.termsAccepted).toBe(false);
+  });
+
   it("forgets the person when the session ends", () => {
     const auth = useAuthStore();
     auth.$patch({ user: admin });

@@ -251,6 +251,8 @@ def test_every_route_says_who_may_use_it(api: TestClient) -> None:
         ("DELETE", "/api/pentests/{pentest_id}/permanent"): "admin",
         ("POST", "/api/pentests/{pentest_id}/clone"): "admin",
         ("GET", "/api/pentests/attestation-text"): "user",
+        ("GET", "/api/terms"): "user",
+        ("POST", "/api/terms/accept"): "user",
         ("POST", "/api/pentests/{pentest_id}/attest"): "admin",
         ("DELETE", "/api/pentests/{pentest_id}/attest"): "admin",
         ("POST", "/api/pentests/{pentest_id}/status"): "admin",
@@ -290,6 +292,7 @@ def test_every_route_that_changes_something_needs_an_administrator_or_is_about_y
         "/api/auth/passkeys/{passkey_id}",
         "/api/auth/passkeys/login/options",
         "/api/auth/passkeys/login",
+        "/api/terms/accept",
     }
     for route in routes():
         if (route.methods or set()) & {"POST", "PUT", "PATCH", "DELETE"}:

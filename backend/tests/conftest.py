@@ -131,8 +131,18 @@ def another_browser(client: TestClient, username: str, password: str = GOOD_PASS
     return browser
 
 
+def accept_terms(client: TestClient) -> None:
+    """Read and accept the terms of use as the signed-in account."""
+    current = client.get("/api/terms")
+    assert current.status_code == 200, current.text
+    answer = client.post("/api/terms/accept", json={"version": current.json()["version"]})
+    assert answer.status_code == 200, answer.text
+
+
 @pytest.fixture
 def admin(api: TestClient) -> TestClient:
-    """The app with first-run setup done, signed in as the administrator."""
+    """The app with first-run setup done, signed in as the administrator, who has accepted the
+    terms of use."""
     set_up(api)
+    accept_terms(api)
     return api

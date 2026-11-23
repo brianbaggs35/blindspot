@@ -27,6 +27,7 @@ from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base, CreatedBy, SoftDelete, Timestamps, UUIDPrimaryKey, utc_now
+from app.terms.text import VERSION as TERMS_VERSION
 from app.vault.seal import Purpose
 from app.vault.types import SealedString
 
@@ -97,6 +98,17 @@ class User(UUIDPrimaryKey, Timestamps, Base):
     failed_attempts: Mapped[int] = mapped_column(default=0, server_default=text("0"))
     locked_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), default=None)
     last_sign_in_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), default=None)
+    # The version of the terms of use this person accepted, and when. It is compared with the
+    # current version (a fingerprint of the text), so changed words are asked for again.
+    terms_version: Mapped[str | None] = mapped_column(String(16), default=None)
+    terms_accepted_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), default=None
+    )
+
+    @property
+    def terms_accepted(self) -> bool:
+        """Whether the terms of use, as they are now, were accepted."""
+        return self.terms_version == TERMS_VERSION
 
 
 class AuthSession(UUIDPrimaryKey, Base):

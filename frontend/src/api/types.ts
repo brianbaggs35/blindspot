@@ -9,6 +9,21 @@ export interface User {
   is_active: boolean;
   last_sign_in_at: string | null;
   created_at: string;
+  terms_accepted: boolean;
+}
+
+export interface TermsSection {
+  id: string;
+  title: string;
+  paragraphs: string[];
+}
+
+export interface Terms {
+  title: string;
+  version: string;
+  accepted: boolean;
+  accepted_at: string | null;
+  sections: TermsSection[];
 }
 
 export interface Status {

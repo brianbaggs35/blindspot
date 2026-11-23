@@ -31,6 +31,7 @@ class UserOut(BaseModel):
     is_active: bool
     last_sign_in_at: datetime | None
     created_at: datetime
+    terms_accepted: bool
 
 
 class Status(BaseModel):
