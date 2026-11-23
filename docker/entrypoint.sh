@@ -4,7 +4,7 @@
 # nothing that stops the next start. Services never run as root (see docker/s6/*/run).
 set -eu
 
-log() { echo "entrypoint: $*"; }
+log() { echo "entrypoint: $(date +%T) $*"; }
 
 DATA=/data
 PGDATA="$DATA/postgres"
@@ -135,13 +135,31 @@ svscan=$!
 # wait for each to be down before going on. What is still running when this process ends is killed,
 # which for PostgreSQL means crash recovery at the next start. Then s6 itself is told to finish.
 stopping=0
+
+# Stops one service and waits for it. After the time given (milliseconds) it says what the process
+# was doing and kills it, so a service that ignores the request cannot use up the whole grace period
+# and leave the database to be killed in the middle of its own shutdown.
+stop_service() {
+  service="$1"
+  dir="/run/s6/services/$service"
+  s6-svc -d "$dir" || log "could not signal $service ($?)"
+  if ! s6-svwait -d -t "$2" "$dir"; then
+    pid="$(s6-svstat -o pid "$dir" 2> /dev/null || true)"
+    log "$service did not stop in time: $(s6-svstat "$dir" 2>&1)"
+    if [ -n "$pid" ] && [ -r "/proc/$pid/status" ]; then
+      log "$service signals: $(grep -E '^Sig(Blk|Ign|Cgt)' "/proc/$pid/status" | tr '\n' ' ')"
+    fi
+    s6-svc -k "$dir" || true
+  fi
+  log "$service is down"
+}
+
 stop() {
   stopping=1
   log "stopping"
-  for service in nginx api postgres; do
-    s6-svc -d "/run/s6/services/$service" || log "could not signal $service ($?)"
-    s6-svwait -d -t 25000 "/run/s6/services/$service" || log "$service did not stop in time ($?)"
-  done
+  stop_service nginx 8000
+  stop_service api 8000
+  stop_service postgres 20000
   s6-svscanctl -t /run/s6/services || log "could not stop s6 ($?)"
 }
 trap stop TERM INT
