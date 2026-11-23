@@ -309,6 +309,7 @@ export interface Pentest extends PentestSummary {
   description: string;
   methodology_name: string;
   methodology_version: number;
+  features: string[];
   scope: PentestScope;
   compiled: PentestScope;
   rules: PentestRules;
@@ -333,4 +334,41 @@ export interface PentestInput {
 export interface AttestationStatement {
   version: string;
   text: string;
+}
+
+export type CheckStatus =
+  "todo" | "in_progress" | "passed" | "finding" | "blocked" | "not_applicable";
+
+export interface Evidence {
+  label: string;
+  url: string;
+}
+
+export interface CheckItem {
+  test_id: string;
+  name: string;
+  reference: string | null;
+  risk_class: RiskClass | null;
+  requires: string[];
+  applies: boolean;
+  status: CheckStatus;
+  notes: string;
+  evidence: Evidence[];
+  custom: boolean;
+  touched: boolean;
+}
+
+export interface CheckCategory {
+  id: string;
+  name: string;
+  tests: CheckItem[];
+}
+
+export interface Checklist {
+  methodology_name: string;
+  methodology_version: number;
+  features: string[];
+  total: number;
+  counts: Record<CheckStatus, number>;
+  categories: CheckCategory[];
 }
