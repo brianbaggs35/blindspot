@@ -61,6 +61,8 @@ export default defineConfig({
           {
             command: "uv run uvicorn --factory app.main:create_app --host 127.0.0.1 --port 8000",
             cwd: "../backend",
+            // A fixed key for the throwaway API the tests start. It protects nothing.
+            env: { BLINDSPOT_SECRET_KEY: "e2e-only-key-".padEnd(48, "0") },
             url: "http://127.0.0.1:8000/api/health",
             reuseExistingServer: !ci,
             timeout: 60_000,

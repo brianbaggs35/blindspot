@@ -8,7 +8,6 @@ changed envelope is refused rather than decrypted to something else.
 """
 
 import base64
-import binascii
 import secrets
 from collections.abc import Sequence
 from enum import StrEnum
@@ -83,7 +82,7 @@ class Vault:
             raise VaultError("The value was sealed with a key this vault does not have.")
         try:
             return key, _decode(parts[2]), _decode(parts[3])
-        except (binascii.Error, ValueError) as error:
+        except ValueError as error:  # binascii.Error is a ValueError
             raise VaultError("The sealed value is damaged.") from error
 
     def open(self, purpose: Purpose, envelope: str) -> str:

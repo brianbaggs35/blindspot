@@ -10,7 +10,7 @@ from app.log import configure_logging
 from app.redact import REDACTED, RedactingFilter, mask, redact, redact_value
 from app.vault import Purpose, SecretKey, Vault
 
-SECRETS = [
+LOOKALIKES = [
     "sk-ant-api03-abcdefghijklmnop1234",
     "sk-proj-abcdefghijklmnop1234567",
     "ghp_abcdefghijklmnopqrstuvwxyz0123",
@@ -21,7 +21,7 @@ SECRETS = [
 ]
 
 
-@pytest.mark.parametrize("secret", SECRETS)
+@pytest.mark.parametrize("secret", LOOKALIKES)
 def test_secret_shaped_text_is_hidden(secret: str) -> None:
     assert (
         redact(f"calling the provider with {secret} now")
@@ -55,14 +55,14 @@ def test_ordinary_text_and_counts_are_left_alone() -> None:
 def test_values_are_hidden_inside_containers_and_by_key_name() -> None:
     value = {
         "password": "p",
-        "note": f"key {SECRETS[0]}",
-        "items": [SECRETS[3], 7, {"api_key": "k"}],
+        "note": f"key {LOOKALIKES[0]}",
+        "items": [LOOKALIKES[3], 7, {"api_key": "k"}],
         "bytes": b"raw",
         "deep": {"a": {"b": {"c": {"d": {"e": {"f": {"g": {"h": "x"}}}}}}}},
     }
     result = redact_value(value)
     assert result["password"] == REDACTED
-    assert SECRETS[0] not in result["note"]
+    assert LOOKALIKES[0] not in result["note"]
     assert result["items"] == [REDACTED, 7, {"api_key": REDACTED}]
     assert result["bytes"] == b"raw"
     assert result["deep"]["a"]["b"]["c"]["d"]["e"]["f"]["g"] == REDACTED
@@ -71,23 +71,23 @@ def test_values_are_hidden_inside_containers_and_by_key_name() -> None:
 def test_structured_logs_never_hold_a_secret(capsys: pytest.CaptureFixture[str]) -> None:
     configure_logging("INFO")
     structlog.get_logger().info(
-        "provider call", api_key=SECRETS[0], detail=f"failed with {SECRETS[1]}"
+        "provider call", api_key=LOOKALIKES[0], detail=f"failed with {LOOKALIKES[1]}"
     )
     line = json.loads(capsys.readouterr().out.strip().splitlines()[-1])
     assert line["api_key"] == REDACTED
-    assert SECRETS[1] not in line["detail"]
+    assert LOOKALIKES[1] not in line["detail"]
 
 
 def test_standard_library_logs_never_hold_a_secret(capsys: pytest.CaptureFixture[str]) -> None:
     configure_logging("INFO")
-    logging.getLogger("uvicorn.error").warning("bad key %s", SECRETS[0])
+    logging.getLogger("uvicorn.error").warning("bad value %s", LOOKALIKES[0])
     output = capsys.readouterr().out
-    assert "bad key" in output
-    assert SECRETS[0] not in output
+    assert "bad value" in output
+    assert LOOKALIKES[0] not in output
 
 
 def test_the_filter_lets_every_record_through() -> None:
-    record = logging.LogRecord("x", logging.INFO, "", 0, "a %s", (SECRETS[3],), None)
+    record = logging.LogRecord("x", logging.INFO, "", 0, "a %s", (LOOKALIKES[3],), None)
     assert RedactingFilter().filter(record)
     assert record.getMessage() == f"a {REDACTED}"
 
