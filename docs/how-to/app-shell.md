@@ -1,0 +1,65 @@
+# The app shell
+
+The shell is everything around a page: the top bar, the menu, the command palette, the themes and
+the shared states. It lives in `frontend/src` and is built with Vue 3, Vuetify 4 and TypeScript 6.
+
+## Look and feel
+
+The direction is **Situation Room**: a dark-first interface with glass bars over a faint radar
+grid, cyan to indigo for live things, and amber kept for blind spots and warnings. The light theme
+(`daylight`) uses the same tokens with darker accents so text keeps its contrast. Both themes are
+defined in `src/plugins/vuetify.ts`; changing the direction means changing those tokens and the
+shell block at the end of `src/styles/main.css`.
+
+- **Visual effects** (the grid, the glass bars) can be turned off from the top bar. They start off
+  for anyone whose system asks for reduced motion, and a choice made here always wins.
+- **Motion** is 150 to 250 ms and always has a reason. `prefers-reduced-motion` removes it.
+- **Contrast** is checked with axe on every page, in both themes, at six widths.
+
+## The menu
+
+The menu is built from the router. A page appears in it when its route has `meta.nav`:
+
+```ts
+{
+  path: "/findings",
+  name: "findings",
+  component: () => import("../views/FindingsView.vue"),
+  meta: { title: "Findings", nav: { label: "Findings", group: "work", order: 30, icon: mdiBug } },
+}
+```
+
+`group` is `work` or `system`, and `order` sorts within the group. Nothing else lists pages, so a
+page added later shows up in the menu, in the command palette and in the tab title without
+touching the shell. A route with `meta.title` and no `meta.nav` (the not-found page) is named in
+the tab but not listed.
+
+- On a laptop or desktop the menu stays beside the page and shrinks to icons (with tooltips).
+  The choice is remembered in this browser.
+- On a phone it is a drawer that opens over the page and closes when a link is used.
+
+## The command palette
+
+Press `Ctrl+K` (`⌘K` on a Mac) or use the search button. Type any words from a page or action;
+every word has to match. Enter runs the first match, or pick one with the mouse, or Tab to it.
+Commands are built in `src/commands.ts`: one for each menu page, plus the appearance actions.
+
+## Shared pieces
+
+| Piece                       | Use it for                                                                                                                                                       |
+| --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `PageHeader`                | The page's `h1`, a subtitle and an actions slot. Every page has exactly one `h1`.                                                                                |
+| `StateView`                 | The four states of a list or detail view: loading (a skeleton, not a spinner), empty (says what to do next), error (says what happened) and ready (the content). |
+| `NavMenu`, `CommandPalette` | Used by the shell only.                                                                                                                                          |
+
+## Remembered settings
+
+Three things are kept in the browser's local storage, and only there: `blindspot.theme`,
+`blindspot.nav` (collapsed or not) and `blindspot.effects`. Storage can be blocked, so every read
+and write goes through `src/storage.ts` and the app works without it.
+
+## Checks
+
+`npm test` (100% coverage target, 95% minimum) covers every component and store. The Playwright
+specs run the menu, the palette, the themes and the not-found page, and the axe and layout specs
+run on every page in `e2e/pages.ts`: add a page there when you add a route.

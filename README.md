@@ -32,6 +32,7 @@ Blindspot is a self-hosted platform for **web application penetration testing wi
 | [The database](docs/how-to/database.md)                         | The socket, the shared columns, sessions, migrations and how to add a table                |
 | [Accounts and sign-in](docs/how-to/accounts.md)                 | First-run setup, passwords, sessions, roles, lockout, CSRF and the audit trail             |
 | [Secrets and the vault](docs/how-to/secrets.md)                 | How credentials are sealed, the app secret key, rotating it, and what logs never show      |
+| [The app shell](docs/how-to/app-shell.md)                       | The look, the menu, the command palette, effects and the shared page pieces                |
 | [Platform plan](docs/PLAN.md)                                   | Architecture, agents, tools, security, UI, CI, the PR stack and open questions             |
 | [Agent framework comparison](docs/research/agent-frameworks.md) | Why Pydantic AI, and what else was considered                                              |
 | [How pentest agents are built](docs/research/pentest-agents.md) | What open-source projects do, and what Blindspot borrows                                   |

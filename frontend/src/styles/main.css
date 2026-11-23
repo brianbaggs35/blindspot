@@ -27,3 +27,120 @@ pre,
     transition-duration: 0.01ms !important;
   }
 }
+
+/* The shell. */
+.bs-skip {
+  position: fixed;
+  top: 8px;
+  left: 8px;
+  z-index: 3000;
+  padding: 8px 16px;
+  border-radius: var(--bs-radius);
+  background: rgb(var(--v-theme-primary));
+  color: rgb(var(--v-theme-on-primary));
+  transform: translateY(-200%);
+}
+
+.bs-skip:focus {
+  transform: none;
+}
+
+.bs-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-left: 4px;
+  color: inherit;
+  text-decoration: none;
+  border-radius: var(--bs-radius);
+}
+
+.bs-wordmark {
+  font-size: 1.15rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.bs-kbd {
+  padding: 1px 6px;
+  border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+  border-radius: 6px;
+  font-family: var(--bs-font-mono);
+  font-size: 0.75rem;
+}
+
+.bs-nav-heading {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.7rem;
+}
+
+.bs-main:focus {
+  outline: none;
+}
+
+.bs-page-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.bs-page-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* Visual effects: a faint radar grid behind the page and glass bars. Off when the person turns
+   them off, and always off for people who ask their system for less motion. */
+.bs-effects .bs-main::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image:
+    radial-gradient(
+      circle at 50% 50%,
+      transparent 0,
+      rgba(var(--v-theme-primary), 0.14) 1px,
+      transparent 2px
+    ),
+    linear-gradient(rgba(var(--v-theme-primary), 0.09) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(var(--v-theme-primary), 0.09) 1px, transparent 1px);
+  background-size:
+    160px 160px,
+    40px 40px,
+    40px 40px;
+  mask-image: radial-gradient(ellipse at 50% 30%, black, transparent 75%);
+}
+
+.bs-effects .bs-main > * {
+  position: relative;
+  z-index: 1;
+}
+
+.v-application.bs-effects .v-app-bar.bs-glass,
+.v-application.bs-effects .v-navigation-drawer.bs-glass {
+  background: rgba(var(--v-theme-surface), 0.78);
+  backdrop-filter: blur(14px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .v-application.bs-effects .v-app-bar.bs-glass,
+  .v-application.bs-effects .v-navigation-drawer.bs-glass {
+    backdrop-filter: none;
+  }
+}

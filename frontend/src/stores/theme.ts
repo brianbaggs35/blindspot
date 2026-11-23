@@ -1,25 +1,13 @@
 import { defineStore } from "pinia";
+import { readSetting, writeSetting } from "../storage";
 
 export type ThemeName = "midnight" | "daylight";
 
 const STORAGE_KEY = "blindspot.theme";
 
 function readSaved(): ThemeName | null {
-  try {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    return saved === "midnight" || saved === "daylight" ? saved : null;
-  } catch {
-    // Storage can be blocked (private windows); the theme then just isn't remembered.
-    return null;
-  }
-}
-
-function save(name: ThemeName): void {
-  try {
-    localStorage.setItem(STORAGE_KEY, name);
-  } catch {
-    // See readSaved.
-  }
+  const saved = readSetting(STORAGE_KEY);
+  return saved === "midnight" || saved === "daylight" ? saved : null;
 }
 
 export function systemTheme(): ThemeName {
@@ -34,7 +22,7 @@ export const useThemeStore = defineStore("theme", {
   actions: {
     set(name: ThemeName) {
       this.name = name;
-      save(name);
+      writeSetting(STORAGE_KEY, name);
     },
     toggle() {
       this.set(this.name === "midnight" ? "daylight" : "midnight");
