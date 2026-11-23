@@ -260,7 +260,7 @@ describe("PentestChecklistView", () => {
 
   it("narrows by state with the chips, from the mouse and the keyboard", async () => {
     const { wrapper } = await page();
-    const chips = () => wrapper.findAll("[role=group][aria-label='Filter by state'] .v-chip");
+    const chips = () => wrapper.findAll("fieldset[aria-label='Filter by state'] .v-chip");
     expect(chips()).toHaveLength(6);
     await chips()[3]?.trigger("click");
     expect(wrapper.text()).toContain("Showing 1 of 4 tests.");
