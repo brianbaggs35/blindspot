@@ -81,7 +81,9 @@ test.describe("Users (administrator)", () => {
     await choose(page, person.username, "Edit");
     const dialog = page.getByRole("dialog");
     await pickOption(dialog, page, "Role", /Administrator/);
-    await dialog.getByLabel("Can sign in").uncheck({ force: true });
+    // The switch's own input is hidden behind its track; its label toggles it like a click would.
+    await dialog.getByText("Can sign in").click();
+    await expect(dialog.getByLabel("Can sign in")).not.toBeChecked();
     await dialog.getByRole("button", { name: "Save" }).click();
     await expect(row(page, person.username)).toContainText("admin");
     await expect(row(page, person.username)).toContainText("disabled");
