@@ -166,5 +166,6 @@ def test_a_stored_methodology_with_a_repeated_id_is_not_accepted() -> None:
     def repeat(document: dict[str, Any]) -> None:
         document["categories"][0]["tests"][1]["id"] = "WSTG-INFO-01"
 
+    spec = wstg()
     with pytest.raises(ValidationError, match="WSTG-INFO-01 appears twice"):
-        edited(wstg(), repeat)
+        edited(spec, repeat)

@@ -130,6 +130,56 @@ def _at_least(risk: RiskClass, floor: RiskClass) -> RiskClass:
     return max(risk, floor, key=RISK_ORDER.index)
 
 
+def _test(
+    category_id: str, test: TestDraft, tools: ToolsFile, authored: dict[str, Playbook]
+) -> Test:
+    """One finished test: its risk is at least that of the steps its playbook lists, and a test
+    with no playbook of its own gets the generated one."""
+    entry = tools.tests.get(test.id)
+    # A test nobody mapped to a tool is judgement work until somebody does.
+    manual = True if entry is None else entry.manual_review or not entry.tools
+    risk = test.risk_class or (entry.risk if entry else RiskClass.ACTIVE)
+    playbook = authored.get(test.id)
+    if playbook is not None:
+        risk = _at_least(risk, _risk_of_steps(playbook))
+    else:
+        playbook = generated_playbook(
+            category_id=category_id,
+            test_name=test.name,
+            objectives=test.objectives,
+            tools=entry.tools if entry else [],
+            manual_review=manual,
+            risk_class=risk,
+            approach=entry.approach if entry else None,
+        )
+    return Test(
+        id=test.id,
+        name=test.name,
+        reference=test.reference,
+        objectives=test.objectives,
+        tags=test.tags,
+        risk_class=risk,
+        requires=test.requires,
+        approach=entry.approach if entry else None,
+        playbook=playbook,
+        playbook_source="authored" if test.id in authored else "generated",
+    )
+
+
+def _category(
+    category: CategoryDraft,
+    tools: ToolsFile,
+    authored: dict[str, Playbook],
+    label: str | None,
+) -> Category:
+    return Category(
+        id=category.id,
+        name=category.name,
+        reporting_label=label,
+        tests=[_test(category.id, test, tools, authored) for test in category.tests],
+    )
+
+
 def _assemble(
     draft: Draft,
     tools: ToolsFile,
@@ -148,49 +198,10 @@ def _assemble(
     _check_known("The playbooks", set(authored), known, strict=strict)
     labels = reporting.categories if reporting else {}
     _check_known("reporting.yaml", set(labels), {c.id for c in draft.categories}, strict=strict)
-    categories: list[Category] = []
-    for category in draft.categories:
-        tests: list[Test] = []
-        for test in category.tests:
-            entry = tools.tests.get(test.id)
-            # A test nobody mapped to a tool is judgement work until somebody does.
-            manual = True if entry is None else entry.manual_review or not entry.tools
-            risk = test.risk_class or (entry.risk if entry else RiskClass.ACTIVE)
-            playbook = authored.get(test.id)
-            if playbook is not None:
-                risk = _at_least(risk, _risk_of_steps(playbook))
-            else:
-                playbook = generated_playbook(
-                    category_id=category.id,
-                    test_name=test.name,
-                    objectives=test.objectives,
-                    tools=entry.tools if entry else [],
-                    manual_review=manual,
-                    risk_class=risk,
-                    approach=entry.approach if entry else None,
-                )
-            tests.append(
-                Test(
-                    id=test.id,
-                    name=test.name,
-                    reference=test.reference,
-                    objectives=test.objectives,
-                    tags=test.tags,
-                    risk_class=risk,
-                    requires=test.requires,
-                    approach=entry.approach if entry else None,
-                    playbook=playbook,
-                    playbook_source="authored" if test.id in authored else "generated",
-                )
-            )
-        categories.append(
-            Category(
-                id=category.id,
-                name=category.name,
-                reporting_label=labels.get(category.id),
-                tests=tests,
-            )
-        )
+    categories = [
+        _category(category, tools, authored, labels.get(category.id))
+        for category in draft.categories
+    ]
     return MethodologySpec(
         id=draft.id,
         name=draft.name,
