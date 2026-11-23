@@ -81,15 +81,18 @@ async function addPicked() {
   adding.value = true;
   fetchFailure.value = "";
   try {
-    for (const one of fresh.value.filter((found) => picked.value.includes(found.model_id))) {
-      await api("POST", `/api/providers/${props.provider.id}/models`, {
-        model_id: one.model_id,
-        display_name: one.display_name,
-        context_tokens: one.context_tokens,
-        max_output_tokens: one.max_output_tokens,
-        capabilities: one.capabilities,
-      });
-    }
+    const chosen = fresh.value.filter((found) => picked.value.includes(found.model_id));
+    await Promise.all(
+      chosen.map((one) =>
+        api("POST", `/api/providers/${props.provider.id}/models`, {
+          model_id: one.model_id,
+          display_name: one.display_name,
+          context_tokens: one.context_tokens,
+          max_output_tokens: one.max_output_tokens,
+          capabilities: one.capabilities,
+        }),
+      ),
+    );
     const count = picked.value.length;
     notice.value = `Added ${String(count)} ${count === 1 ? "model" : "models"}.`;
     fetched.value = false;
