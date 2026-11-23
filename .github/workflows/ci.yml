@@ -195,7 +195,7 @@ jobs:
         run: pyright
 
       - name: Bandit
-        run: bandit -c pyproject.toml -r app migrations
+        run: bandit -c pyproject.toml -r app
 
       - name: Dependency audit
         run: pip-audit

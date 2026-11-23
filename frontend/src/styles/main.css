@@ -1,0 +1,29 @@
+/* Design tokens. Amber is reserved for blind spots and warnings. */
+:root {
+  --bs-font-sans: "Inter Variable", system-ui, sans-serif;
+  --bs-font-mono: "JetBrains Mono", ui-monospace, monospace;
+  --bs-radius: 12px;
+  --bs-space: 8px;
+  --bs-motion-fast: 150ms;
+  --bs-motion-slow: 250ms;
+}
+
+html {
+  font-family: var(--bs-font-sans);
+}
+
+code,
+pre,
+.mono {
+  font-family: var(--bs-font-mono);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
