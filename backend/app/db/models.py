@@ -30,6 +30,8 @@ from app.db.base import Base, CreatedBy, SoftDelete, Timestamps, UUIDPrimaryKey,
 from app.vault.seal import Purpose
 from app.vault.types import SealedString
 
+METHODOLOGY_ID = "methodology.id"
+
 __all__ = [
     "AiModel",
     "AiProvider",
@@ -274,7 +276,7 @@ class MethodologyVersion(UUIDPrimaryKey, Base):
     __table_args__ = (UniqueConstraint("methodology_id", "number"),)
 
     methodology_id: Mapped[str] = mapped_column(
-        String(32), ForeignKey("methodology.id", ondelete="CASCADE"), index=True
+        String(32), ForeignKey(METHODOLOGY_ID, ondelete="CASCADE"), index=True
     )
     number: Mapped[int] = mapped_column(Integer)
     label: Mapped[str] = mapped_column(String(40))
@@ -293,7 +295,7 @@ class PlaybookOverride(Base):
     __tablename__ = "playbook_override"
 
     methodology_id: Mapped[str] = mapped_column(
-        String(32), ForeignKey("methodology.id", ondelete="CASCADE"), primary_key=True
+        String(32), ForeignKey(METHODOLOGY_ID, ondelete="CASCADE"), primary_key=True
     )
     test_id: Mapped[str] = mapped_column(String(64), primary_key=True)
     playbook: Mapped[Any] = mapped_column(JSONB)
@@ -338,7 +340,7 @@ class Pentest(UUIDPrimaryKey, Timestamps, SoftDelete, CreatedBy, Base):
     client: Mapped[str | None] = mapped_column(String(120), default=None)
     description: Mapped[str] = mapped_column(Text, default="", server_default="")
     methodology_id: Mapped[str] = mapped_column(
-        String(32), ForeignKey("methodology.id", ondelete="RESTRICT"), index=True
+        String(32), ForeignKey(METHODOLOGY_ID, ondelete="RESTRICT"), index=True
     )
     # The snapshot of the methodology this pentest was made against.
     methodology_version: Mapped[int] = mapped_column(Integer)
