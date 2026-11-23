@@ -12,3 +12,4 @@ docs/assets/*.svg
 # Long-form planning and research documents with wide tables, kept as written.
 docs/PLAN.md
 docs/research
+backend/app/methodology/bundled/wstg/checklist.json

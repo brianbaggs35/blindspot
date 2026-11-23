@@ -37,7 +37,10 @@ __all__ = [
     "AuditEvent",
     "AuthSession",
     "Base",
+    "Methodology",
+    "MethodologyVersion",
     "Passkey",
+    "PlaybookOverride",
     "Role",
     "UsageLedger",
     "User",
@@ -243,3 +246,55 @@ class UsageLedger(UUIDPrimaryKey, Base):
     thinking_tokens: Mapped[int] = mapped_column(BigInteger, default=0)
     latency_ms: Mapped[int] = mapped_column(Integer, default=0)
     cost_usd: Mapped[Decimal | None] = mapped_column(Numeric(18, 8), default=None)
+
+
+class Methodology(Timestamps, Base):
+    """A methodology a pentest can follow, such as WSTG. Its content is in `MethodologyVersion`;
+    the newest version is the one in use."""
+
+    __tablename__ = "methodology"
+    __table_args__ = (CheckConstraint("origin IN ('bundled', 'folder')", name="origin"),)
+
+    id: Mapped[str] = mapped_column(String(32), primary_key=True)
+    name: Mapped[str] = mapped_column(String(200))
+    source_url: Mapped[str] = mapped_column(String(500))
+    license: Mapped[str] = mapped_column(String(200))
+    origin: Mapped[str] = mapped_column(String(16))
+    enabled: Mapped[bool] = mapped_column(default=True, server_default=true())
+
+
+class MethodologyVersion(UUIDPrimaryKey, Base):
+    """One snapshot of a methodology. Snapshots are only added, so a pentest can say exactly which
+    tests it was run against. `number` counts up from 1 for each methodology."""
+
+    __tablename__ = "methodology_version"
+    __table_args__ = (UniqueConstraint("methodology_id", "number"),)
+
+    methodology_id: Mapped[str] = mapped_column(
+        String(32), ForeignKey("methodology.id", ondelete="CASCADE"), index=True
+    )
+    number: Mapped[int] = mapped_column(Integer)
+    label: Mapped[str] = mapped_column(String(40))
+    content_hash: Mapped[str] = mapped_column(String(64))
+    spec: Mapped[Any] = mapped_column(JSONB)
+    source: Mapped[str] = mapped_column(String(16))
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utc_now, server_default=func.now()
+    )
+    created_by: Mapped[uuid.UUID | None] = mapped_column(Uuid, default=None)
+
+
+class PlaybookOverride(Base):
+    """A playbook an administrator wrote to replace the one a test came with."""
+
+    __tablename__ = "playbook_override"
+
+    methodology_id: Mapped[str] = mapped_column(
+        String(32), ForeignKey("methodology.id", ondelete="CASCADE"), primary_key=True
+    )
+    test_id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    playbook: Mapped[Any] = mapped_column(JSONB)
+    updated_by: Mapped[uuid.UUID | None] = mapped_column(Uuid, default=None)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utc_now, onupdate=utc_now, server_default=func.now()
+    )
