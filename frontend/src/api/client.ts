@@ -106,15 +106,20 @@ export async function upload<T>(path: string, file: Blob): Promise<T> {
 
 const jsonHeaders = { Accept: "application/json", "Content-Type": "application/json" };
 
+/** Refusals whose detail is the useful part (what is missing, what to do next), so it is shown too. */
+const EXPLAINED = new Set(["terms_not_accepted", "cannot_launch", "out_of_scope"]);
+
 /** The words to show a person for an error, with the request id when there is one to quote. */
 export function describe(error: unknown): string {
   if (error instanceof ApiError) {
     if (error.status === 429 && error.retryAfter !== undefined) {
       return `Too many attempts. Try again in ${waitWords(error.retryAfter)}.`;
     }
-    return error.requestId === undefined
-      ? error.message
-      : `${error.message} (reference ${error.requestId})`;
+    const words =
+      error.detail !== undefined && EXPLAINED.has(error.code)
+        ? `${error.message}. ${error.detail}`
+        : error.message;
+    return error.requestId === undefined ? words : `${words} (reference ${error.requestId})`;
   }
   return "Something went wrong. Try again.";
 }

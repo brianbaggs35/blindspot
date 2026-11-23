@@ -129,6 +129,29 @@ describe("describe", () => {
   });
 });
 
+describe("describe, for refusals that explain themselves", () => {
+  it("adds what is missing, and the reference when there is one", () => {
+    const refused = new ApiError(409, "cannot_launch", "This pentest cannot start yet", {
+      detail: "The signed letter is missing.",
+    });
+    expect(describeError(refused)).toBe(
+      "This pentest cannot start yet. The signed letter is missing.",
+    );
+    const traced = new ApiError(403, "terms_not_accepted", "Accept the terms first", {
+      detail: "Open them.",
+      requestId: "r-1",
+    });
+    expect(describeError(traced)).toBe("Accept the terms first. Open them. (reference r-1)");
+  });
+
+  it("is just the title when there is no detail, and ignores detail on other errors", () => {
+    expect(describeError(new ApiError(409, "cannot_launch", "Cannot start"))).toBe("Cannot start");
+    expect(describeError(new ApiError(400, "other", "Bad", { detail: "Internal note" }))).toBe(
+      "Bad",
+    );
+  });
+});
+
 describe("waitWords", () => {
   it.each([
     [0.2, "1 seconds"],
