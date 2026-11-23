@@ -69,6 +69,8 @@ RUN echo "$APK_REFRESH $IMAGE_REFRESH" > /dev/null \
 COPY --from=python /opt/venv /opt/venv
 COPY --from=web /src/frontend/dist /usr/share/blindspot/web
 COPY backend/app /opt/blindspot/app
+COPY backend/alembic.ini /opt/blindspot/alembic.ini
+COPY backend/migrations /opt/blindspot/migrations
 COPY docker/nginx/nginx.conf /etc/nginx/nginx.conf
 COPY docker/nginx/security-headers.conf /etc/nginx/security-headers.conf
 COPY docker/pg_hba.conf /etc/blindspot/pg_hba.conf
