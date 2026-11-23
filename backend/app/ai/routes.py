@@ -22,6 +22,7 @@ from app.ai.schemas import (
     ModelOut,
     ModelUpdate,
     PriceOut,
+    PriceSource,
     ProviderIn,
     ProviderOut,
     ProviderUpdate,
@@ -46,7 +47,7 @@ def get_resolver() -> Resolver:
 ResolverDep = Annotated[Resolver, Depends(get_resolver)]
 
 
-async def _provider(session: AsyncSession, provider_id: uuid.UUID) -> AiProvider:
+async def provider_by_id(session: AsyncSession, provider_id: uuid.UUID) -> AiProvider:
     found = await session.get(AiProvider, provider_id)
     if found is None:
         raise AppError(404, "not_found", "There is no such provider")
@@ -60,7 +61,7 @@ async def _model(session: AsyncSession, provider_id: uuid.UUID, model_ref: uuid.
     return found
 
 
-async def _checked_url(url: str, kind: ProviderKind, resolver: Resolver) -> str:
+async def checked_url(url: str, kind: ProviderKind, resolver: Resolver) -> str:
     try:
         return await check_base_url(url, kind, resolver)
     except BaseUrlRejected as error:
@@ -92,18 +93,22 @@ async def _provider_out(session: AsyncSession, providers: list[AiProvider]) -> l
     ]
 
 
+def price_source(kind: ProviderKind, model_id: str, overrides: Price) -> PriceSource:
+    """Where a model's price comes from."""
+    if overrides != Price():
+        return "override"
+    if kind is ProviderKind.OLLAMA_LOCAL:
+        return "free"
+    if load_catalog().find(kind, model_id) is not None:
+        return "catalog"
+    return "unknown"
+
+
 def _model_out(provider: AiProvider, model: AiModel) -> ModelOut:
     kind = ProviderKind(provider.kind)
     overrides = overrides_of(model) or Price()
     effective = price_for(kind, model.model_id, overrides)
-    if overrides != Price():
-        source = "override"
-    elif kind is ProviderKind.OLLAMA_LOCAL:
-        source = "free"
-    elif load_catalog().find(kind, model.model_id) is not None:
-        source = "catalog"
-    else:
-        source = "unknown"
+    source = price_source(kind, model.model_id, overrides)
     return ModelOut(
         id=model.id,
         provider_id=model.provider_id,
@@ -168,7 +173,7 @@ async def list_providers(_who: SignedIn, session: SessionDep) -> list[ProviderOu
 
 
 @router.post("/providers", status_code=201)
-async def add_provider(
+async def addprovider_by_id(
     body: ProviderIn, request: Request, who: Admin, session: SessionDep, resolver: ResolverDep
 ) -> ProviderOut:
     """Add a provider."""
@@ -176,7 +181,7 @@ async def add_provider(
     key = body.api_key.get_secret_value().strip() if body.api_key else ""
     if info.needs_key and not key:
         raise AppError(422, "key_required", f"{info.label} needs an API key")
-    url = await _checked_url(body.base_url or info.default_base_url, body.kind, resolver)
+    url = await checked_url(body.base_url or info.default_base_url, body.kind, resolver)
     provider = AiProvider(
         kind=body.kind.value,
         name=body.name,
@@ -205,13 +210,15 @@ async def add_provider(
 
 
 @router.get("/providers/{provider_id}")
-async def get_provider(provider_id: uuid.UUID, _who: SignedIn, session: SessionDep) -> ProviderOut:
+async def getprovider_by_id(
+    provider_id: uuid.UUID, _who: SignedIn, session: SessionDep
+) -> ProviderOut:
     """One provider."""
-    return (await _provider_out(session, [await _provider(session, provider_id)]))[0]
+    return (await _provider_out(session, [await provider_by_id(session, provider_id)]))[0]
 
 
 @router.patch("/providers/{provider_id}")
-async def change_provider(
+async def changeprovider_by_id(
     provider_id: uuid.UUID,
     body: ProviderUpdate,
     *,
@@ -221,11 +228,11 @@ async def change_provider(
     resolver: ResolverDep,
 ) -> ProviderOut:
     """Change a provider. A new key replaces the old one; the old one is never shown."""
-    provider = await _provider(session, provider_id)
+    provider = await provider_by_id(session, provider_id)
     kind = ProviderKind(provider.kind)
     changed: list[str] = []
     if body.base_url is not None:
-        provider.base_url = await _checked_url(body.base_url, kind, resolver)
+        provider.base_url = await checked_url(body.base_url, kind, resolver)
         changed.append("base_url")
     if body.api_key is not None:
         key = body.api_key.get_secret_value().strip()
@@ -265,11 +272,11 @@ async def change_provider(
 
 
 @router.delete("/providers/{provider_id}", status_code=204)
-async def remove_provider(
+async def removeprovider_by_id(
     provider_id: uuid.UUID, request: Request, who: Admin, session: SessionDep
 ) -> Response:
     """Remove a provider, its models and its role defaults. Its usage stays in the ledger."""
-    provider = await _provider(session, provider_id)
+    provider = await provider_by_id(session, provider_id)
     await session.delete(provider)
     audit.record(
         session,
@@ -287,7 +294,7 @@ async def list_models(
     provider_id: uuid.UUID, _who: SignedIn, session: SessionDep
 ) -> list[ModelOut]:
     """A provider's models."""
-    provider = await _provider(session, provider_id)
+    provider = await provider_by_id(session, provider_id)
     rows = await session.scalars(
         select(AiModel).where(AiModel.provider_id == provider.id).order_by(AiModel.model_id)
     )
@@ -300,7 +307,7 @@ async def add_model(
 ) -> ModelOut:
     """Add a model by hand (fetching adds them for you). What is left out comes from the catalog
     when it knows the model."""
-    provider = await _provider(session, provider_id)
+    provider = await provider_by_id(session, provider_id)
     known = load_catalog().find(ProviderKind(provider.kind), body.model_id)
     capabilities = body.capabilities
     if capabilities is None:
@@ -356,7 +363,7 @@ async def change_model(
     session: SessionDep,
 ) -> ModelOut:
     """Change a model's name, whether it can be chosen, its capabilities or its prices."""
-    provider = await _provider(session, provider_id)
+    provider = await provider_by_id(session, provider_id)
     model = await _model(session, provider_id, model_ref)
     if body.display_name is not None:
         model.display_name = body.display_name
@@ -387,7 +394,7 @@ async def remove_model(
     session: SessionDep,
 ) -> Response:
     """Remove a model from the list (and from any role it was the default for)."""
-    provider = await _provider(session, provider_id)
+    provider = await provider_by_id(session, provider_id)
     model = await _model(session, provider_id, model_ref)
     await session.delete(model)
     audit.record(

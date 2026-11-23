@@ -15,6 +15,7 @@ Name = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max
 ModelId = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=200)]
 PriceValue = Annotated[Decimal, Field(ge=0, le=100000, max_digits=14, decimal_places=6)]
 Budget = Annotated[Decimal, Field(ge=0, le=100000000, max_digits=14, decimal_places=4)]
+PriceSource = Literal["override", "catalog", "free", "unknown"]
 Capability = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=32)]
 
 
@@ -135,7 +136,7 @@ class ModelOut(BaseModel):
     supports_tools: bool
     enabled: bool
     price: PriceOut
-    price_source: Literal["override", "catalog", "free", "unknown"]
+    price_source: PriceSource
     overrides: PriceOut
 
 
@@ -184,3 +185,26 @@ class RoleDefaultOut(BaseModel):
     model_ref: uuid.UUID | None
     provider_name: str | None
     model_id: str | None
+
+
+class ConnectionOut(BaseModel):
+    """The result of trying a provider. A failure is a result, not an error, so the page can show
+    it next to the button."""
+
+    ok: bool
+    latency_ms: int
+    model_count: int | None
+    failure: str | None
+    detail: str
+
+
+class DiscoveredOut(BaseModel):
+    """A model the provider offers, with what the app would use if it were added."""
+
+    model_id: str
+    display_name: str
+    context_tokens: int | None
+    max_output_tokens: int | None
+    capabilities: list[str]
+    added: bool
+    price_source: PriceSource
