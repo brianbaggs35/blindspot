@@ -83,10 +83,11 @@ See [AI providers and spend](ai-providers.md#the-ai-providers-page) for the step
 
 ## Pentests
 
-| Page     | Path            | What it does                                                                                                                          |
-| -------- | --------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
-| Pentests | `/pentests`     | Active, Archived and Trash tabs with search and a status filter; administrators make a pentest or import one                          |
-| Pentest  | `/pentests/:id` | Authorization, scope, rules, accounts and the signed letter. Administrators change them and every risky step asks first; viewers read |
+| Page      | Path                      | What it does                                                                                                                          |
+| --------- | ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| Pentests  | `/pentests`               | Active, Archived and Trash tabs with search and a status filter; administrators make a pentest or import one                          |
+| Pentest   | `/pentests/:id`           | Authorization, scope, rules, accounts and the signed letter. Administrators change them and every risky step asks first; viewers read |
+| Checklist | `/pentests/:id/checklist` | Every test of the pentest's methodology with progress, filters and notes; administrators record results, viewers read                 |
 
 See [Pentests](pentests.md#the-pentests-pages) for the steps.
 

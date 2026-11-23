@@ -48,6 +48,12 @@ export const routes: RouteRecordRaw[] = [
     meta: { title: "Pentest" },
   },
   {
+    path: "/pentests/:id/checklist",
+    name: "pentest-checklist",
+    component: () => import("../views/PentestChecklistView.vue"),
+    meta: { title: "Checklist" },
+  },
+  {
     path: "/methodologies",
     name: "methodologies",
     component: () => import("../views/MethodologiesView.vue"),
