@@ -81,6 +81,14 @@ address, and a certificate the browser accepts.
 
 See [AI providers and spend](ai-providers.md#the-ai-providers-page) for the steps.
 
+## Methodologies
+
+| Page          | Path             | What it does                                                                                                                                            |
+| ------------- | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Methodologies | `/methodologies` | The checklist by category and test, and the playbook each test's agent is given. Administrators edit playbooks, switch, reload and update; viewers read |
+
+See [Methodologies](methodologies.md#the-methodologies-page) for the steps.
+
 ## Users and the audit log (administrators)
 
 | Page      | Path     | What it does                                                                                                                               |
