@@ -1,0 +1,5 @@
+# Findings Trivy should not fail on. Each entry needs a reason and an expiry date, so nothing is
+# ignored forever by accident. Empty means everything is fixed or has no fix available.
+vulnerabilities: []
+misconfigurations: []
+secrets: []

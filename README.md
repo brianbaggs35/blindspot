@@ -24,16 +24,18 @@ Blindspot is a self-hosted platform for **web application penetration testing wi
 
 ## Documentation
 
-| | |
-| --- | --- |
-| [Platform plan](docs/PLAN.md) | Architecture, agents, tools, security, UI, CI, the PR stack and open questions |
-| [Agent framework comparison](docs/research/agent-frameworks.md) | Why Pydantic AI, and what else was considered |
-| [How pentest agents are built](docs/research/pentest-agents.md) | What open-source projects do, and what Blindspot borrows |
-| [WSTG tool map](docs/research/wstg-tool-map.md) | Every one of the 133 WSTG tests mapped to verified tools, plus the tools rejected as stale |
-| [Models and pricing](docs/research/models-and-pricing.md) | Verified model IDs, prices and caching rules for Anthropic, OpenAI and Ollama |
+|                                                                 |                                                                                            |
+| --------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| [Contributing](docs/how-to/contributing.md)                     | Tickets, branch names, one-line commits, stacked pull requests and what must pass          |
+| [Continuous integration](docs/how-to/ci.md)                     | Every CI workflow and check, how to run them locally, branch protection setup              |
+| [Platform plan](docs/PLAN.md)                                   | Architecture, agents, tools, security, UI, CI, the PR stack and open questions             |
+| [Agent framework comparison](docs/research/agent-frameworks.md) | Why Pydantic AI, and what else was considered                                              |
+| [How pentest agents are built](docs/research/pentest-agents.md) | What open-source projects do, and what Blindspot borrows                                   |
+| [WSTG tool map](docs/research/wstg-tool-map.md)                 | Every one of the 133 WSTG tests mapped to verified tools, plus the tools rejected as stale |
+| [Models and pricing](docs/research/models-and-pricing.md)       | Verified model IDs, prices and caching rules for Anthropic, OpenAI and Ollama              |
 
 How-to guides (quick start, running your first pentest, providers, operations) are added to `docs/` with the features they describe.
 
 ## Contributing
 
-Every change starts with a Jira ticket on the BLI board. Branch names, commit subjects and PR titles start with the ticket key, for example `BLI-5-scaffold`, and commit messages are a single line such as `BLI-5 Scaffold backend and frontend`.
+Every change starts with a Jira ticket on the BLI board. Branch names, commit subjects and PR titles start with the ticket key, for example `BLI-5-scaffold`, and commit messages are a single line such as `BLI-5 Scaffold backend and frontend`. The full rules, and what CI checks, are in [Contributing](docs/how-to/contributing.md).

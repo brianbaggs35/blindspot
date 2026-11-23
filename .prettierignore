@@ -1,0 +1,14 @@
+# Generated or vendored files that Prettier should leave alone.
+node_modules
+.venv
+dist
+coverage
+e2e-results
+*.lock
+package-lock.json
+docs/assets/*.svg
+.github/workflows/*.sarif
+
+# Long-form planning and research documents with wide tables, kept as written.
+docs/PLAN.md
+docs/research
