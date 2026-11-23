@@ -1,0 +1,38 @@
+# Checks a pull request follows the project's rules: the title and branch start with a Jira
+# ticket key (BLI-12), and every commit message is one line starting with it. See
+# docs/how-to/contributing.md. The check reads the pull request's text from the environment, never
+# from the shell, and never runs code from the pull request.
+name: PR hygiene
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pr-hygiene-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  hygiene:
+    name: Ticket key, branch and commit messages
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # All of the history, to list this pull request's commits.
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Check the rules
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_BRANCH: ${{ github.event.pull_request.head.ref }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+          PR_ACTOR: ${{ github.event.pull_request.user.login }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: ./.github/scripts/pr-hygiene.sh
