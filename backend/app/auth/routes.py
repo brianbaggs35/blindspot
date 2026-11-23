@@ -24,7 +24,6 @@ from app.auth.service import (
     count_users,
     create_user,
     find_user,
-    get_pepper,
     is_locked,
     is_valid_username,
     live_sessions,
@@ -196,8 +195,7 @@ async def change_password(
     if wait := limiter.blocked_for(address):
         return _too_many(request, wait)
     user = who.user
-    pepper = await get_pepper(session)
-    correct, _ = await verify_password(user.password_hash, body.current_password, pepper)
+    correct, _ = await verify_password(user.password_hash, body.current_password)
     if not correct:
         limiter.record_failure(address)
         audit.record(session, request, "auth.password", actor=user, outcome="failure")
@@ -205,7 +203,7 @@ async def change_password(
     if reason := password_problem(body.new_password, user.username):
         raise AppError(422, "password_rejected", reason)
     now = utc_now()
-    await set_password(session, user, body.new_password)
+    await set_password(user, body.new_password)
     await revoke_sessions(session, user.id, now, keep=who.session.id)
     audit.record(session, request, "auth.password", actor=user)
     return Response(status_code=204)

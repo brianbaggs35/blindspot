@@ -47,6 +47,4 @@ class FailureLimiter:
         return set(self._failures)
 
     def _forget_quiet_keys(self) -> None:
-        for key in list(self._failures):
-            if not self._recent(key):
-                del self._failures[key]
+        self._failures = {key: seen for key, seen in self._failures.items() if self._recent(key)}

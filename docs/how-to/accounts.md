@@ -22,11 +22,11 @@ throttled like a failed sign-in.
 
 - Passwords need 12 to 256 characters, at least four different ones, and must not be a very
   common password or contain the username.
-- They are mixed with a secret **pepper** (HMAC-SHA256) and then hashed with **Argon2id** using
-  the RFC 9106 low-memory profile (64 MiB, 3 passes, 4 lanes). The pepper is made on first use
-  and kept sealed in the database, so a copy of the database alone is not enough to guess
-  passwords offline. It is rotated with the rest when the secret key is rotated
-  ([Secrets](secrets.md)). **Losing the secret key means losing every password.**
+- They are hashed with **Argon2id** using the RFC 9106 low-memory profile (64 MiB, 3 passes,
+  4 lanes). The hash is then sealed by the vault before it is stored, so a copy of the database
+  alone holds nothing that can be used to guess passwords offline. The sealed hashes are
+  re-sealed with the rest when the secret key is rotated ([Secrets](secrets.md)). **Losing the
+  secret key means losing every password.**
 - A hash made with older settings is replaced at the next sign-in.
 - Hashing runs in a thread, so it does not hold up other requests.
 

@@ -1,6 +1,6 @@
 # Secrets and the vault
 
-Passwords are hashed (with a secret pepper that is itself sealed: see [Accounts](accounts.md)) and can never be read back. Everything else that must stay secret (AI
+Passwords are hashed with Argon2id and the hash is sealed too (see [Accounts](accounts.md)); they can never be read back. Everything else that must stay secret (AI
 provider keys, credentials for the systems being tested, credentials found during a test, and
 evidence marked sensitive) is **sealed** before it reaches the database. Nothing sensitive is
 stored in the clear.

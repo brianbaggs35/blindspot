@@ -8,16 +8,14 @@ import psycopg
 import pytest
 from argon2 import PasswordHasher
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine, select
+from sqlalchemy import create_engine
 from tests.conftest import GOOD_PASSWORD, SAME_SITE, another_browser, app_of, set_up, setup_code
 
 from app.auth.deps import COOKIE_NAME
-from app.auth.passwords import mix
 from app.config import get_settings
 from app.db.base import Base
 from app.db.events import connection_string
-from app.db.models import AuthSecret
-from app.vault import SecretKey, Vault, get_vault, set_vault
+from app.vault import Purpose, SecretKey, Vault, get_vault, set_vault
 from app.vault.rotate import rotate
 
 
@@ -180,18 +178,20 @@ def test_a_hash_with_old_settings_is_replaced_at_sign_in(
     api: TestClient, database_url: str
 ) -> None:
     set_up(api)
-    # The pepper is stored sealed; read it through the app's own column type.
-    engine = create_engine(database_url)
-    with engine.connect() as connection:
-        plain = connection.execute(select(AuthSecret.value)).scalar_one()
-    engine.dispose()
-    weak = PasswordHasher(time_cost=1, memory_cost=8, parallelism=1).hash(
-        mix(GOOD_PASSWORD, plain.encode())
+    weak = PasswordHasher(time_cost=1, memory_cost=8, parallelism=1).hash(GOOD_PASSWORD)
+    sql(
+        database_url, "UPDATE app_user SET password_hash = %s", get_vault().seal(Purpose.AUTH, weak)
     )
-    sql(database_url, "UPDATE app_user SET password_hash = %s", weak)
     another_browser(api, "admin")
     (stored,) = sql(database_url, "SELECT password_hash FROM app_user")[0]
-    assert str(stored).startswith("$argon2id$v=19$m=65536,t=3,p=4$")
+    assert get_vault().open(Purpose.AUTH, str(stored)).startswith("$argon2id$v=19$m=65536,t=3,p=4$")
+
+
+def test_the_password_hash_is_sealed_at_rest(api: TestClient, database_url: str) -> None:
+    set_up(api)
+    (stored,) = sql(database_url, "SELECT password_hash FROM app_user")[0]
+    assert str(stored).startswith("v1:")
+    assert "argon2" not in str(stored)
 
 
 def test_the_session_is_stored_as_a_hash_only(api: TestClient, database_url: str) -> None:
@@ -305,7 +305,7 @@ def test_a_made_up_cookie_is_no_session(api: TestClient, flag: str) -> None:
 def test_passwords_still_work_after_the_secret_key_is_rotated(
     api: TestClient, database_url: str
 ) -> None:
-    """The pepper is sealed with the app key, so rotating the key must carry it over."""
+    """The password hashes are sealed with the app key, so rotating the key must carry them over."""
     set_up(api)
     old = get_vault()
     new = Vault(SecretKey.from_text("a-brand-new-key-0123456789abcdef0123456789"), [old.current])

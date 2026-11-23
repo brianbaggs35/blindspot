@@ -1,15 +1,12 @@
-"""Password hashing: the password is mixed with a secret pepper (HMAC-SHA256), then hashed with
-Argon2id using the RFC 9106 low-memory profile. The pepper lives in the vault, so a copy of the
-database alone cannot be used to guess passwords offline.
+"""Password hashing with Argon2id, using the RFC 9106 low-memory profile. The stored hash is then
+sealed by the vault (see User.password_hash), so a copy of the database alone holds nothing that
+can be used to guess passwords offline.
 
 Hashing takes a tenth of a second and some memory on purpose, so it runs in a thread: the event
 loop keeps serving other requests meanwhile.
 """
 
 import asyncio
-import base64
-import hashlib
-import hmac
 from functools import lru_cache
 
 from argon2 import PasswordHasher
@@ -38,12 +35,6 @@ _COMMON = frozenset(
 _hasher = PasswordHasher.from_parameters(RFC_9106_LOW_MEMORY)
 
 
-def mix(password: str, pepper: bytes) -> str:
-    """The password with the pepper mixed in: what Argon2id is given."""
-    digest = hmac.digest(pepper, password.encode(), hashlib.sha256)
-    return base64.b64encode(digest).decode()
-
-
 def password_problem(password: str, username: str) -> str | None:
     """Why a password is not acceptable, or None when it is."""
     if len(password) < MIN_LENGTH:
@@ -60,13 +51,13 @@ def password_problem(password: str, username: str) -> str | None:
     return None
 
 
-def _hash(password: str, pepper: bytes) -> str:
-    return _hasher.hash(mix(password, pepper))
+def _hash(password: str) -> str:
+    return _hasher.hash(password)
 
 
-def _verify(stored: str, password: str, pepper: bytes) -> tuple[bool, bool]:
+def _verify(stored: str, password: str) -> tuple[bool, bool]:
     try:
-        _hasher.verify(stored, mix(password, pepper))
+        _hasher.verify(stored, password)
     except VerificationError, InvalidHashError:
         return False, False
     return True, _hasher.check_needs_rehash(stored)
@@ -78,17 +69,17 @@ def _decoy() -> str:
     return _hasher.hash("decoy")
 
 
-async def hash_password(password: str, pepper: bytes) -> str:
+async def hash_password(password: str) -> str:
     """The Argon2id hash to store."""
-    return await asyncio.to_thread(_hash, password, pepper)
+    return await asyncio.to_thread(_hash, password)
 
 
-async def verify_password(stored: str, password: str, pepper: bytes) -> tuple[bool, bool]:
+async def verify_password(stored: str, password: str) -> tuple[bool, bool]:
     """Whether the password is right, and whether the stored hash should be made again with the
     current settings."""
-    return await asyncio.to_thread(_verify, stored, password, pepper)
+    return await asyncio.to_thread(_verify, stored, password)
 
 
-async def spend_the_same_time(password: str, pepper: bytes) -> None:
+async def spend_the_same_time(password: str) -> None:
     """Do the work of a check for an account that does not exist."""
-    await asyncio.to_thread(_verify, _decoy(), password, pepper)
+    await asyncio.to_thread(_verify, _decoy(), password)
