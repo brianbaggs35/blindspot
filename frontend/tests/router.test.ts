@@ -31,6 +31,7 @@ describe("router", () => {
       "/",
       "/setup",
       "/sign-in",
+      "/ai-providers",
       "/users",
       "/audit",
       "/account",

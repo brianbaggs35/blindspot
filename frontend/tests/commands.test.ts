@@ -22,6 +22,7 @@ describe("commands", () => {
     const commands = buildCommands(createBlindspotRouter(createMemoryHistory()));
     expect(commands.map((entry) => entry.id)).toEqual([
       "go:/",
+      "go:/ai-providers",
       "go:/users",
       "go:/audit",
       "go:/account",
@@ -30,6 +31,7 @@ describe("commands", () => {
     ]);
     expect(commands.map((entry) => entry.title)).toEqual([
       "Overview",
+      "AI providers",
       "Users",
       "Audit log",
       "Account",
@@ -43,12 +45,12 @@ describe("commands", () => {
     const first = buildCommands(router);
     await first[0]?.run();
     expect(router.currentRoute.value.path).toBe("/");
-    first[4]?.run();
     first[5]?.run();
+    first[6]?.run();
     expect(useThemeStore().name).toBe("daylight");
     expect(useUiStore().effects).toBe(false);
     const second = buildCommands(router);
-    expect(second.map((entry) => entry.title).slice(4)).toEqual([
+    expect(second.map((entry) => entry.title).slice(5)).toEqual([
       "Switch to the dark theme",
       "Turn visual effects on",
     ]);

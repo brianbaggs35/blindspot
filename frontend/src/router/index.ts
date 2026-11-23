@@ -1,4 +1,10 @@
-import { mdiAccountCircleOutline, mdiAccountGroupOutline, mdiHistory, mdiRadar } from "@mdi/js";
+import {
+  mdiAccountCircleOutline,
+  mdiAccountGroupOutline,
+  mdiBrain,
+  mdiHistory,
+  mdiRadar,
+} from "@mdi/js";
 import { createRouter, createWebHistory, type RouteRecordRaw } from "vue-router";
 import { setSessionEndedHandler } from "../api/client";
 import { pageTitle } from "../navigation";
@@ -23,6 +29,15 @@ export const routes: RouteRecordRaw[] = [
     name: "sign-in",
     component: () => import("../views/SignInView.vue"),
     meta: { title: "Sign in", access: "public", layout: "bare" },
+  },
+  {
+    path: "/ai-providers",
+    name: "ai-providers",
+    component: () => import("../views/AiProvidersView.vue"),
+    meta: {
+      title: "AI providers",
+      nav: { label: "AI providers", group: "system", order: 30, icon: mdiBrain },
+    },
   },
   {
     path: "/users",
