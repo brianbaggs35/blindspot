@@ -5,6 +5,11 @@ umask 007
 if [ -z "${BLINDSPOT_SECRET_KEY:-}" ] && [ -z "${BLINDSPOT_SECRET_KEY_FILE:-}" ]; then
   export BLINDSPOT_SECRET_KEY_FILE=/data/secrets/secret.key
 fi
+# Bring the database up to date before serving: this waits for it to accept connections, copies it
+# to /data/backups first when a migration will change it, and stops here, so the API does not start
+# (and s6 tries again) if the copy or the migration fails.
+setpriv --reuid=blindspot --regid=blindspot --init-groups --no-new-privs -- \
+  python -m app.db.migrate || exit 1
 exec setpriv --reuid=blindspot --regid=blindspot --init-groups --no-new-privs -- \
   uvicorn --factory app.main:create_app \
   --uds /run/blindspot/api.sock \

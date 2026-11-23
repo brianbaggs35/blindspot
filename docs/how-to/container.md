@@ -56,4 +56,4 @@ The image is built on Chainguard's Wolfi and upgrades every package at build tim
 
 ## Restarts and upgrades
 
-Every step of the entrypoint is safe to repeat. The database is created in a side directory and moved into place only when it is complete, so a crash during the first start leaves nothing half-made. Database migrations arrive with the database layer (BLI-8) and are idempotent too.
+Every step of the entrypoint is safe to repeat. The database is created in a side directory and moved into place only when it is complete, so a crash during the first start leaves nothing half-made. The database is migrated at every start, before the API serves anything, and a copy of it is written to `/data/backups` first when the migration will change it (see [the database](database.md)). Migrations are idempotent too.
