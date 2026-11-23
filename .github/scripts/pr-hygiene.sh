@@ -2,7 +2,9 @@
 # Checks a pull request follows the project's rules (CONTRIBUTING in docs/how-to/contributing.md):
 #   - the title starts with a Jira ticket key:        BLI-12 Add the app shell
 #   - the branch starts with the same key:            BLI-12-app-shell
-#   - every commit message is ONE line starting with the key:  BLI-12 Add the app shell
+#   - every commit message is ONE line starting with a ticket key:  BLI-12 Add the app shell
+#   - at least one commit uses the pull request's own key. Others may carry a lower pull request's
+#     key: a fix made there is cherry-picked up the stack, so the stack never needs a force-push.
 # Reads PR_TITLE, PR_BRANCH, PR_BODY, PR_ACTOR, BASE_SHA and HEAD_SHA from the environment.
 # Dependency update bots are exempt, their pull requests are named by .github/dependabot.yml.
 set -euo pipefail
@@ -47,6 +49,7 @@ fi
 
 # Merge commits (from merging the base branch into this one) are exempt: GitHub writes them.
 checked=0
+own=0
 while read -r commit parents; do
   [[ -z "$commit" ]] && continue
   if [[ "$parents" == *" "* ]]; then
@@ -62,13 +65,15 @@ while read -r commit parents; do
   if [[ -n "${rest//[[:space:]]/}" ]]; then
     fail "Commit $short must be a single line, but it has more text after the subject."
   fi
-  if [[ -n "$title_key" && "$subject" =~ ^($key_pattern)\  && "${BASH_REMATCH[1]}" != "$title_key" ]]; then
-    fail "Commit $short uses ${BASH_REMATCH[1]} but the pull request uses $title_key."
+  if [[ -n "$title_key" && "$subject" == "$title_key "* ]]; then
+    own=$((own + 1))
   fi
 done < <(git rev-list --parents "$base..$head")
 
 if [[ "$checked" -eq 0 ]]; then
   echo "::notice::No commits of its own to check (only merge commits)."
+elif [[ -n "$title_key" && "$own" -eq 0 ]]; then
+  fail "No commit uses the pull request's ticket, $title_key."
 fi
 
 if [[ "$body" != "<!-- claude-projects-attribution:"* ]]; then
