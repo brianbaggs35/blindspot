@@ -34,8 +34,10 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
     """Open the database pool when the server starts and close it when it stops. Connecting is
     lazy, so the server starts even while the database is still coming up (see /api/ready)."""
     app.state.database = Database(get_settings().database_url)
-    yield
-    await app.state.database.close()
+    try:
+        yield
+    finally:
+        await app.state.database.close()
 
 
 def create_app() -> FastAPI:
