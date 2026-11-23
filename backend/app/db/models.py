@@ -45,6 +45,8 @@ __all__ = [
     "Passkey",
     "Pentest",
     "PentestAccount",
+    "PentestAttestation",
+    "PentestLetter",
     "PlaybookOverride",
     "Role",
     "UsageLedger",
@@ -366,4 +368,48 @@ class PentestAccount(UUIDPrimaryKey, Timestamps, Base):
     role_hint: Mapped[str] = mapped_column(String(80), default="", server_default="")
     secret: Mapped[str | None] = mapped_column(
         SealedString(Purpose.TARGET_CREDENTIALS), default=None
+    )
+
+
+class PentestAttestation(UUIDPrimaryKey, Base):
+    """A person's written statement that they have permission to test everything in scope. Rows
+    are only added: a withdrawn attestation keeps its row, marked with when and why. `scope_hash`
+    fingerprints the scope and rules that were attested, so a change to either is noticed."""
+
+    __tablename__ = "pentest_attestation"
+
+    pentest_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid, ForeignKey("pentest.id", ondelete="CASCADE"), index=True
+    )
+    attested_by: Mapped[uuid.UUID | None] = mapped_column(Uuid, default=None)
+    attested_by_name: Mapped[str] = mapped_column(String(64))
+    attested_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utc_now, server_default=func.now()
+    )
+    ip_address: Mapped[str | None] = mapped_column(String(45), default=None)
+    text_version: Mapped[str] = mapped_column(String(16))
+    text: Mapped[str] = mapped_column(Text)
+    confirmation: Mapped[str] = mapped_column(String(120))
+    scope_hash: Mapped[str] = mapped_column(String(64))
+    withdrawn_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), default=None)
+    withdrawn_reason: Mapped[str | None] = mapped_column(String(200), default=None)
+
+
+class PentestLetter(Base):
+    """The signed authorization letter for a pentest, kept as a file under the data directory.
+    There is at most one; uploading another replaces it."""
+
+    __tablename__ = "pentest_letter"
+
+    pentest_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid, ForeignKey("pentest.id", ondelete="CASCADE"), primary_key=True
+    )
+    filename: Mapped[str] = mapped_column(String(200))
+    content_type: Mapped[str] = mapped_column(String(40))
+    size: Mapped[int] = mapped_column(Integer)
+    sha256: Mapped[str] = mapped_column(String(64))
+    stored_name: Mapped[str] = mapped_column(String(64))
+    uploaded_by: Mapped[uuid.UUID | None] = mapped_column(Uuid, default=None)
+    uploaded_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utc_now, server_default=func.now()
     )
