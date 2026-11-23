@@ -29,6 +29,18 @@ class AppError(Exception):
         self.detail = detail
 
 
+class BudgetExceeded(AppError):  # noqa: N818  # the plan's name for this error
+    """A provider's monthly budget is used up and it is set to stop there."""
+
+    def __init__(self, provider: str) -> None:
+        super().__init__(
+            402,
+            "budget_exceeded",
+            f"The monthly budget for {provider} is used up",
+            "Raise the budget, or turn off the hard stop, in the AI provider settings.",
+        )
+
+
 def problem(
     request: Request,
     status: int,
