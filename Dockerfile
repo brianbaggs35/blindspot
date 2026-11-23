@@ -100,6 +100,6 @@ HEALTHCHECK --interval=15s --timeout=8s --start-period=60s --retries=3 \
 # is started as its own unprivileged user with setpriv. The container is run with every
 # capability dropped except the five that takes (see compose.yaml).
 # hadolint ignore=DL3002
-USER root
+USER 0:0
 STOPSIGNAL SIGTERM
 ENTRYPOINT ["/usr/local/bin/blindspot-entrypoint"]
