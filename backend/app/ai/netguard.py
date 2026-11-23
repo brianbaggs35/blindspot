@@ -59,6 +59,13 @@ def _refuse_always(address: Address) -> str | None:
     return None
 
 
+def never_reachable(address: Address) -> str | None:
+    """Why an address may never be connected to whatever the setting (link-local, cloud metadata,
+    unspecified, multicast, reserved), or None. Other code that makes outside connections uses this
+    too, so there is one list."""
+    return _refuse_always(_plain(address))
+
+
 def _why_not(address: Address, *, allow_private: bool) -> str | None:
     address = _plain(address)
     if (reason := _refuse_always(address)) is not None:
