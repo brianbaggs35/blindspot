@@ -19,10 +19,10 @@ esac
 
 # --- Directories --------------------------------------------------------------------------
 umask 077
-mkdir -p "$PGDATA" "$CERTS" "$DATA/evidence" "$DATA/reports" "$DATA/backups"
+mkdir -p "$PGDATA" "$CERTS" "$DATA/evidence" "$DATA/reports" "$DATA/backups" "$DATA/letters"
 chown postgres:postgres "$PGDATA"
 chmod 0700 "$PGDATA"
-chown blindspot:blindspot "$DATA/evidence" "$DATA/reports" "$DATA/backups"
+chown blindspot:blindspot "$DATA/evidence" "$DATA/reports" "$DATA/backups" "$DATA/letters"
 
 # --- Secret key -----------------------------------------------------------------------------
 # The key that seals every stored credential. When it is supplied (BLINDSPOT_SECRET_KEY, or
