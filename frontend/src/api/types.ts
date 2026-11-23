@@ -238,3 +238,99 @@ export interface ReloadResult {
   updates_available: string[];
   problems: Record<string, string>;
 }
+
+export type Box = "black" | "grey" | "white";
+export type PentestStatus = "draft" | "authorized" | "running" | "paused" | "complete";
+export type PentestView = "active" | "archived" | "trash" | "all";
+
+export interface PentestSummary {
+  id: string;
+  name: string;
+  client: string | null;
+  status: PentestStatus;
+  box: Box;
+  methodology_id: string;
+  targets: number;
+  archived_at: string | null;
+  deleted_at: string | null;
+  updated_at: string;
+}
+
+export interface TestingWindow {
+  start: string;
+  end: string;
+  timezone: string;
+}
+
+export interface PentestRules {
+  max_risk: RiskClass;
+  allow_destructive: boolean;
+  requests_per_second: number;
+  concurrency: number;
+  window: TestingWindow | null;
+  stop_on_first_critical: boolean;
+  notes: string;
+}
+
+export interface PentestScope {
+  in_scope: string[];
+  out_of_scope: string[];
+  excluded_paths: string[];
+  methods: string[];
+}
+
+export interface PentestAccount {
+  id: string;
+  label: string;
+  username: string;
+  role_hint: string;
+  has_secret: boolean;
+}
+
+export interface Attestation {
+  id: string;
+  attested_by_name: string;
+  attested_at: string;
+  ip_address: string | null;
+  text_version: string;
+  text: string;
+  current: boolean;
+}
+
+export interface Letter {
+  filename: string;
+  content_type: string;
+  size: number;
+  sha256: string;
+  uploaded_at: string;
+}
+
+export interface Pentest extends PentestSummary {
+  description: string;
+  methodology_name: string;
+  methodology_version: number;
+  scope: PentestScope;
+  compiled: PentestScope;
+  rules: PentestRules;
+  accounts: PentestAccount[];
+  attestation: Attestation | null;
+  letter: Letter | null;
+  launch_problems: string[];
+  created_at: string;
+}
+
+/** What a pentest form sends: a new pentest, or the parts of one that change. */
+export interface PentestInput {
+  name: string;
+  client: string | null;
+  description: string;
+  methodology_id: string;
+  box: Box;
+  scope: PentestScope;
+  rules: PentestRules;
+}
+
+export interface AttestationStatement {
+  version: string;
+  text: string;
+}

@@ -70,15 +70,10 @@ async function problemOf(response: Response): Promise<ApiError> {
   );
 }
 
-export async function api<T = undefined>(method: Method, path: string, body?: unknown): Promise<T> {
+async function send(path: string, init: RequestInit): Promise<Response> {
   let response: Response;
   try {
-    response = await fetch(path, {
-      method,
-      credentials: "same-origin",
-      headers: body === undefined ? { Accept: "application/json" } : jsonHeaders,
-      ...(body === undefined ? {} : { body: JSON.stringify(body) }),
-    });
+    response = await fetch(path, { ...init, credentials: "same-origin" });
   } catch {
     throw new ApiError(0, "network", "Blindspot could not be reached. Check your connection.");
   }
@@ -87,7 +82,26 @@ export async function api<T = undefined>(method: Method, path: string, body?: un
     if (error.status === 401 && error.code === "not_signed_in") onSessionEnded?.();
     throw error;
   }
+  return response;
+}
+
+export async function api<T = undefined>(method: Method, path: string, body?: unknown): Promise<T> {
+  const response = await send(path, {
+    method,
+    headers: body === undefined ? { Accept: "application/json" } : jsonHeaders,
+    ...(body === undefined ? {} : { body: JSON.stringify(body) }),
+  });
   return (response.status === 204 ? undefined : await response.json()) as T;
+}
+
+/** Send a file as the whole request body (the API reads the bytes as they are). */
+export async function upload<T>(path: string, file: Blob): Promise<T> {
+  const response = await send(path, {
+    method: "PUT",
+    headers: { Accept: "application/json", "Content-Type": "application/octet-stream" },
+    body: file,
+  });
+  return (await response.json()) as T;
 }
 
 const jsonHeaders = { Accept: "application/json", "Content-Type": "application/json" };

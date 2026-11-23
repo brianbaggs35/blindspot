@@ -5,6 +5,7 @@ import {
   mdiClipboardListOutline,
   mdiHistory,
   mdiRadar,
+  mdiTargetAccount,
 } from "@mdi/js";
 import { createRouter, createWebHistory, type RouteRecordRaw } from "vue-router";
 import { setSessionEndedHandler } from "../api/client";
@@ -30,6 +31,21 @@ export const routes: RouteRecordRaw[] = [
     name: "sign-in",
     component: () => import("../views/SignInView.vue"),
     meta: { title: "Sign in", access: "public", layout: "bare" },
+  },
+  {
+    path: "/pentests",
+    name: "pentests",
+    component: () => import("../views/PentestsView.vue"),
+    meta: {
+      title: "Pentests",
+      nav: { label: "Pentests", group: "work", order: 30, icon: mdiTargetAccount },
+    },
+  },
+  {
+    path: "/pentests/:id",
+    name: "pentest",
+    component: () => import("../views/PentestDetailView.vue"),
+    meta: { title: "Pentest" },
   },
   {
     path: "/methodologies",
