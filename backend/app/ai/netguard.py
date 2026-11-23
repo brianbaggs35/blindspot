@@ -21,8 +21,11 @@ Address = ipaddress.IPv4Address | ipaddress.IPv6Address
 Resolver = Callable[[str, int], Awaitable[list[str]]]
 
 # Metadata services outside the link-local range.
-_METADATA: Final = frozenset(
-    ipaddress.ip_address(text) for text in ("100.100.100.200", "fd00:ec2::254")
+_METADATA: Final[frozenset[Address]] = frozenset(
+    {
+        ipaddress.IPv4Address(bytes([100, 100, 100, 200])),  # Alibaba Cloud
+        ipaddress.IPv6Address((0xFD00_0EC2 << 96) | 0x254),  # AWS, over IPv6
+    }
 )
 
 

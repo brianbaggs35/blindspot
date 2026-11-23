@@ -46,16 +46,16 @@ async def test_a_hosted_provider_at_a_public_address_is_fine() -> None:
 async def test_a_hosted_provider_cannot_point_at_private_or_metadata_addresses(
     address: str, why: str
 ) -> None:
+    resolver = resolving(address)
     with pytest.raises(BaseUrlRejected, match=why):
-        await check_base_url("https://api.example.com", ProviderKind.ANTHROPIC, resolving(address))
+        await check_base_url("https://api.example.com", ProviderKind.ANTHROPIC, resolver)
 
 
 async def test_one_bad_answer_among_good_ones_refuses_the_name() -> None:
     # A name that resolves to a public and a private address could be pointed at either.
+    resolver = resolving(PUBLIC, "10.1.1.1")
     with pytest.raises(BaseUrlRejected, match="private"):
-        await check_base_url(
-            "https://api.example.com", ProviderKind.OPENAI, resolving(PUBLIC, "10.1.1.1")
-        )
+        await check_base_url("https://api.example.com", ProviderKind.OPENAI, resolver)
 
 
 @pytest.mark.parametrize("address", ["127.0.0.1", "10.0.0.5", "192.168.1.9", "::1", "172.17.0.1"])
@@ -70,10 +70,9 @@ async def test_local_ollama_may_use_private_addresses(address: str) -> None:
 async def test_local_ollama_still_cannot_reach_metadata_or_unusable_addresses(
     address: str,
 ) -> None:
+    resolver = resolving(address)
     with pytest.raises(BaseUrlRejected, match="not allowed"):
-        await check_base_url(
-            "http://ollama.lan:11434", ProviderKind.OLLAMA_LOCAL, resolving(address)
-        )
+        await check_base_url("http://ollama.lan:11434", ProviderKind.OLLAMA_LOCAL, resolver)
 
 
 async def test_an_address_typed_as_an_ip_is_checked_without_a_lookup() -> None:
@@ -105,8 +104,9 @@ async def test_an_address_typed_as_an_ip_is_checked_without_a_lookup() -> None:
 async def test_malformed_or_unsafe_addresses_are_refused(
     url: str, kind: ProviderKind, message: str
 ) -> None:
+    resolver = resolving(PUBLIC)
     with pytest.raises(BaseUrlRejected, match=message):
-        await check_base_url(url, kind, resolving(PUBLIC))
+        await check_base_url(url, kind, resolver)
 
 
 async def test_a_name_that_cannot_be_found_is_refused() -> None:
@@ -115,8 +115,9 @@ async def test_a_name_that_cannot_be_found_is_refused() -> None:
 
     with pytest.raises(BaseUrlRejected, match="cannot be found"):
         await check_base_url("https://nowhere.example", ProviderKind.OPENAI, missing)
+    nothing = resolving()
     with pytest.raises(BaseUrlRejected, match="cannot be found"):
-        await check_base_url("https://nowhere.example", ProviderKind.OPENAI, resolving())
+        await check_base_url("https://nowhere.example", ProviderKind.OPENAI, nothing)
 
 
 async def test_the_system_resolver_finds_localhost() -> None:
