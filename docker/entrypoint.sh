@@ -131,15 +131,18 @@ log "starting"
 s6-svscan /run/s6/services &
 svscan=$!
 
-# On SIGTERM (docker stop) ask s6 to stop every service, then wait for them to finish. s6-svscan
-# doesn't wait for them, and what is still running when this process ends is killed, which for
-# PostgreSQL means crash recovery at the next start. The services leave these behind while they run
-# (the database's pid file, nginx's pid file, the API's socket).
+# On SIGTERM (docker stop) stop the services one at a time, nginx first and the database last, and
+# wait for each to be down before going on. What is still running when this process ends is killed,
+# which for PostgreSQL means crash recovery at the next start. Then s6 itself is told to finish.
 stopping=0
 stop() {
   stopping=1
   log "stopping"
-  s6-svscanctl -t /run/s6/services
+  for service in nginx api postgres; do
+    s6-svc -d "/run/s6/services/$service" || log "could not signal $service ($?)"
+    s6-svwait -d -t 25000 "/run/s6/services/$service" || log "$service did not stop in time ($?)"
+  done
+  s6-svscanctl -t /run/s6/services || log "could not stop s6 ($?)"
 }
 trap stop TERM INT
 
