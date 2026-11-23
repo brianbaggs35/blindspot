@@ -59,6 +59,46 @@ model: `GET /api/ai/role-defaults`, `PUT /api/ai/role-defaults/{role}` with a `m
 `DELETE` to clear. Only enabled models can be chosen, and removing a model clears the defaults
 that used it.
 
+## Trying a provider and fetching models
+
+Both calls are admin-only (they make the server contact the provider with the stored key) and
+are recorded in the audit trail without the key.
+
+- `POST /api/providers/{id}/test` asks the provider for its models and returns `200` with
+  `{ok, latency_ms, model_count, failure, detail}`. A failure is a result, not an HTTP error, so
+  the page can show it beside the button. `failure` is one of `key_rejected`, `unreachable`,
+  `rate_limited`, `not_found` (the address is not that provider's API), `provider_error`,
+  `bad_response` or `base_url_rejected`. `detail` never quotes the provider's reply or the key.
+- `POST /api/providers/{id}/models/fetch` returns the models the account can use, each with
+  `added`, the price source and whatever the catalog adds (name, context size, capabilities).
+  It adds nothing; the page offers the list and adds the ones picked with the ordinary add-model
+  call. A failure is `502` with `provider_<failure>`.
+
+What each kind lists:
+
+| Kind           | How                                                   | Notes                                                             |
+| -------------- | ----------------------------------------------------- | ----------------------------------------------------------------- |
+| `anthropic`    | Models API through the official SDK, following pages  | Reports thinking and image support per model                      |
+| `openai`       | Models API through the official SDK                   | Audio, image and embedding models are left out                    |
+| `ollama-local` | `GET /api/tags`, then `POST /api/show` for each model | Capabilities and context size; embedding-only models are left out |
+| `ollama-cloud` | The same, with the key as a bearer token              | Cloud does not enforce JSON-schema output                         |
+
+The address is checked again on every call, because a host name can start resolving to a
+private address after it was saved. The HTTP client never follows redirects and has a 30 second
+timeout (10 to connect). The SDKs retry rate limits and server errors twice.
+
+## Running prompts
+
+`app/ai/engine.py` turns a stored provider into a Pydantic AI model: Anthropic's Messages API,
+OpenAI's Responses API, and Ollama's OpenAI-compatible chat endpoint. `cache_settings` switches
+prompt caching on: Anthropic caches the instructions, the tool definitions and the conversation
+so far; OpenAI groups a run's calls under one `prompt_cache_key`. `usage_of` turns a run's usage
+into the same terms the price catalog uses (uncached input, output, cache reads, short and long
+cache writes), taking cached tokens out of the input figure for providers that count them in it.
+Ollama reports no cached tokens through this path, so its cache reads show as zero. OpenAI's
+12-hour cache writes are not reported by Pydantic AI, and Blindspot only asks for the default
+30-minute lifetime, so they never arise.
+
 ## Errors
 
 | Code                | Status | Meaning                                                       |

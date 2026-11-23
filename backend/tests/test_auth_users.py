@@ -227,6 +227,8 @@ def test_every_route_says_who_may_use_it(api: TestClient) -> None:
         ("GET", "/api/ai/role-defaults"): "user",
         ("PUT", "/api/ai/role-defaults/{role}"): "admin",
         ("DELETE", "/api/ai/role-defaults/{role}"): "admin",
+        ("POST", "/api/providers/{provider_id}/test"): "admin",
+        ("POST", "/api/providers/{provider_id}/models/fetch"): "admin",
         ("GET", "/api/users"): "admin",
         ("POST", "/api/users"): "admin",
         ("PATCH", "/api/users/{user_id}"): "admin",
