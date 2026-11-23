@@ -97,9 +97,9 @@ export function mockApi(handlers: Record<string, Handler>) {
 // Dialogs and menus are teleported to the body, outside the wrapper, so they are found there.
 export function dialogButton(label: string) {
   // The newest dialog is last in the page; one that was closed may still be there.
-  return Array.from(document.body.querySelectorAll<HTMLButtonElement>(".v-dialog button"))
-    .filter((button) => button.textContent.trim() === label)
-    .at(-1);
+  return Array.from(document.body.querySelectorAll<HTMLButtonElement>(".v-dialog button")).findLast(
+    (button) => button.textContent.trim() === label,
+  );
 }
 
 export async function fillDialog(values: Record<string, string>) {

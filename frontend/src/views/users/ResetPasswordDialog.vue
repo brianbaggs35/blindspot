@@ -54,7 +54,7 @@ async function submit() {
     @submit="submit"
   >
     <p class="text-body-2 mb-3">They will be signed out everywhere and need the new password.</p>
-    <PasswordField v-model="password" label="New password" autocomplete="new-password" />
+    <PasswordField v-model="password" label="New password" purpose="new" />
     <PasswordRules :password="password" :username="username" />
   </FormDialog>
 </template>

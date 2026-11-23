@@ -117,7 +117,7 @@ async function submit() {
       inset
     />
     <template v-if="!editing">
-      <PasswordField v-model="password" label="Password" autocomplete="new-password" />
+      <PasswordField v-model="password" label="Password" purpose="new" />
       <PasswordRules :password="password" :username="username" />
     </template>
   </FormDialog>
