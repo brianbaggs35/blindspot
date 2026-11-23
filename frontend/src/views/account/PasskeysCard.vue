@@ -152,7 +152,7 @@ onMounted(load);
         v-if="dialog !== 'rename'"
         v-model="password"
         label="Your password"
-        autocomplete="current-password"
+        purpose="current"
       />
     </FormDialog>
   </v-card>

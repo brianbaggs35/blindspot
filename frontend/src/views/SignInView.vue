@@ -50,7 +50,7 @@ const usePasskey = () => attempt(() => auth.signInWithPasskey());
         spellcheck="false"
         required
       />
-      <PasswordField v-model="password" label="Password" autocomplete="current-password" />
+      <PasswordField v-model="password" label="Password" purpose="current" />
       <v-btn type="submit" color="primary" size="large" block :loading="busy" class="mt-2">
         Sign in
       </v-btn>

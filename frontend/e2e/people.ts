@@ -1,3 +1,4 @@
+import { randomBytes } from "node:crypto";
 import {
   expect,
   type APIRequestContext,
@@ -15,8 +16,7 @@ export interface Person {
 
 /** A name nobody else in the run will use, so specs never depend on each other's accounts. */
 export function uniqueName(prefix: string): string {
-  const stamp = `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
-  return `${prefix}-${stamp}`;
+  return `${prefix}-${Date.now().toString(36)}${randomBytes(3).toString("hex")}`;
 }
 
 /** Make an account through the API as the administrator, whatever the page under test is signed in as. */

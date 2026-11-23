@@ -83,12 +83,12 @@ async function submit() {
         required
       />
       <v-text-field v-model="displayName" label="Name (optional)" autocomplete="name" />
-      <PasswordField v-model="password" label="Password" autocomplete="new-password" />
+      <PasswordField v-model="password" label="Password" purpose="new" />
       <PasswordRules :password="password" :username="username" />
       <PasswordField
         v-model="confirmation"
         label="Type the password again"
-        autocomplete="new-password"
+        purpose="new"
         :error-messages="mismatch"
         class="mt-4"
       />

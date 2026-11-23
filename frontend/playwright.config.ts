@@ -15,6 +15,8 @@ const chromium = process.env["E2E_CHROMIUM"];
 export default defineConfig({
   testDir: "e2e",
   testMatch: "**/*.spec.ts",
+  // Passkeys need a certificate the browser trusts, which the container's own one is not.
+  ...(container ? { testIgnore: "**/*.host.spec.ts" } : {}),
   outputDir: "e2e-results/artifacts",
   fullyParallel: true,
   forbidOnly: ci,

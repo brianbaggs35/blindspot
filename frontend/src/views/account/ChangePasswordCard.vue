@@ -53,13 +53,13 @@ async function submit() {
         {{ failure }}
       </v-alert>
       <v-form @submit.prevent="submit">
-        <PasswordField v-model="current" label="Current password" autocomplete="current-password" />
-        <PasswordField v-model="fresh" label="New password" autocomplete="new-password" />
+        <PasswordField v-model="current" label="Current password" purpose="current" />
+        <PasswordField v-model="fresh" label="New password" purpose="new" />
         <PasswordRules :password="fresh" :username="username" />
         <PasswordField
           v-model="again"
           label="Type the new password again"
-          autocomplete="new-password"
+          purpose="new"
           :error-messages="mismatch"
           class="mt-4"
         />
