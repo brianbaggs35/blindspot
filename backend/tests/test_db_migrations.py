@@ -12,6 +12,7 @@ from alembic.runtime.migration import MigrationContext
 from sqlalchemy.engine import Connection
 
 from app.db.ensure import (
+    drop_column_if_exists,
     drop_table_if_exists,
     ensure_column,
     ensure_index,
@@ -115,6 +116,18 @@ def test_ensure_index_and_constraint_are_made_once(operations: Connection) -> No
     assert "ix_widget_label" in {index["name"] for index in inspector.get_indexes("widget")}
     constraints = inspector.get_unique_constraints("widget")
     assert [constraint["name"] for constraint in constraints] == ["uq_widget_label"]
+
+
+def test_drop_column_if_exists_drops_once_and_ignores_a_missing_table(
+    operations: Connection,
+) -> None:
+    ensure_table(
+        "widget", sa.Column("id", sa.Integer, primary_key=True), sa.Column("label", sa.String(20))
+    )
+    for _ in range(2):
+        drop_column_if_exists("widget", "label")
+    assert names(operations, "widget") == {"id"}
+    drop_column_if_exists("no_such_table", "label")
 
 
 def test_drop_table_if_exists_drops_once(operations: Connection) -> None:

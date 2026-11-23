@@ -47,6 +47,7 @@ __all__ = [
     "Pentest",
     "PentestAccount",
     "PentestAttestation",
+    "PentestCheck",
     "PentestLetter",
     "PlaybookOverride",
     "Role",
@@ -318,6 +319,18 @@ class PentestStatus(StrEnum):
     COMPLETE = "complete"
 
 
+class CheckStatus(StrEnum):
+    """Where one test of a pentest stands. A test nobody has touched is `todo`, or
+    `not_applicable` when the target lacks a feature it needs."""
+
+    TODO = "todo"
+    IN_PROGRESS = "in_progress"
+    PASSED = "passed"
+    FINDING = "finding"
+    BLOCKED = "blocked"
+    NOT_APPLICABLE = "not_applicable"
+
+
 class Box(StrEnum):
     """How much the testers know going in."""
 
@@ -352,6 +365,9 @@ class Pentest(UUIDPrimaryKey, Timestamps, SoftDelete, CreatedBy, Base):
     scope: Mapped[Any] = mapped_column(JSONB)
     rules: Mapped[Any] = mapped_column(JSONB)
     archived_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), default=None)
+    # What the target shows (such as "saml" or "upload"), so the checklist can tell which tests
+    # apply. It does not change what may be touched, so it is not part of the attestation.
+    features: Mapped[Any] = mapped_column(JSONB, default=list, server_default=text("'[]'::jsonb"))
 
 
 class PentestAccount(UUIDPrimaryKey, Timestamps, Base):
@@ -414,3 +430,31 @@ class PentestLetter(Base):
     uploaded_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=utc_now, server_default=func.now()
     )
+
+
+class PentestCheck(UUIDPrimaryKey, Timestamps, Base):
+    """What a person or an agent recorded for one test of a pentest. A row exists once somebody
+    has touched the test (or added a custom one); the rest of the checklist comes from the
+    methodology snapshot the pentest is pinned to."""
+
+    __tablename__ = "pentest_check"
+    __table_args__ = (
+        UniqueConstraint("pentest_id", "test_id"),
+        CheckConstraint(
+            "status IN ('todo', 'in_progress', 'passed', 'finding', 'blocked', 'not_applicable')",
+            name="status",
+        ),
+    )
+
+    pentest_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid, ForeignKey(PENTEST_ID, ondelete="CASCADE"), index=True
+    )
+    test_id: Mapped[str] = mapped_column(String(64))
+    status: Mapped[str] = mapped_column(String(16), default=CheckStatus.TODO.value)
+    notes: Mapped[str] = mapped_column(Text, default="", server_default="")
+    evidence: Mapped[Any] = mapped_column(JSONB, default=list, server_default=text("'[]'::jsonb"))
+    # A custom test belongs to this pentest alone: it has a name and a category of its own.
+    custom: Mapped[bool] = mapped_column(default=False, server_default=false())
+    name: Mapped[str | None] = mapped_column(String(200), default=None)
+    category: Mapped[str | None] = mapped_column(String(80), default=None)
+    updated_by: Mapped[uuid.UUID | None] = mapped_column(Uuid, default=None)
