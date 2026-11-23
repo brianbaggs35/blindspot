@@ -14,10 +14,9 @@ defineEmits<{ action: [] }>();
 </script>
 
 <template>
-  <div v-if="state === 'loading'" role="status" aria-live="polite" class="bs-state">
-    <span class="sr-only">Loading</span>
+  <output v-if="state === 'loading'" class="bs-state d-block" aria-label="Loading">
     <v-skeleton-loader type="heading, paragraph, paragraph" aria-hidden="true" />
-  </div>
+  </output>
   <div v-else-if="state === 'ready'">
     <slot />
   </div>
