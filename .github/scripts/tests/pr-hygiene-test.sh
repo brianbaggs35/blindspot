@@ -45,7 +45,10 @@ expect_fail "a commit with a body" check "BLI-12 Add the app shell" "BLI-12-app-
 assert_contains "names the one-line rule" "must be a single line"
 git -C "$repo" reset -q --hard "$base"
 commit -m "BLI-13 Something else"
-expect_fail "a commit for another ticket" check "BLI-12 Add the app shell" "BLI-12-app-shell"
+expect_fail "only commits for another ticket" check "BLI-12 Add the app shell" "BLI-12-app-shell"
+assert_contains "names the ticket" "No commit uses the pull request's ticket, BLI-12"
+commit -m "BLI-12 Add the app shell"
+expect_pass "a fix picked up from a lower pull request is allowed" check "BLI-12 Add the app shell" "BLI-12-app-shell"
 git -C "$repo" reset -q --hard "$base"
 
 # A merge of the base branch into the pull request is exempt from the message rules.

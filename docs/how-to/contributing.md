@@ -15,7 +15,9 @@ Every change starts with a ticket on the [BLI board](https://brianbaggs.atlassia
 
 Pull requests are **stacked**: each one is based on the branch below it, so the whole stack can be merged bottom-up once CI is green. The first PR of a stack is based on `master`.
 
-The `PR hygiene` workflow checks the title, the branch and every commit message. Dependency update pull requests from Dependabot use the dependency ticket (BLI-23).
+A fix to a lower pull request is committed on that branch, then cherry-picked onto the branches above it with the same one-line message, so no branch is ever force-pushed. A pull request may therefore carry commits with a lower ticket's key, as long as at least one commit uses its own key.
+
+The `PR hygiene` workflow checks the title, the branch and every commit message (one line, starting with a ticket key, at least one with the pull request's own). Dependency update pull requests from Dependabot use the dependency ticket (BLI-23).
 
 ## What must pass before a pull request merges
 
