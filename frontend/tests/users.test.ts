@@ -257,6 +257,10 @@ describe("UsersView", () => {
     await pick(wrapper, "vic", "Reset password");
     dialogButton("Cancel")?.click();
     await flushPromises();
+    for (const name of ["UserFormDialog", "ResetPasswordDialog"]) {
+      wrapper.getComponent({ name }).getComponent(FormDialog).vm.$emit("update:modelValue", false);
+    }
+    await flushPromises();
     expect(calls.map((call) => call.key)).toEqual(["GET /api/users"]);
   });
 
