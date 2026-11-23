@@ -17,7 +17,7 @@ import ModelFormDialog from "../src/views/providers/ModelFormDialog.vue";
 import ModelsDialog from "../src/views/providers/ModelsDialog.vue";
 import ProviderFormDialog from "../src/views/providers/ProviderFormDialog.vue";
 import RoleDefaults from "../src/views/providers/RoleDefaults.vue";
-import { dialogButton, mockApi, mountWithApp, submitDialog, viewer } from "./helpers";
+import { dialogButton, dialogName, mockApi, mountWithApp, submitDialog, viewer } from "./helpers";
 
 type Handlers = Parameters<typeof mockApi>[0];
 
@@ -582,6 +582,7 @@ describe("The models of a provider", () => {
     expect(rows[0]?.textContent).toContain("catalog price");
     expect(rows[0]?.textContent).not.toContain("no tools");
     expect(document.body.textContent).toContain("Models of Anthropic");
+    expect(dialogName()).toBe("Models of Anthropic");
   });
 
   it("flags a model that cannot run agents and shows a free one as free", async () => {

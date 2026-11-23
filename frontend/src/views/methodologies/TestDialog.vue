@@ -71,11 +71,15 @@ async function putBack() {
     busy.value = false;
   }
 }
+
+const heading = computed(() =>
+  detail.value ? `${detail.value.test.id} · ${detail.value.test.name}` : "Loading the test",
+);
 </script>
 
 <template>
-  <v-dialog v-model="open" max-width="860" scrollable>
-    <v-card :title="detail ? `${detail.test.id} · ${detail.test.name}` : 'Loading the test'">
+  <v-dialog v-model="open" max-width="860" scrollable :aria-label="heading">
+    <v-card :title="heading">
       <v-card-text>
         <v-alert v-if="failure" type="error" variant="tonal" class="mb-4" role="alert">
           {{ failure }}
@@ -117,16 +121,16 @@ async function putBack() {
             <v-icon :icon="mdiOpenInNew" size="small" />
           </a>
 
-          <h3 class="text-subtitle-1 mb-1">Objectives</h3>
+          <h2 class="text-subtitle-1 mb-1">Objectives</h2>
           <ul class="mb-4 ps-6">
             <li v-for="goal in detail.test.objectives" :key="goal">{{ goal }}</li>
           </ul>
 
-          <h3 class="text-subtitle-1 mb-1">What the agent is told</h3>
+          <h2 class="text-subtitle-1 mb-1">What the agent is told</h2>
           <p class="mb-2">{{ detail.test.playbook.summary }}</p>
           <pre class="playbook-text mb-4">{{ detail.test.playbook.instructions }}</pre>
 
-          <h3 class="text-subtitle-1 mb-1">Tools</h3>
+          <h2 class="text-subtitle-1 mb-1">Tools</h2>
           <div class="d-flex flex-wrap ga-2 mb-4">
             <v-chip v-for="tool in detail.test.playbook.tools" :key="tool" size="small" label>
               {{ tool }}
@@ -137,23 +141,23 @@ async function putBack() {
           </div>
 
           <template v-for="step in steps" :key="step.title">
-            <h3 class="text-subtitle-1 mb-1">{{ step.title }}</h3>
+            <h2 class="text-subtitle-1 mb-1">{{ step.title }}</h2>
             <ul class="mb-4 ps-6">
               <li v-for="item in step.items" :key="item">{{ item }}</li>
             </ul>
           </template>
 
-          <h3 class="text-subtitle-1 mb-1">Evidence it must bring back</h3>
+          <h2 class="text-subtitle-1 mb-1">Evidence it must bring back</h2>
           <ul class="mb-4 ps-6">
             <li v-for="item in detail.test.playbook.evidence" :key="item">{{ item }}</li>
           </ul>
 
-          <h3 class="text-subtitle-1 mb-1">Passed when</h3>
+          <h2 class="text-subtitle-1 mb-1">Passed when</h2>
           <p class="mb-4">{{ detail.test.playbook.success }}</p>
-          <h3 class="text-subtitle-1 mb-1">A finding when</h3>
+          <h2 class="text-subtitle-1 mb-1">A finding when</h2>
           <p class="mb-4">{{ detail.test.playbook.failure }}</p>
           <template v-if="detail.test.playbook.not_applicable.length > 0">
-            <h3 class="text-subtitle-1 mb-1">Not applicable when</h3>
+            <h2 class="text-subtitle-1 mb-1">Not applicable when</h2>
             <ul class="mb-2 ps-6">
               <li v-for="item in detail.test.playbook.not_applicable" :key="item">{{ item }}</li>
             </ul>
