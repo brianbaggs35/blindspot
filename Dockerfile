@@ -46,13 +46,13 @@ ARG APK_REFRESH=dev
 ARG IMAGE_REFRESH=dev
 
 # python: the API. nginx: TLS and the web app. postgresql-18: the database. s6: supervises the
-# three. setpriv: drops each service to its own user. openssl: the first-start certificate.
+# three. setpriv: drops each service to its own user. tini: the first process. openssl: the first-start certificate.
 # curl: the health check. All upgraded at build time.
 # hadolint ignore=DL3018
 RUN echo "$APK_REFRESH $IMAGE_REFRESH" > /dev/null \
     && apk upgrade --no-cache \
     && apk add --no-cache ca-certificates-bundle curl nginx-mainline nginx-mainline-mime-types \
-        openssl postgresql-18 python-3.14 s6 setpriv \
+        openssl postgresql-18 python-3.14 s6 setpriv tini \
     # One user per service. nginx reaches the API's socket through the blindspot group; the
     # API and the database share the pgsock group, which owns the database socket.
     && addgroup -S -g 10001 blindspot \
@@ -103,4 +103,5 @@ HEALTHCHECK --interval=15s --timeout=8s --start-period=60s --retries=3 \
 # hadolint ignore=DL3002
 USER 0:0
 STOPSIGNAL SIGTERM
-ENTRYPOINT ["/usr/local/bin/blindspot-entrypoint"]
+# tini is the first process: it passes SIGTERM to the entrypoint and reaps whatever is orphaned.
+ENTRYPOINT ["tini", "--", "/usr/local/bin/blindspot-entrypoint"]

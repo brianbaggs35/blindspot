@@ -128,4 +128,34 @@ for dir in /etc/s6/services/*/; do
   done
 done
 log "starting"
-exec s6-svscan /run/s6/services
+s6-svscan /run/s6/services &
+svscan=$!
+
+# On SIGTERM (docker stop) ask s6 to stop every service, then wait for them to finish. s6-svscan
+# doesn't wait for them, and what is still running when this process ends is killed, which for
+# PostgreSQL means crash recovery at the next start. The services leave these behind while they run
+# (the database's pid file, nginx's pid file, the API's socket).
+stopping=0
+stop() {
+  stopping=1
+  log "stopping"
+  s6-svscanctl -t /run/s6/services
+}
+trap stop TERM INT
+
+while kill -0 "$svscan" 2> /dev/null; do
+  wait "$svscan" || true
+done
+
+if [ "$stopping" -ne 1 ]; then
+  log "s6 stopped by itself"
+  exit 1
+fi
+
+waited=0
+while [ "$waited" -lt 400 ] \
+  && { [ -e "$PGDATA/postmaster.pid" ] || [ -e /run/nginx/nginx.pid ] || [ -S /run/blindspot/api.sock ]; }; do
+  sleep 0.1
+  waited=$((waited + 1))
+done
+log "stopped"

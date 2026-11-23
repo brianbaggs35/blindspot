@@ -379,7 +379,7 @@ jobs:
 
       - name: Stop cleanly
         run: |
-          docker stop --time 40 blindspot-ci
+          docker stop --timeout 40 blindspot-ci
           code="$(docker inspect --format '{{.State.ExitCode}}' blindspot-ci)"
           echo "exit code: $code"
           [[ "$code" == "0" ]]
