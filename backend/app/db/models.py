@@ -2,17 +2,22 @@
 
 import uuid
 from datetime import datetime
+from decimal import Decimal
 from enum import StrEnum
 from typing import Any
 
 from sqlalchemy import (
+    BigInteger,
     CheckConstraint,
     DateTime,
     ForeignKey,
     Integer,
     LargeBinary,
+    Numeric,
     String,
+    UniqueConstraint,
     Uuid,
+    false,
     func,
     text,
     true,
@@ -25,12 +30,16 @@ from app.vault.seal import Purpose
 from app.vault.types import SealedString
 
 __all__ = [
+    "AiModel",
+    "AiProvider",
+    "AiRoleDefault",
     "AppSetting",
     "AuditEvent",
     "AuthSession",
     "Base",
     "Passkey",
     "Role",
+    "UsageLedger",
     "User",
     "WebAuthnChallenge",
 ]
@@ -151,3 +160,86 @@ class WebAuthnChallenge(UUIDPrimaryKey, Base):
     purpose: Mapped[str] = mapped_column(String(16))
     user_id: Mapped[uuid.UUID | None] = mapped_column(Uuid, default=None)
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+
+
+class AiProvider(UUIDPrimaryKey, Timestamps, Base):
+    """A place models come from: a hosted API or an Ollama server. The key is sealed; the last
+    four characters are kept apart so the page can show which key is in use."""
+
+    __tablename__ = "ai_provider"
+    __table_args__ = (
+        CheckConstraint(
+            "kind IN ('anthropic', 'openai', 'ollama-local', 'ollama-cloud')", name="kind"
+        ),
+        CheckConstraint("monthly_budget_usd IS NULL OR monthly_budget_usd >= 0", name="budget"),
+    )
+
+    kind: Mapped[str] = mapped_column(String(16))
+    name: Mapped[str] = mapped_column(String(64), unique=True)
+    base_url: Mapped[str] = mapped_column(String(300))
+    api_key: Mapped[str | None] = mapped_column(SealedString(Purpose.PROVIDERS), default=None)
+    api_key_last4: Mapped[str | None] = mapped_column(String(4), default=None)
+    enabled: Mapped[bool] = mapped_column(default=True, server_default=true())
+    monthly_budget_usd: Mapped[Decimal | None] = mapped_column(Numeric(14, 4), default=None)
+    hard_stop: Mapped[bool] = mapped_column(default=False, server_default=false())
+
+
+class AiModel(UUIDPrimaryKey, Timestamps, Base):
+    """A model of a provider that can be chosen. Price columns are overrides of the catalog (USD
+    per million tokens); empty means "use the catalog"."""
+
+    __tablename__ = "ai_model"
+    __table_args__ = (UniqueConstraint("provider_id", "model_id"),)
+
+    provider_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid, ForeignKey("ai_provider.id", ondelete="CASCADE"), index=True
+    )
+    model_id: Mapped[str] = mapped_column(String(200))
+    display_name: Mapped[str] = mapped_column(String(200))
+    context_tokens: Mapped[int | None] = mapped_column(BigInteger, default=None)
+    max_output_tokens: Mapped[int | None] = mapped_column(BigInteger, default=None)
+    capabilities: Mapped[list[str]] = mapped_column(JSONB, default=list)
+    enabled: Mapped[bool] = mapped_column(default=True, server_default=true())
+    price_input: Mapped[Decimal | None] = mapped_column(Numeric(14, 6), default=None)
+    price_output: Mapped[Decimal | None] = mapped_column(Numeric(14, 6), default=None)
+    price_cache_read: Mapped[Decimal | None] = mapped_column(Numeric(14, 6), default=None)
+    price_cache_write: Mapped[Decimal | None] = mapped_column(Numeric(14, 6), default=None)
+    price_cache_write_long: Mapped[Decimal | None] = mapped_column(Numeric(14, 6), default=None)
+
+
+class AiRoleDefault(Base):
+    """The model used by default for one agent role."""
+
+    __tablename__ = "ai_role_default"
+
+    role: Mapped[str] = mapped_column(String(32), primary_key=True)
+    model_ref: Mapped[uuid.UUID] = mapped_column(
+        Uuid, ForeignKey("ai_model.id", ondelete="CASCADE")
+    )
+
+
+class UsageLedger(UUIDPrimaryKey, Base):
+    """One model call: what it used and what it cost. Rows are only added. The provider and model
+    are kept by name too, so the history reads after a provider is removed. A cost of NULL means
+    the price was not known (the tokens are still real)."""
+
+    __tablename__ = "usage_ledger"
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utc_now, server_default=func.now(), index=True
+    )
+    provider_id: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid, ForeignKey("ai_provider.id", ondelete="SET NULL"), default=None, index=True
+    )
+    provider_name: Mapped[str] = mapped_column(String(64))
+    model_id: Mapped[str] = mapped_column(String(200))
+    agent: Mapped[str | None] = mapped_column(String(100), default=None)
+    run_id: Mapped[uuid.UUID | None] = mapped_column(Uuid, default=None, index=True)
+    input_tokens: Mapped[int] = mapped_column(BigInteger, default=0)
+    output_tokens: Mapped[int] = mapped_column(BigInteger, default=0)
+    cache_read_tokens: Mapped[int] = mapped_column(BigInteger, default=0)
+    cache_write_tokens: Mapped[int] = mapped_column(BigInteger, default=0)
+    cache_write_long_tokens: Mapped[int] = mapped_column(BigInteger, default=0)
+    thinking_tokens: Mapped[int] = mapped_column(BigInteger, default=0)
+    latency_ms: Mapped[int] = mapped_column(Integer, default=0)
+    cost_usd: Mapped[Decimal | None] = mapped_column(Numeric(18, 8), default=None)

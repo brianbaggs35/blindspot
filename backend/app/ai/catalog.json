@@ -1,0 +1,239 @@
+{
+  "verified_on": "2026-11-23",
+  "source": "docs/research/models-and-pricing.md",
+  "unit": "USD per million tokens",
+  "models": [
+    {
+      "kind": "anthropic",
+      "id": "claude-opus-5-5",
+      "name": "Claude Opus 5.5",
+      "context": 1000000,
+      "max_output": 128000,
+      "capabilities": [
+        "tools",
+        "thinking",
+        "vision"
+      ],
+      "price": {
+        "input": "4",
+        "output": "20",
+        "cache_read": "0.20",
+        "cache_write": "5",
+        "cache_write_long": "8"
+      }
+    },
+    {
+      "kind": "anthropic",
+      "id": "claude-sonnet-5-5",
+      "name": "Claude Sonnet 5.5",
+      "context": 1000000,
+      "max_output": 128000,
+      "capabilities": [
+        "tools",
+        "thinking",
+        "vision"
+      ],
+      "price": {
+        "input": "2",
+        "output": "10",
+        "cache_read": "0.10",
+        "cache_write": "2.50",
+        "cache_write_long": "4"
+      }
+    },
+    {
+      "kind": "anthropic",
+      "id": "claude-haiku-5-5",
+      "name": "Claude Haiku 5.5",
+      "context": 1000000,
+      "max_output": 128000,
+      "capabilities": [
+        "tools",
+        "thinking",
+        "vision"
+      ],
+      "price": {
+        "input": "0.10",
+        "output": "0.50",
+        "cache_read": "0.01",
+        "cache_write": "0.125",
+        "cache_write_long": "0.20"
+      },
+      "long_prompt": {
+        "above": 100000,
+        "price": {
+          "input": "0.50",
+          "output": "2.50",
+          "cache_read": "0.05",
+          "cache_write": "0.625",
+          "cache_write_long": "1"
+        }
+      }
+    },
+    {
+      "kind": "anthropic",
+      "id": "claude-fable-5-2",
+      "name": "Claude Fable 5.2",
+      "context": 1000000,
+      "max_output": 128000,
+      "capabilities": [
+        "tools",
+        "thinking",
+        "vision"
+      ],
+      "price": {
+        "input": "8",
+        "output": "40",
+        "cache_read": "0.20",
+        "cache_write": "10",
+        "cache_write_long": "16"
+      }
+    },
+    {
+      "kind": "openai",
+      "id": "gpt-6-luna",
+      "name": "GPT-6 Luna",
+      "context": 1050000,
+      "max_output": 128000,
+      "capabilities": [
+        "tools",
+        "thinking"
+      ],
+      "price": {
+        "input": "0.10",
+        "output": "0.50",
+        "cache_read": "0.01",
+        "cache_write": "0.125",
+        "cache_write_long": "0.25"
+      },
+      "long_prompt": {
+        "above": 272000,
+        "price": {
+          "input": "0.20",
+          "output": "0.75",
+          "cache_read": null,
+          "cache_write": null,
+          "cache_write_long": null
+        }
+      }
+    },
+    {
+      "kind": "openai",
+      "id": "gpt-6.1-terra",
+      "name": "GPT-6.1 Terra",
+      "context": 1050000,
+      "max_output": 128000,
+      "capabilities": [
+        "tools",
+        "thinking"
+      ],
+      "price": {
+        "input": "1",
+        "output": "5",
+        "cache_read": "0.05",
+        "cache_write": "1.25",
+        "cache_write_long": "2.50"
+      },
+      "long_prompt": {
+        "above": 272000,
+        "price": {
+          "input": "2",
+          "output": "7.50",
+          "cache_read": null,
+          "cache_write": null,
+          "cache_write_long": null
+        }
+      }
+    },
+    {
+      "kind": "openai",
+      "id": "gpt-6.2-sol",
+      "name": "GPT-6.2 Sol",
+      "context": 1050000,
+      "max_output": 128000,
+      "capabilities": [
+        "tools",
+        "thinking"
+      ],
+      "price": {
+        "input": "2",
+        "output": "10",
+        "cache_read": "0.10",
+        "cache_write": "2.50",
+        "cache_write_long": "5"
+      },
+      "long_prompt": {
+        "above": 272000,
+        "price": {
+          "input": "4",
+          "output": "15",
+          "cache_read": null,
+          "cache_write": null,
+          "cache_write_long": null
+        }
+      }
+    },
+    {
+      "kind": "openai",
+      "id": "gpt-6.2-astra",
+      "name": "GPT-6.2 Astra",
+      "context": 1050000,
+      "max_output": 128000,
+      "capabilities": [
+        "tools",
+        "thinking"
+      ],
+      "price": {
+        "input": "8",
+        "output": "40",
+        "cache_read": "0.40",
+        "cache_write": "10",
+        "cache_write_long": "20"
+      },
+      "long_prompt": {
+        "above": 272000,
+        "price": {
+          "input": "16",
+          "output": "60",
+          "cache_read": null,
+          "cache_write": null,
+          "cache_write_long": null
+        }
+      }
+    },
+    {
+      "kind": "openai",
+      "id": "gpt-5.4-mini",
+      "name": "GPT-5.4 mini",
+      "context": null,
+      "max_output": null,
+      "capabilities": [
+        "tools"
+      ],
+      "price": {
+        "input": "0.75",
+        "output": "4.50",
+        "cache_read": "0.075",
+        "cache_write": null,
+        "cache_write_long": null
+      }
+    },
+    {
+      "kind": "openai",
+      "id": "gpt-5.4-nano",
+      "name": "GPT-5.4 nano",
+      "context": null,
+      "max_output": null,
+      "capabilities": [
+        "tools"
+      ],
+      "price": {
+        "input": "0.20",
+        "output": "1.25",
+        "cache_read": "0.02",
+        "cache_write": null,
+        "cache_write_long": null
+      }
+    }
+  ]
+}
