@@ -7,7 +7,7 @@ import { mdiRadar } from "@mdi/js";
     <v-row align="center" justify="center">
       <v-col cols="12" md="8" lg="6">
         <v-card class="pa-6" variant="tonal" color="primary">
-          <v-card-title class="d-flex align-center ga-3 text-h5">
+          <v-card-title tag="h1" class="d-flex align-center ga-3 text-h5">
             <v-icon :icon="mdiRadar" aria-hidden="true" />
             Find what you cannot see
           </v-card-title>

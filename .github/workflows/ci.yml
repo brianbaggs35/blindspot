@@ -285,6 +285,223 @@ jobs:
           if-no-files-found: ignore
           retention-days: 14
 
+  # Playwright against the API and the built web app on the runner, in three shards. Each shard
+  # collects the web app's coverage from the browser (the build has its source maps inside, so
+  # the numbers are for src/); `e2e-report` merges them and enforces the minimum.
+  e2e-host:
+    name: End to end, host (${{ matrix.shard }}/3)
+    needs: detect
+    if: ${{ needs.detect.outputs.backend == 'true' && needs.detect.outputs.frontend == 'true' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3]
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: astral-sh/setup-uv@1db35dd8eee11c5894872e0b383ae6c406cf738d # v10.4.0
+        with:
+          python-version: "3.14"
+          working-directory: backend
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install the API's dependencies
+        working-directory: backend
+        run: uv sync --locked --no-build
+
+      - name: Install the web app's dependencies
+        run: npm ci --ignore-scripts --no-audit --no-fund
+
+      - name: Install the browser
+        run: npx playwright install --with-deps chromium
+
+      - name: Build the web app with source maps
+        run: npm run build:e2e
+
+      - name: Run this shard
+        env:
+          E2E_COVERAGE: "1"
+          SHARD: ${{ matrix.shard }}
+        run: npx playwright test --shard="$SHARD/3"
+
+      - name: Upload the shard's report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: e2e-host-blob-${{ matrix.shard }}
+          path: frontend/e2e-results/blob/
+          if-no-files-found: ignore
+          retention-days: 14
+
+      - name: Upload the shard's coverage
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: e2e-host-coverage-${{ matrix.shard }}
+          path: frontend/e2e-results/coverage/
+          if-no-files-found: ignore
+          retention-days: 14
+
+  # The same tests against the real image, started as people run it (read-only, capabilities
+  # dropped). The image has no source maps, so this mode checks behaviour, not coverage.
+  e2e-container:
+    name: End to end, container (${{ matrix.shard }}/3)
+    needs: detect
+    if: ${{ needs.detect.outputs.container == 'true' && needs.detect.outputs.frontend == 'true' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+
+      - name: Build the image
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .
+          target: runtime
+          load: true
+          tags: blindspot:e2e
+          provenance: false
+          sbom: false
+          build-args: |
+            RELEASE=e2e
+            COMMIT=${{ github.sha }}
+            APK_REFRESH=${{ github.run_id }}
+            IMAGE_REFRESH=${{ github.run_id }}-${{ github.run_attempt }}
+
+      - name: Start the container
+        run: |
+          ./.github/scripts/run-container.sh blindspot:e2e blindspot-e2e 8443
+          ./.github/scripts/smoke-test.sh blindspot-e2e 8443
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          # No package cache in a job that builds the image: a poisoned cache must not reach it.
+          package-manager-cache: false
+
+      - name: Install the web app's dependencies
+        working-directory: frontend
+        run: npm ci --ignore-scripts --no-audit --no-fund
+
+      - name: Install the browser
+        working-directory: frontend
+        run: npx playwright install --with-deps chromium
+
+      - name: Run this shard
+        working-directory: frontend
+        env:
+          E2E_MODE: container
+          E2E_BASE_URL: https://127.0.0.1:8443
+          SHARD: ${{ matrix.shard }}
+        run: npx playwright test --shard="$SHARD/3"
+
+      - name: Container logs
+        if: ${{ failure() }}
+        run: docker logs --tail 200 blindspot-e2e || true
+
+      - name: Upload the shard's report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: e2e-container-blob-${{ matrix.shard }}
+          path: frontend/e2e-results/blob/
+          if-no-files-found: ignore
+          retention-days: 14
+
+  # One HTML report per mode, and the web app's coverage merged across the host shards. Fails
+  # below 80% of lines, and warns below 90%.
+  e2e-report:
+    name: End to end report and coverage
+    needs: [detect, e2e-host, e2e-container]
+    if: ${{ !cancelled() && needs.detect.outputs.frontend == 'true' && needs.e2e-host.result != 'skipped' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install the web app's dependencies
+        run: npm ci --ignore-scripts --no-audit --no-fund
+
+      - name: Download the shards' coverage
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          pattern: e2e-host-coverage-*
+          path: frontend/e2e-shards
+
+      - name: Merge the coverage and check it
+        run: |
+          shopt -s nullglob
+          shards=(e2e-shards/*/)
+          [[ ${#shards[@]} -gt 0 ]] || { echo "::error::No shard produced coverage."; exit 1; }
+          node e2e/scripts/merge-coverage.mjs "${shards[@]}"
+
+      - name: Add the coverage to the job summary
+        if: ${{ !cancelled() }}
+        run: cat e2e-results/coverage-merged/coverage-summary.md >> "$GITHUB_STEP_SUMMARY" || true
+
+      - name: Upload the merged coverage
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: e2e-coverage
+          path: frontend/e2e-results/coverage-merged/
+          if-no-files-found: ignore
+          retention-days: 14
+
+      - name: Download the shards' reports
+        if: ${{ !cancelled() }}
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          pattern: e2e-*-blob-*
+          path: frontend/e2e-blobs
+          merge-multiple: true
+
+      - name: Merge the reports
+        if: ${{ !cancelled() }}
+        run: npx playwright merge-reports --reporter=html e2e-blobs
+        env:
+          PLAYWRIGHT_HTML_OPEN: never
+
+      - name: Upload the report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: e2e-report
+          path: frontend/playwright-report/
+          if-no-files-found: ignore
+          retention-days: 14
+
   # The container, built and run as people will run it: scanned by Trivy, started read-only with
   # every capability dropped but five, and smoke tested over https. The release builds and tests
   # the same image for both CPUs; this finds a broken image in the pull request instead.
@@ -472,7 +689,20 @@ jobs:
   # counts as passed; a failed or cancelled one does not.
   ci-gate:
     name: CI gate
-    needs: [detect, format, infrastructure, trivy, backend, frontend, container, sonarqube]
+    needs:
+      [
+        detect,
+        format,
+        infrastructure,
+        trivy,
+        backend,
+        frontend,
+        container,
+        e2e-host,
+        e2e-container,
+        e2e-report,
+        sonarqube,
+      ]
     if: ${{ always() }}
     runs-on: ubuntu-24.04
     timeout-minutes: 5

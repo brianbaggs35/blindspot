@@ -2,7 +2,7 @@
 SHELL := /bin/bash
 .DEFAULT_GOAL := help
 .PHONY: help lint lint-backend lint-frontend lint-infra audit-workflows format format-check test test-ci-scripts \
-	test-backend test-frontend audit scan-source clean
+	test-backend test-frontend e2e e2e-host audit scan-source clean
 
 # Linters run from images pinned by digest, not from third-party GitHub Actions, so the same
 # versions run here and in CI. Dependabot raises these (docker ecosystem) in its own PRs.
@@ -68,6 +68,16 @@ test-backend: ## pytest (skipped until the backend exists)
 test-frontend: ## Vitest with coverage (skipped until the web app exists)
 	@if [ -f frontend/package.json ]; then $(FRONTEND) npm run coverage; else echo "No frontend yet: skipped."; fi
 
+e2e-host: ## Playwright against the API and the built web app on this machine, with coverage
+	$(FRONTEND) npm run build:e2e && E2E_COVERAGE=1 npx playwright test && npm run e2e:merge -- e2e-results/coverage
+
+e2e: ## Playwright against the real image, started the way people run it (needs Docker)
+	docker build --target runtime --tag blindspot:e2e .
+	docker rm --force blindspot-e2e >/dev/null 2>&1 || true
+	./.github/scripts/run-container.sh blindspot:e2e blindspot-e2e 8443
+	./.github/scripts/smoke-test.sh blindspot-e2e 8443
+	$(FRONTEND) E2E_MODE=container npx playwright test; status=$$?; docker rm --force --volumes blindspot-e2e >/dev/null; exit $$status
+
 audit: ## Check dependencies for known vulnerabilities (the frontend fails on critical, as CI does)
 	@if [ -f backend/pyproject.toml ]; then $(BACKEND) uv run pip-audit; fi
 	@if [ -f frontend/package.json ]; then $(FRONTEND) npm audit --audit-level=critical; fi
@@ -78,4 +88,4 @@ scan-source: ## Trivy: vulnerable dependencies, leaked secrets and Dockerfile mi
 
 clean: ## Remove local build and test artifacts
 	rm -rf backend/.pytest_cache backend/.ruff_cache backend/.coverage backend/coverage.xml \
-		frontend/dist frontend/coverage frontend/e2e-results
+		frontend/dist frontend/dist-e2e frontend/coverage frontend/e2e-results

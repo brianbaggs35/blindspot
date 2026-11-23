@@ -16,3 +16,4 @@ frontend/tests
 !README.md
 .env
 certs
+frontend/dist-e2e
