@@ -334,6 +334,12 @@ jobs:
           name: frontend-coverage
           path: frontend/coverage
 
+      # Vitest writes file names relative to the web app's folder (src/App.vue), and SonarQube reads
+      # them relative to the repository, so without this none of the web app's files get coverage.
+      - name: Make the frontend coverage paths relative to the repository
+        if: ${{ env.SONAR_TOKEN != '' }}
+        run: sed -i 's#^SF:#SF:frontend/#' frontend/coverage/lcov.info
+
       - name: SonarQube analysis and quality gate
         id: scan
         if: ${{ env.SONAR_TOKEN != '' }}
