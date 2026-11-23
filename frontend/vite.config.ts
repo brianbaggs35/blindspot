@@ -5,6 +5,11 @@ import vuetify from "vite-plugin-vuetify";
 // https://vite.dev/config/ and https://vitest.dev/config/
 export default defineConfig({
   plugins: [vue(), vuetify({ autoImport: true })],
+  build: {
+    // Fonts and images stay files. Inlined as data: URLs they would need `data:` in the
+    // container's font-src, and the Content-Security-Policy allows only the app's own files.
+    assetsInlineLimit: 0,
+  },
   server: {
     // In development the API runs on its own port; in the container nginx serves both.
     proxy: { "/api": "http://127.0.0.1:8000" },
