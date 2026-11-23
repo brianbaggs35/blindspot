@@ -37,7 +37,7 @@ Everything else in the container is read-only. Back up the `data` volume.
 ## How it is locked down
 
 - **Read-only file system**, `no-new-privileges`, a process limit, and every capability dropped except `CHOWN`, `DAC_OVERRIDE`, `FOWNER`, `SETUID` and `SETGID`.
-- **Only the supervisor runs as root.** The entrypoint prepares `/data`, then s6 starts each service as its own user with `setpriv`: `nginx`, `blindspot` (the API) and `postgres`. This is why Trivy's "image runs as root" finding is ignored in `.trivyignore.yaml`, with this reason and an expiry date.
+- **Little runs as root.** The entrypoint, s6 and nginx's master process (which opens the logs and reads the key, as nginx always does) are root. The API runs as `blindspot`, PostgreSQL as `postgres`, started with `setpriv`, and nginx's workers, the processes that handle requests, as `nginx`. This is why Trivy's "image runs as root" finding is ignored in `.trivyignore.yaml`, with this reason and an expiry date.
 - **Ports above 1024 inside** (8443 and 8080), so binding them needs no capability. Compose publishes them as 443 and 80.
 - **Only nginx listens on TCP.** The API listens on `/run/blindspot/api.sock` (readable by nginx only) and PostgreSQL on `/run/postgresql` (readable by the API only). The smoke test in CI fails if anything else listens.
 - **TLS 1.3 only**, no session tickets, no server version, and a Content-Security-Policy without inline scripts or `eval`. Styles are allowed by a per-request nonce that nginx puts in the page; inline style _attributes_ are allowed because Vuetify sets them (they cannot run script).
@@ -50,7 +50,7 @@ docker build --target runtime -t blindspot .
 .github/scripts/smoke-test.sh blindspot-local 8443
 ```
 
-The image is built on Chainguard's Wolfi and upgrades every package at build time, so a rebuild picks up the day's fixes. Wolfi keeps only the newest version of each package, so packages are not version-pinned; the base image is pinned by digest instead. Dependabot's Docker updates keep that digest current.
+The image is built on Chainguard's Wolfi and upgrades every package at build time, so a rebuild picks up the day's fixes. Wolfi keeps only the newest version of each package, so packages are not version-pinned; the base image is pinned by its digest instead, and Dependabot's Docker updates keep that digest current.
 
 ## Restarts and upgrades
 
