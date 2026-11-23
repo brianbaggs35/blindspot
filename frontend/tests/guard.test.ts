@@ -80,6 +80,23 @@ describe("the guard", () => {
     expect(r.currentRoute.value.path).toBe("/");
   });
 
+  it("holds everyone back at the terms until they are accepted, then lets them through", async () => {
+    const unaccepted = { ...admin, terms_accepted: false };
+    const r = router({ user: unaccepted });
+    await r.push("/account?tab=passkeys");
+    expect(r.currentRoute.value.name).toBe("terms");
+    expect(r.currentRoute.value.query["next"]).toBe("/account?tab=passkeys");
+    await r.push("/pentests");
+    expect(r.currentRoute.value.name).toBe("terms");
+    await r.push("/terms");
+    expect(r.currentRoute.value.name).toBe("terms");
+    useAuthStore().$patch({ user: admin });
+    await r.push("/terms?next=/account");
+    expect(r.currentRoute.value.path).toBe("/account");
+    await r.push("/terms");
+    expect(r.currentRoute.value.path).toBe("/");
+  });
+
   it("keeps a viewer out of administrator pages and lets an administrator in", async () => {
     const forViewer = router({ user: viewer });
     await forViewer.push("/users");

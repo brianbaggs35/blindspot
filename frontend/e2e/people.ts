@@ -24,6 +24,7 @@ export async function newPerson(
   playwright: PlaywrightWorkerArgs["playwright"],
   baseURL: string | undefined,
   role: "admin" | "viewer" = "viewer",
+  { acceptTerms = true }: { acceptTerms?: boolean } = {},
 ): Promise<Person> {
   const origin = new URL(baseURL ?? "").origin;
   const request = await playwright.request.newContext({
@@ -33,7 +34,31 @@ export async function newPerson(
   });
   const person = await createPerson(request, origin, role);
   await request.dispose();
+  if (acceptTerms) await acceptTermsAs(playwright, origin, person);
   return person;
+}
+
+/** Sign the person in through the API and accept the terms of use, so the page opens at once. */
+async function acceptTermsAs(
+  playwright: PlaywrightWorkerArgs["playwright"],
+  origin: string,
+  person: Person,
+): Promise<void> {
+  const own = await playwright.request.newContext({
+    baseURL: origin,
+    ignoreHTTPSErrors: true,
+    extraHTTPHeaders: { Origin: origin },
+  });
+  const login = await own.post("/api/auth/login", {
+    data: { username: person.username, password: person.password },
+  });
+  expect(login.ok()).toBe(true);
+  const terms = (await (await own.get("/api/terms")).json()) as { version: string };
+  const accepted = await own.post("/api/terms/accept", { data: { version: terms.version } });
+  expect(accepted.ok()).toBe(true);
+  // End this session so the account starts with none, as a person who has never signed in would.
+  await own.post("/api/auth/logout");
+  await own.dispose();
 }
 
 export async function createPerson(
@@ -51,12 +76,16 @@ export async function createPerson(
 }
 
 /** Sign in through the page, as a person would. */
-export async function signInThroughThePage(page: Page, person: Person): Promise<void> {
+export async function signInThroughThePage(
+  page: Page,
+  person: Person,
+  { landsOn = "Overview" }: { landsOn?: string } = {},
+): Promise<void> {
   await page.goto("/sign-in");
   await page.getByLabel("Username").fill(person.username);
   await page.getByLabel("Password", { exact: true }).fill(person.password);
   await page.getByRole("button", { name: "Sign in", exact: true }).click();
-  await expect(page.getByRole("heading", { name: "Overview", level: 1 })).toBeVisible();
+  await expect(page.getByRole("heading", { name: landsOn, level: 1 })).toBeVisible();
 }
 
 export async function signOutThroughThePage(page: Page): Promise<void> {

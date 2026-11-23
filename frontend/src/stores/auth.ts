@@ -1,6 +1,6 @@
 import { defineStore } from "pinia";
 import { api } from "../api/client";
-import type { Status, User } from "../api/types";
+import type { Status, Terms, User } from "../api/types";
 import { signInWithPasskey } from "../passkeys";
 
 export interface SetupDetails {
@@ -21,6 +21,8 @@ export const useAuthStore = defineStore("auth", {
   getters: {
     isSignedIn: (state) => state.user !== null,
     isAdmin: (state) => state.user?.role === "admin",
+    /** Whether the signed-in person has accepted the terms of use as they are now. */
+    termsAccepted: (state) => state.user?.terms_accepted === true,
   },
   actions: {
     /** Ask the API once; later calls reuse the answer unless `again` is given. */
@@ -55,6 +57,11 @@ export const useAuthStore = defineStore("auth", {
         // the session there ends on its own when it expires.
       }
       this.user = null;
+    },
+    /** Record that the person read and accepted this version of the terms. */
+    async acceptTerms(version: string) {
+      await api<Terms>("POST", "/api/terms/accept", { version });
+      if (this.user) this.user = { ...this.user, terms_accepted: true };
     },
     /** The session ended on the server (expired, revoked, account turned off). */
     sessionEnded() {

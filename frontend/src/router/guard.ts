@@ -7,7 +7,7 @@ export function safeNext(raw: unknown): string {
 }
 
 // Runs before every navigation. The order matters: setup comes first (nothing else works until
-// there is an administrator), then who is signed in, then what they may open.
+// there is an administrator), then who is signed in, then the terms of use, then what they may open.
 export async function guard(to: RouteLocationNormalized): Promise<true | RouteLocationRaw> {
   const auth = useAuthStore();
   await auth.load();
@@ -18,6 +18,12 @@ export async function guard(to: RouteLocationNormalized): Promise<true | RouteLo
     return { name: "sign-in", query: { next: to.fullPath } };
   }
   if (to.name === "sign-in") return { path: safeNext(to.query["next"]) };
+  // Nothing in the app opens until the terms of use are accepted; they are asked for again when
+  // their text changes.
+  if (!auth.termsAccepted) {
+    return to.name === "terms" ? true : { name: "terms", query: { next: to.fullPath } };
+  }
+  if (to.name === "terms") return { path: safeNext(to.query["next"]) };
   if (to.meta.access === "admin" && !auth.isAdmin) return { name: "forbidden" };
   return true;
 }

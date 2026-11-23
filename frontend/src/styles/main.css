@@ -157,6 +157,10 @@ pre,
   max-width: 440px;
 }
 
+.bs-auth-card.bs-auth-wide {
+  max-width: 760px;
+}
+
 .bs-rules {
   margin: 0 0 8px;
   padding: 0;

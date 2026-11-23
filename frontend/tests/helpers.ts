@@ -16,6 +16,7 @@ export const admin: User = {
   is_active: true,
   last_sign_in_at: "2026-11-20T10:00:00Z",
   created_at: "2026-11-01T10:00:00Z",
+  terms_accepted: true,
 };
 
 export const viewer: User = {

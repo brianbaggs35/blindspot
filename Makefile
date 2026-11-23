@@ -1,7 +1,7 @@
 # Blindspot: `make` lists every command.
 SHELL := /bin/bash
 .DEFAULT_GOAL := help
-.PHONY: secret-key rotate-secret-key help lint lint-backend lint-frontend lint-infra audit-workflows format format-check test test-ci-scripts \
+.PHONY: secret-key rotate-secret-key terms help lint lint-backend lint-frontend lint-infra audit-workflows format format-check test test-ci-scripts \
 	test-backend test-frontend e2e e2e-host audit scan-source clean
 
 # Linters run from images pinned by digest, not from third-party GitHub Actions, so the same
@@ -92,6 +92,9 @@ secret-key: ## Print a new app secret key to keep somewhere safe
 
 rotate-secret-key: ## Seal every stored secret again with BLINDSPOT_SECRET_KEY (old key in BLINDSPOT_PREVIOUS_SECRET_KEY)
 	@$(BACKEND) uv run --no-sync python -m app.vault rotate
+
+terms: ## Write DISCLAIMER.md from the terms of use in backend/app/terms/text.py
+	@$(BACKEND) uv run --no-sync python -m app.terms
 
 clean: ## Remove local build and test artifacts
 	rm -rf backend/.pytest_cache backend/.ruff_cache backend/.coverage backend/coverage.xml \

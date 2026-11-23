@@ -125,6 +125,7 @@ test.describe("first-run setup", () => {
           is_active: true,
           last_sign_in_at: null,
           created_at: "2026-11-23T00:00:00Z",
+          terms_accepted: true,
         },
       });
     });

@@ -33,6 +33,12 @@ export const routes: RouteRecordRaw[] = [
     meta: { title: "Sign in", access: "public", layout: "bare" },
   },
   {
+    path: "/terms",
+    name: "terms",
+    component: () => import("../views/TermsView.vue"),
+    meta: { title: "Terms of use", layout: "bare" },
+  },
+  {
     path: "/pentests",
     name: "pentests",
     component: () => import("../views/PentestsView.vue"),
