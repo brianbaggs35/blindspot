@@ -69,6 +69,11 @@ Multi-tenant SaaS, scheduled continuous scanning, non-web targets (network, mobi
 | Web server | nginx mainline, TLS 1.3, Let's Encrypt or bring-your-own | As requested |
 | Secrets | AES-256-GCM sealing with HKDF per-purpose keys; Argon2id password hashes; passkeys | Passwords are hashed (one-way), API keys and credentials encrypted (reversible only with the app key) |
 | Tool isolation | **Pluggable runner**: in-container sandbox by default, **optional Docker runner** through a restricted socket proxy | Keeps the "one container" promise while allowing real per-tool isolation. Needs your decision, see [7.2](#72-where-tools-run-the-single-container-question) |
+| Tool run modes | Per tool, you choose **Local** (inside the Blindspot container) or **Docker** on a new **Tools settings** page, with a global default | You asked for control over how tools run. Decided: hybrid runner ([7.2](#72-where-tools-run-the-single-container-question)) |
+| Tool images | Blindspot publishes signed, digest-pinned **tool-pack images** and **pulls them automatically** when a Docker-mode tool is first needed | No manual `docker pull`; pinned digests mean what runs is what was tested ([7.6](#76-docker-images-pulled-automatically-and-safely)) |
+| WSTG coverage | All **133 tests** mapped to tools, test by test, with replacements for stale tools | [Tool map](research/wstg-tool-map.md), summary in [7.7](#77-complete-wstg-tool-coverage) |
+| Roles | **Two only: admin and viewer** (viewer is read only), enforced on the API and the UI | As requested ([12.2](#122-accounts-passkeys-and-sessions)) |
+| Dependencies | Latest stable of everything except TypeScript (6.x); no stale or unmaintained packages | [Policy and exceptions](#dependency-policy) |
 | CVE data | NVD (records) + CISA KEV + EPSS + OSV, CIRCL as no-key fallback, all cached locally | Free, authoritative, rate-limit friendly |
 | Quality | pytest and Vitest at 100% target (CI floor 95%); Playwright floor 80%, aiming 90%+; Sonar, CodeQL, zizmor, Trivy, bandit, ruff, hadolint, Prettier | As requested, modeled on the AresGate CI you referenced in BLI-1 |
 
@@ -131,6 +136,17 @@ Processes: **nginx** terminates TLS and serves the static web app. **api** handl
 
 Versions below were read from PyPI and npm on 2026-11-23. Each scaffold PR re-checks the registry before adding a dependency and never pins an old major from memory.
 
+### Dependency policy
+
+Your rule is: latest versions, nothing stale, nothing nobody uses, and TypeScript stays on 6 because 7 is not widely supported yet. This is how that is applied and enforced:
+
+1. **Latest stable from the registry.** Every version in this plan was read from PyPI, npm, the Go module proxy or the Wolfi index, not from memory. The one deliberate exception is **TypeScript 6.0.3** (npm `latest` is 7.0.2), tracked in a ticket so the upgrade is a planned PR, not an accident.
+2. **Maintenance.** A package needs a release in the last 12 months, or a documented exception. Libraries and tools whose newest release is older are rejected and replaced; the list is in the [tool map](research/wstg-tool-map.md#rejected-or-replaced-stale-unmaintained-or-not-redistributable).
+3. **Adoption.** No near-zero-star or near-zero-download packages. Star counts need `api.deps.dev` and download counts need `api.npmjs.org` and `pypistats.org`, which are not on this session's allow-list yet. Until then adoption is recorded as *pending*, and the scaffold PR does not merge a dependency without that column filled in.
+4. **Enforced in CI, not just once.** Dependabot (weekly), `pip-audit`, `npm audit`, OSV-Scanner and Trivy on every PR, and a small `dependency-freshness` check that fails when a pinned dependency has a newer stable release outside an allow-listed exception, or when its latest release is older than 12 months and it is not on the exception list.
+
+Known exceptions, found while checking this list: `defusedxml` (last release 2021-03-08) is **dropped**; XML from tools is parsed with `lxml` 6.1.3 using a hardened parser (no entity resolution, no network, no DTD loading). `graphology` 0.26.0 (2025-01-26) is the current release and a required peer of sigma.js 4, so it stays, noted as a watch item. `argon2-cffi` 25.1.0 (2025-06-03) is the current release; the vault ticket checks whether the `cryptography` package's own Argon2 support makes it unnecessary. `httpx` (below) is a transitive dependency of the AI SDKs.
+
 ### Backend
 
 | Piece | Choice | Version |
@@ -147,7 +163,7 @@ Versions below were read from PyPI and npm on 2026-11-23. Each scaffold PR re-ch
 | Passkeys | webauthn (py_webauthn) | 3.0.1 |
 | Live events | sse-starlette | 3.7.1 |
 | Logging | structlog | 26.1.0 |
-| XML parsing (nmap etc.) | defusedxml | 0.7.1 |
+| XML parsing (nmap etc.) | lxml with a hardened parser (replaces defusedxml, last released 2021) | 6.1.3 |
 | Packaging | uv | 0.13.9 |
 | Quality | pytest 9.2.0, pytest-asyncio 1.5.0, pytest-cov 7.1.0, pytest-recording 0.15.0 (vcrpy 9.4.2), ruff 0.17.6, pyright 1.1.414, bandit 1.9.4, pip-audit 2.10.1 | |
 
@@ -365,7 +381,7 @@ explain: "Looks for open network doors (ports) on a server and what is listening
 could_go_wrong: "Active scanning can trigger alerts and, rarely, upset fragile devices."
 ```
 
-Typical tools: nmap, httpx-style probing, testssl.sh or sslyze, whatweb-style fingerprinting, ffuf, nuclei, nikto, sqlmap (intrusive, always asks), wafw00f, dnsx, subfinder; plus **built-in Python tools** with no external binary: HTTP client with scope guard, security-header and cookie analyzer, CORS and CSP evaluator, JWT inspector, robots/sitemap/security.txt fetcher, form and parameter spider, session-token entropy check. White box adds Semgrep, Gitleaks, OSV-Scanner and Trivy filesystem scans. Heavier optional packs (a Playwright browser tool, ZAP baseline) stay out of the base image.
+The complete tool set, with a verified version, source and risk class for each entry and a test-by-test assignment for all 133 WSTG tests, is in [research/wstg-tool-map.md](research/wstg-tool-map.md) (summary in [7.7](#77-complete-wstg-tool-coverage)). Tools come in four tiers: **built-in** Python tools with no external binary, **core** tools bundled in the app image, **pack** tools delivered as signed Docker images (or pinned installs), and **optional** tools you opt into.
 
 **"Any and all tools":** administrators can add a custom tool from the UI (binary or image, argument template, parser: none, regex, JSON or XML). It passes through the same validation, scope guard, permissions and audit as built-in tools. External **MCP servers** can also be attached as tool sources.
 
@@ -385,6 +401,8 @@ You asked for a single container *and* for tools in Docker containers. These pul
 
 **Recommendation: A + B behind one `Runner` interface.** Zero-config users get a safe, single-container product; people who want stronger isolation or arbitrary tools switch on the `tools` profile. The tool manifest, scope guard, permissions and parsers are identical in both, so there is one code path to test. Option C is available as a setting but not the default.
 
+**Decided:** you chose the hybrid. One consequence worth stating: because Blindspot itself runs in a container, **"Local" means inside the Blindspot container** (bundled tools, or tools you install into the `/data/tools` volume), not programs installed on your host computer. Host-installed tools can be used through Docker mode (mount nothing, run the same image you would have installed) or, later, a small opt-in host agent. That is documented on the Tools page so nobody expects otherwise.
+
 ### 7.3 Permissions
 
 A grant is the product of **agent role × tool × max risk class × scope × approval mode**.
@@ -401,6 +419,47 @@ The approval queue appears in Mission Control and as a notification; approvals s
 ### 7.4 Resource safety
 
 Wall-clock timeouts, output caps, process-group kill, CPU, memory and process limits, per-target request-rate limits, and a global **Emergency Stop** that cancels running tools within seconds.
+
+### 7.5 The Tools settings page
+
+Admins see a **Tools** settings page where they decide, per tool or globally, how each tool runs. Viewers can see it read-only.
+
+| Control | Detail |
+| --- | --- |
+| **Global default** | Auto (use Local where bundled, else Docker), Prefer Local, Prefer Docker, or Docker only |
+| **Per tool** | Enabled; mode Local or Docker; for Docker, the image reference and pinned digest (default from the release lock file, editable for advanced users); for Local, the binary path and detected version |
+| **Status** | Ready, image missing, pulling (with progress), update available, verification failed, Docker unreachable, binary not found |
+| **Test tool** | Runs the tool's version check through the chosen runner and shows the real command, output and timing |
+| **Limits** | CPU, memory, timeout, output cap, per-target rate limit, maximum risk class, network (default: only the in-scope targets) |
+| **Defaults** | Default arguments and wordlists, with per-pentest override |
+| **Install and update** | Pull or update an image, import an image archive for air-gapped hosts, install a Local tool into `/data/tools` from a checksummed release |
+| **Custom tools and MCP servers** | Add a tool manifest or an MCP server; same validation and permissions as built-in tools |
+
+If a tool's chosen mode is unavailable (for example Docker is not reachable) the run is not silently switched: Blindspot shows what is wrong and offers the other mode as an explicit choice, and the pentest launch pre-flight lists every problem before an agent starts.
+
+### 7.6 Docker images pulled automatically and safely
+
+When a tool is set to Docker mode and its image is not present, Blindspot pulls it without you running `docker pull`.
+
+- **Our own pack images.** The release pipeline builds tool packs on the Wolfi base from pinned upstream versions, as multi-arch images published to the project's container registry, each with a signature, an SBOM and a provenance attestation. A release ships a **lock file** (`tools/images.lock.json`) listing every image by **digest**. Blindspot pulls `repository@sha256:…`, never a floating tag, and refuses an image whose digest does not match the lock. Third-party images that are official (ZAP, Nikto) are pinned by digest in the same file, and are marked as third party in the UI.
+- **When it pulls.** Pull on first use (default), pull all enabled tools at startup, or manual only. The pentest pre-flight shows "3 images to pull, about 1.2 GB" and lets you start the pulls immediately; a mission does not start with a missing image.
+- **How it pulls.** Through the Docker Engine API (`POST /images/create` with the digest reference) behind the restricted socket proxy, which allows pulls only from allow-listed registries and only by digest. Progress streams to the page (layers, bytes). Failures are classified and shown: no network, registry unreachable, rate limited, unauthorized, not enough disk (checked before the pull), digest mismatch, signature invalid. Retries use backoff with jitter; a half-pulled image is never marked ready.
+- **Registry settings.** Registry mirror, proxy and credentials for private registries (credentials stored sealed), and an offline mode that imports a tarball (`docker save` output) after verifying it against the lock file.
+- **Updates.** New releases bring a new lock file. The page shows "update available" with the changelog; updating is a click, and an old image is garbage-collected after the new one is verified. Nothing updates itself in the middle of a mission.
+- **What the proxy refuses.** Privileged containers, host mounts, host networking, exec into other containers, image build, and any image not in the lock file or the admin's explicit allow-list entry (which shows a warning and is audited).
+
+### 7.7 Complete WSTG tool coverage
+
+Every one of the 133 WSTG tests has an assigned tool set. The full table, with versions and sources, is [research/wstg-tool-map.md](research/wstg-tool-map.md); the shape of it:
+
+| Tier | Count | Examples |
+| --- | --- | --- |
+| Built-in Python | 29 | Scoped HTTP client, instrumented Playwright browser, session/JWT/SAML/OIDC/WebAuthn analyzers, race-condition engine, HTTP desync prober, cache prober, injection probe set, WebAssembly analyzer, OAST listener |
+| Core (bundled, Wolfi) | 11 | Nmap, Nuclei, sqlmap, gobuster, Amass, Hydra, grpcurl, WABT/wasm-tools/Binaryen/Wasmtime, Semgrep + Gitleaks + OSV-Scanner + Trivy + Syft + Grype, TruffleHog |
+| Pack images | 16 | ProjectDiscovery recon suite, ffuf, Dalfox 3, testssl.sh, wafw00f, commix, SSTImap, Retire.js, GraphQL tools, Schemathesis, OSINT tools, ysoserial, Checkov, Wapiti, OWASP ZAP |
+| Optional | 4 | Nikto (not redistributable, you pull the official image), WhatWeb, SearXNG, custom/MCP |
+
+Findings that shaped the design: several popular tools are stale (for example `jwt_tool`, `Corsy`, `smuggler`, `regexploit`, `kiterunner`, `dnsReaper`) and are replaced by built-ins; techniques that exist only as Burp extensions (HTTP Request Smuggler, Param Miner, DOM Invader) are rebuilt as built-ins; some PyPI packages for live projects are years out of date (commix, theHarvester, S3Scanner), so packs install from pinned git tags; and Nikto's database files may only be distributed with the official package, so we do not bundle it. Business-logic tests are marked as agent-driven with human review rather than pretending a scanner covers them.
 
 ---
 
@@ -485,6 +544,17 @@ Methodology ─┬─ id, name, version, source, license
 
 WSTG is imported from `checklists/checklist.json` (structure verified: `categories` → `{id, tests[{id, name, reference, objectives, cre_ids}]}`); the import is idempotent, snapshots are versioned, and updates show a diff before they apply. Other methodologies are files in `/data/methodologies` validated by a JSON Schema. A second sample methodology is loaded in tests to prove the abstraction.
 
+**Adding a methodology** (PTES, OSSTMM, ASVS and others later) never touches core code. A methodology pack is a folder with:
+
+| File | Purpose |
+| --- | --- |
+| `methodology.yaml` | id, name, version, source and license, categories and tests (validated by JSON Schema) |
+| `tools.yaml` | the test-to-tool map, in the same format as the [WSTG map](research/wstg-tool-map.md); every test must list tools or a `manual-review` marker, enforced at import |
+| `playbooks/` | optional hand-written playbooks per test; tests without one get generated defaults |
+| `reporting.yaml` | how its categories appear in reports and the coverage radar |
+
+The **tool registry** is separate and shared: a methodology only references tool ids, so adding a methodology that reuses nmap or Nuclei needs no new tool work, and adding a new tool makes it available to every methodology. ASVS requirement levels and PTES phases are modeled as categories and tags, so the agent hierarchy (Commander, one agent per category, one sub-agent per test) is generated from whichever methodology the pentest uses. Admins import packs from the Methodologies page; imports are idempotent and show a diff before applying.
+
 ---
 ## 12. Security model
 
@@ -508,7 +578,7 @@ WSTG is imported from `checklists/checklist.json` (structure verified: `categori
 - **First run**: a setup page guarded by a one-time code printed in the container log. No default credentials, ever.
 - **Sign in** with a password or a **passkey (WebAuthn)**. User verification is required, discoverable credentials and conditional-UI autofill are supported, challenges are single-use and expire in minutes, the relying-party id comes from the configured server name, sign-count regressions raise a warning (synced passkeys that report zero are tolerated). Adding or removing a passkey needs a recent re-authentication; up to 20 per account. Passkeys belong to the server name, so changing it invalidates them (documented).
 - Lockout and rate limits per account and per address, constant-time comparisons, generic error messages (no user enumeration), optional TOTP second step.
-- **Roles**: admin, tester, viewer. Authorization is enforced on the server for every route, and a test asserts that every registered route declares a policy.
+- **Roles: exactly two.** **Admin** can do everything (create and run pentests, approve tool actions, change settings, manage users and secrets). **Viewer** is strictly read only: it can read pentests, results, findings, reports and usage, but cannot create, change, delete, launch, approve or export secrets, and sees credentials and API keys only as masked values. Enforcement is on the server for every route: each route declares a policy (`admin` or `viewer-ok`), a test fails the build if a route has none, and a test calls every non-GET route as a viewer and asserts 403. Mutating UI controls are hidden or disabled for viewers, but the server never relies on that. The chatbot and agents act with the permissions of the person who started them, so a viewer's chat cannot trigger tools or write to the knowledge base.
 - **CSRF**: `Origin` and `Sec-Fetch-Site` checks on state-changing requests.
 - **Audit log** of sign-ins, secret operations, setting and scope changes, approvals, tool executions and agent launches, with a filterable page.
 
@@ -600,6 +670,16 @@ The goal is an interface that feels like a film-set operations room but behaves 
 - Optional **Cinematic mode** (off by default, lazy-loaded): a WebGL view of the agent constellation and attack surface for demos and big screens. Everything it shows is also available in the plain 2D views.
 - Optional audio cues: off by default.
 
+### 14.1a Movie-grade, and easy to use
+
+The look is a command system from a film; the behavior is a product anyone can drive. Both are requirements, and where they conflict, clarity wins.
+
+- **Easy first.** A first-run tour, a launch wizard that explains each choice in plain language, sensible defaults, and a **Simple / Expert** switch: Simple shows the friendly views and one big "Launch" path; Expert exposes raw output, argv, per-agent settings and the event stream.
+- **One visual language.** Glass panels on a faint radar grid, cyan-to-indigo energy for live things, amber only for blind spots and warnings, restrained motion that always means something (a ticking number, a sweep, a pulse on a new event).
+- **Signature moments.** Boot sequence on launch, agents "coming online" in the hierarchy, the radar filling in as tests complete, an evidence reveal for each confirmed finding, a replay scrubber that plays a mission back like footage.
+- **Craft checks in CI.** Axe on every route in both themes, visual-regression screenshots at 320, 390, 768, 1280 and 1920 px, performance budgets, and keyboard-only paths, so beauty cannot regress accessibility or speed.
+- **Directions to choose from.** The app-shell PR brings two or three mock directions; nothing is built into the final look until you pick one.
+
 ### 14.2 Mission Control (the hero page)
 
 ```
@@ -644,7 +724,7 @@ Panels: live agent tree with per-test status; **blindspot radar** (13 sectors, o
 | **Mission Control** | Run and watch a mission | See [14.2](#142-mission-control-the-hero-page) |
 | **Agents** | See and deploy the hierarchy | Tree and grid, deploy flow with launch summary and estimated cost, presets |
 | **Agent settings** | Tune each role, category or test | Model, effort, budgets, tool grants, approval mode, prompt versions with diff and history |
-| **Tools** | Registry and permissions | Installed tools, risk class, grants, custom tools, MCP servers |
+| **Tools** (settings) | Registry, run modes and permissions | Local or Docker per tool, image status and automatic pulls, test button, risk class, grants, limits, custom tools, MCP servers ([7.5](#75-the-tools-settings-page)) |
 | **Results** | Everything the tools produced | Friendly / Technical / Raw toggle, full CRUD, promote to finding |
 | **Findings** | The product of the test | CVSS 4.0 and 3.1 calculator, CWE and OWASP mapping, linked CVEs with EPSS and KEV, evidence, status workflow, retest, merge duplicates |
 | **Checklist** | Methodology coverage | Every WSTG test with status and evidence links |
@@ -653,7 +733,7 @@ Panels: live agent tree with per-test status; **blindspot radar** (13 sectors, o
 | **AI usage** | Tokens and cost | Per provider, model, agent and run; cache savings; budgets and alerts; export |
 | **Chatbot** | Talk to the pentest | See [15.1](#151-the-chatbot) |
 | **AI providers** | Settings | Add keys, test, fetch Ollama models, defaults per role |
-| **Settings, users, audit log, methodologies, about** | Administration | Roles, passkeys, sessions, certificates, secret key rotation, terms |
+| **Settings, users, audit log, methodologies, about** | Administration | Two roles (admin, viewer), passkeys, sessions, certificates, secret key rotation, methodology packs, terms |
 
 ### 15.1 The chatbot
 
@@ -665,7 +745,7 @@ Fully integrated with the current pentest and the agents: it can read the missio
 
 Core entities (all with UUIDv7 ids, UTC timestamps, soft delete, created-by):
 
-`user`, `session`, `passkey`, `audit_event` · `provider`, `model`, `usage_ledger` · `methodology`, `category`, `test`, `playbook` · `pentest`, `target`, `scope_rule`, `access_profile` (accounts, repo), `authorization_attestation`, `contact` · `mission`, `task`, `step`, `event`, `approval`, `agent_definition`, `prompt_version` · `tool`, `tool_grant`, `tool_run`, `result`, `knowledge_fact` · `finding`, `evidence`, `cve_record`, `finding_cve` · `report`.
+`user`, `session`, `passkey`, `audit_event` · `provider`, `model`, `usage_ledger` · `methodology`, `category`, `test`, `playbook` · `pentest`, `target`, `scope_rule`, `access_profile` (accounts, repo), `authorization_attestation`, `contact` · `mission`, `task`, `step`, `event`, `approval`, `agent_definition`, `prompt_version` · `tool`, `tool_setting` (mode, image digest, limits), `tool_image` (digest, status, pulled-at), `tool_grant`, `tool_run`, `result`, `knowledge_fact` · `finding`, `evidence`, `cve_record`, `finding_cve` · `report`.
 
 ---
 ## 17. Quality gates and CI
@@ -693,6 +773,9 @@ BLI-1 points at AresGate's workflows as a reference. I read `ci.yml`, `release.y
 | **End-to-end in the container** (3 shards) | Playwright against the built container, V8 coverage |
 | **End-to-end on the runner** (3 shards) | Same specs without the container; a failure in only one points at nginx, TLS or the image |
 | **End-to-end coverage** | Merges every shard's coverage; **fails below 80%, warns below 90%** (target 90%+) |
+| **Dependency freshness** | Fails on a pinned dependency with a newer stable release (except TypeScript 6 and listed exceptions), or whose latest release is over 12 months old and not on the exception list; checks the tool lock file the same way ([policy](#dependency-policy)) |
+| **Tool images** | Verifies every image in `images.lock.json` by digest and signature, and that each Docker-mode tool starts and prints its version |
+| **Role policy** | Every route declares `admin` or `viewer-ok`; every non-GET route returns 403 for a viewer |
 | **Accessibility** | axe on every page, both themes, four widths, diffed against the previous run |
 | **SonarQube** | Needs backend and frontend jobs; scan with `-Dsonar.qualitygate.wait=true`; on failure **prints the list of open issues and hotspots** (as BLI-1 asks); fails the PR on any open issue in new code |
 | **Upgrade** (planned once a release exists) | Start the previous release's image on data, upgrade, verify |
@@ -744,38 +827,42 @@ Jira: [BLI board](https://brianbaggs.atlassian.net/jira/software/projects/BLI/bo
 | # | Ticket | PR | Contents |
 | --- | --- | --- | --- |
 | 1 | BLI-4 | Plan, research, logo, README | This PR. Docs only |
-| 2 | BLI-5 | Scaffold backend and frontend | uv, FastAPI health, Vue/Vuetify/TS 6 shell, ruff, pyright, bandit, ESLint, Prettier, vue-tsc, pytest and Vitest at 100% |
-| 3 | BLI-1 | CI workflows | `ci.yml`, CodeQL, zizmor, release, Dependabot, PR hygiene; Makefile targets |
+| 2 | BLI-1 | CI pipeline (first build PR) | `ci.yml`, CodeQL, zizmor, actionlint, hadolint, release, Dependabot, PR hygiene, dependency-freshness check, Makefile targets. Path-aware: jobs for code that does not exist yet report "nothing to check" and a single required `ci-gate` job summarizes them, so this PR is green by itself and every PR after it runs the full pipeline |
+| 3 | BLI-5 | Scaffold backend and frontend | uv, FastAPI health, Vue/Vuetify/TS 6 shell, ruff, pyright, bandit, ESLint, Prettier, vue-tsc, pytest and Vitest at 100%. First PR to run through the full CI |
 | 4 | BLI-2 | SonarQube | `sonar-project.properties`, Sonar job with issue list |
 | 5 | BLI-6 | Single container | Wolfi image, nginx TLS, supervisord, PostgreSQL 18 on a unix socket, compose hardening, hadolint, Trivy |
 | 6 | BLI-7 | Playwright harness | Container and host modes, sharding, coverage merge, axe |
 | 7 | BLI-8 | Database layer | SQLAlchemy, Alembic, idempotent migration helpers, advisory lock, pre-upgrade backup, migration CI checks |
 | 8 | BLI-9 | Secrets vault | AES-256-GCM, HKDF, sealed column types, key rotation |
-| 9 | BLI-10 | Sign-in | First-run setup, Argon2id, sessions, roles, lockout, audit log |
+| 9 | BLI-10 | Sign-in | First-run setup, Argon2id, sessions, **admin and viewer roles** with route-policy tests, lockout, audit log |
 | 10 | BLI-11 | Passkeys | WebAuthn registration and sign-in |
 | 11 | BLI-12 | App shell | Design system, collapsible nav, themes, mobile, command palette, logo assets (after direction approval) |
 | 12 | BLI-13 | AI providers | Anthropic, OpenAI, Ollama local and cloud, fetch models, pricing catalog, usage ledger, settings page |
-| 13 | BLI-14 | Methodology engine | Generic model, WSTG import (133 tests), checklist pages |
+| 13 | BLI-14 | Methodology engine | Pack format (`methodology.yaml`, `tools.yaml`, playbooks), WSTG import (133 tests), checklist pages |
 | 14 | BLI-15 | Pentests | CRUD, black/grey/white wizard, scope compiler, authorization attestation |
 | 15 | BLI-16 | Warnings and terms | Terms acceptance, banners, disclaimer files |
-| 16 | BLI-17 | Tool framework | Manifests, runner interface, in-container sandbox, scope guard, permissions, custom tools, MCP |
-| 17 | _to create_ | Docker tool runner (opt-in) | Socket proxy, ephemeral tool containers, forbidden-call tests |
-| 18 | BLI-18 | Core tool pack | nmap and the rest, parsers, built-in Python tools |
-| 19 | _to create_ | White-box analysis pack | Repo import, Semgrep, Gitleaks, OSV-Scanner, SBOM, "send code to AI" gating |
-| 20 | BLI-19 | Results pages | Friendly / Technical / Raw, full CRUD |
-| 21 | BLI-20 | Agent runtime | Commander, category agents, per-test sub-agents, memory, verifier, evals |
-| 22 | BLI-21 | Agents page and settings | Deploy, per-role settings, prompt versions |
-| 23 | BLI-22 | Findings | CRUD, CVSS, evidence, verification, status workflow |
-| 24 | _to create_ | CVE enrichment | NVD, KEV, EPSS, OSV, cache and rate limiting |
-| 25 | _to create_ | Mission Control | Radar, graph, live events, approvals, replay |
-| 26 | _to create_ | AI usage page | Tokens and cost by provider, agent, run |
-| 27 | _to create_ | Dashboard | Overview and attention queue |
-| 28 | _to create_ | Chatbot | Integrated chat with knowledge-base write-back |
-| 29 | _to create_ | Reports | Templates and exports |
-| 30 | _to create_ | Docs and README finish | How-to guides, screenshots, final links |
+| 16 | BLI-17 | Tool framework | Manifests, tool registry, runner interface, Local in-container runner, scope guard, permissions, custom tools, MCP |
+| 17 | _to create_ | Docker runner and automatic image pulls | Restricted socket proxy, ephemeral tool containers, digest-pinned lock file, pull with progress, signature check, offline import, forbidden-call tests |
+| 18 | _to create_ | Tools settings page | Local or Docker per tool and globally, status, test button, limits, custom tools |
+| 19 | BLI-18 | Core tool pack | Nmap, Nuclei, sqlmap, gobuster, Amass, Hydra and the other bundled tools, with parsers |
+| 20 | _to create_ | Built-in analyzers, part 1 | Scoped HTTP client, instrumented browser, headers/cookies/CSP/CORS, TLS, DNS and takeover, crawler, parameter discovery |
+| 21 | _to create_ | Built-in analyzers, part 2 | Session, JWT, SAML, OIDC, WebAuthn, CSRF, race engine, desync prober, cache prober, injection probe set, upload, GraphQL, gRPC, WebSocket, ReDoS, WebAssembly, OAST |
+| 22 | _to create_ | Tool pack images and release pipeline | Pack Dockerfiles on Wolfi (recon, web, OSINT, ysoserial, Checkov), multi-arch build, cosign signatures, SBOM, `images.lock.json` |
+| 23 | _to create_ | Optional engines | OWASP ZAP, Wapiti, Nikto (user pulls the official image), WhatWeb, SearXNG |
+| 24 | _to create_ | White-box analysis pack | Repo import, Semgrep, Gitleaks, TruffleHog, OSV-Scanner, Trivy, Syft/Grype, Checkov, "send code to AI" gating |
+| 25 | BLI-19 | Results pages | Friendly / Technical / Raw, full CRUD |
+| 26 | BLI-20 | Agent runtime | Commander, category agents, per-test sub-agents, memory, verifier, evals |
+| 27 | BLI-21 | Agents page and settings | Deploy, per-role settings, prompt versions |
+| 28 | BLI-22 | Findings | CRUD, CVSS, evidence, verification, status workflow |
+| 29 | _to create_ | CVE enrichment | NVD, KEV, EPSS, OSV, cache and rate limiting |
+| 30 | _to create_ | Mission Control | Radar, graph, live events, approvals, replay |
+| 31 | _to create_ | AI usage page | Tokens and cost by provider, agent, run |
+| 32 | _to create_ | Dashboard | Overview and attention queue |
+| 33 | _to create_ | Chatbot | Integrated chat with knowledge-base write-back |
+| 34 | _to create_ | Reports | Templates and exports |
+| 35 | _to create_ | Docs and README finish | How-to guides, screenshots, final links |
 
-Order notes: CI lands (#3) before the code that depends on it is large, but PRs 1 and 2 predate it, so they are checked locally with the same commands; a decision is requested in [section 21](#21-open-questions-and-things-i-could-not-verify). Mission Control is built after the runtime, findings and CVE enrichment so it shows real data.
-
+Order notes: **BLI-1 (CI) is the first build PR**, as you asked, so the scaffold and everything after it runs through the full pipeline before it is merged. Because the CI PR has no application code to check yet, its jobs are path-aware and report "nothing to check" until code exists; its own content (workflows, Dockerfile lint, docs formatting) is still checked by actionlint, zizmor, hadolint and Prettier. The tool work is split into reviewable slices (framework, Docker runner and pulls, settings page, built-ins, pack images, optional engines) instead of one giant tool PR. Mission Control is built after the runtime, findings and CVE enrichment so it shows real data.
 ---
 
 ## 20. Risks
@@ -790,8 +877,11 @@ Order notes: CI lands (#3) before the code that depends on it is large, but PRs 
 | Docker socket access is powerful | Optional, behind a restricted proxy with an allow-list and tests; default is the in-container sandbox |
 | Third-party APIs change or rate-limit | Local cache, token buckets, provider fallbacks, stale-data banner |
 | Model and price churn | Catalog file with dates and user overrides; model lists fetched from APIs |
-| Scope creep: 30 PRs is a lot | Strict vertical slices; each PR runs on its own; the early foundation PRs make later ones small |
-| `httpx` has had no release since 2024-12-06 | Recorded in the scaffold ticket; evaluate alternatives for our own calls |
+| Scope creep: 36 PRs is a lot | Strict vertical slices; each PR runs on its own; the early foundation PRs make later ones small |
+| `httpx` has had no release since 2024-12-06 | Recorded in the scaffold ticket; our own outbound calls use aiohttp, httpx stays only as the AI SDKs' transitive dependency |
+| Tool images pulled automatically could be tampered with or fail midway | Digest-pinned lock file, signature check, allow-listed registries, classified errors, no half-pulled image marked ready |
+| Stale or unmaintained security tools | Version and last-release check in CI, replacement list in the [tool map](research/wstg-tool-map.md), built-ins instead of abandoned tools |
+| Star and download counts not yet verified | Hosts requested; the scaffold PR is blocked on filling the adoption column |
 | Cinematic visuals hurt performance or accessibility | Budgets, lazy loading, Reduce effects, 2D equivalents, axe in CI |
 
 ---
@@ -800,11 +890,11 @@ Order notes: CI lands (#3) before the code that depends on it is large, but PRs 
 
 ### Decisions I need from you
 
-1. **Tool isolation.** Hybrid (in-container sandbox by default plus an opt-in Docker runner) as recommended in [7.2](#72-where-tools-run-the-single-container-question), Docker-first, or in-container only?
+1. ~~**Tool isolation.**~~ **Decided: hybrid** (you chose it on 2026-11-23), with a Tools settings page to pick Local or Docker per tool ([7.5](#75-the-tools-settings-page)).
 2. **UI library.** I recommend Vuetify 4 (you suggested it, and AresGate uses it). Your coding standards name PrimeVue for Vue projects; say so if you would rather follow that.
 3. **License.** Apache-2.0 suggested. Your call.
 4. **CVE enrichment privacy.** External lookups send only CVE ids, product names and versions. Default on or off?
-5. **CI order.** PRs 1 and 2 (plan, scaffold) come before CI exists. Alternative: put CI first with a stub skeleton. I recommend the current order and merging PRs 1 to 4 early.
+5. ~~**CI order.**~~ **Decided: CI first.** BLI-1 is the first build PR, then the scaffold ([section 19](#19-the-pr-stack)).
 6. **Coverage threshold.** Your message says about 95%, the project instructions say about 90%. I used 95% for pytest and Vitest and 80% for Playwright.
 7. **Visual direction.** The app-shell PR will bring two or three mock directions for you to pick from.
 8. **Chainguard Python packages.** Use Chainguard Libraries for Python for runtime dependencies, with PyPI as a fallback? It reduces CVEs but ties installs to credentials (contributors and fork PRs would use PyPI). Recommended: Wolfi base image from day one; try the Python index in the scaffold PR once I can confirm your credentials are entitled to it.
@@ -813,11 +903,15 @@ Order notes: CI lands (#3) before the code that depends on it is large, but PRs 
 
 After you allowed the hosts I read the sources directly: Ollama's `/api/tags`, `/api/show`, authentication, cloud and usage pages; Pydantic AI's Anthropic and Ollama pages; Anthropic's and OpenAI's prompt-caching pages; the Wolfi package index, and live responses from NVD, EPSS, CISA KEV (and its GitHub mirror), OSV and CIRCL. Findings that changed the plan: Ollama Cloud does not enforce JSON-schema output; OpenAI now charges for cache writes; Anthropic's minimum cacheable length is 512 tokens on the current models; EPSS values are strings.
 
+### Added after your review (2026-11-23)
+
+Tool set researched for every WSTG test ([tool map](research/wstg-tool-map.md)); Docker image pulls, Tools settings page, two roles, dependency policy and CI-first stack order added. Newly verified: Wolfi has nuclei 3.11.1, gobuster 3.8.2, amass 5.1.3, hydra 26.2.0, grpcurl 1.9.4, WABT, wasm-tools, Binaryen, Wasmtime, Syft and Grype, but not ffuf, httpx, katana, subfinder, dalfox, testssl.sh, Nikto, wafw00f, sslyze or ZAP; the official ZAP image has `stable`, `weekly` and `latest` tags on GHCR; Dalfox 3 is a Rust rewrite (tag v3.3.0); Nikto's database files may be distributed only with the official package.
+
 ### Still unverified
 
 - **Chainguard** registry and package-index details and entitlement: `cgr.dev`, `libraries.cgr.dev`, `edu.chainguard.dev`, `www.chainguard.dev` and `support.chainguard.dev` are still blocked for me. Please add them if you want this verified.
 - **NVD's own rate-limit page** (`nvd.nist.gov` returned 403 and is a JavaScript app); the 5 and 50 requests per 30 seconds come from search results quoting it. The API itself answers on `services.nvd.nist.gov`.
-- `pypistats.org` (download counts) is unreachable; agent-framework star counts are one third-party snapshot. Versions and release counts were read from PyPI directly.
+- `pypistats.org` (download counts) is unreachable; agent-framework star counts are one third-party snapshot. **Star counts and download counts for the dependency policy** need `api.deps.dev`, `api.npmjs.org`, `pypistats.org` and `api.securityscorecards.dev`, which I have asked you to allow; the GitHub API is limited to this repository, so I read releases, tags and last-commit dates through the Go proxy, PyPI, npm, Docker Hub and `git ls-remote` instead. Versions and release counts were read from PyPI directly.
 - `go-acme.github.io` returned 404 (lego docs); the lego version and flags are checked in the container ticket. `lego` is not a Wolfi package.
 - Whether Ollama's cached-token count survives Pydantic AI's OpenAI-compatible path; OpenAI Chat Completions support for the GPT-6 models (the Responses API is confirmed).
 - The black, grey and white box definitions come from vendor and training write-ups, not a standard; the pre-engagement field list comes from public scoping and rules-of-engagement templates, not from PTES itself.
@@ -835,6 +929,7 @@ Checked 2026-11-23.
 - Reference CI: AresGate `ci.yml`, `release.yml`, `zizmor.yml`, `Dockerfile`, `sonar-project.properties` and `DOCS/security.md` in the AresGate repository
 - Agent frameworks and pentest agents: [research/agent-frameworks.md](research/agent-frameworks.md), [research/pentest-agents.md](research/pentest-agents.md)
 - Models and pricing: [research/models-and-pricing.md](research/models-and-pricing.md)
+- Tools: [research/wstg-tool-map.md](research/wstg-tool-map.md); versions from the Go module proxy, PyPI, npm, the Wolfi index, Docker Hub and GHCR tag lists, and `git ls-remote` plus shallow clones for last-commit dates; Nikto licensing from its `COPYING` file
 - CVE data: [NVD developers](https://nvd.nist.gov/developers/start-here) and [API key announcement](https://nvd.nist.gov/general/news/API-Key-Announcement) (limits, as returned by search); live responses from the NVD, FIRST EPSS, CIRCL and OSV APIs; [OSV API docs](https://google.github.io/osv.dev/api/); [cisagov/kev-data](https://github.com/cisagov/kev-data) and the CISA KEV JSON feed
 - Ollama: [authentication](https://docs.ollama.com/api/authentication), [cloud](https://docs.ollama.com/cloud), [cloud API keys](https://docs.ollama.com/cloud/api), [cloud models](https://docs.ollama.com/cloud/models), [list models](https://docs.ollama.com/api/tags), [show model details](https://docs.ollama.com/api-reference/show-model-details), [usage metrics](https://docs.ollama.com/api/usage)
 - Pydantic AI: [Anthropic models and caching](https://pydantic.dev/docs/ai/models/anthropic/), [Ollama models](https://pydantic.dev/docs/ai/models/ollama/)
