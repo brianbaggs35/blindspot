@@ -93,15 +93,8 @@ def upgrade() -> None:
     ensure_index("ix_audit_event_action", "audit_event", ["action"])
     ensure_index("ix_audit_event_actor_id", "audit_event", ["actor_id"])
     ensure_index("ix_audit_event_created_at", "audit_event", ["created_at"])
-    ensure_table(
-        "auth_secret",
-        sa.Column("name", sa.String(64), nullable=False),
-        sa.Column("value", sa.Text(), nullable=False),
-        _now(),
-        sa.PrimaryKeyConstraint("name", name=op.f("pk_auth_secret")),
-    )
 
 
 def downgrade() -> None:
-    for name in ("auth_secret", "audit_event", "auth_session", "app_user"):
+    for name in ("audit_event", "auth_session", "app_user"):
         drop_table_if_exists(name)

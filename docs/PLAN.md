@@ -563,7 +563,7 @@ The **tool registry** is separate and shared: a methodology only references tool
 
 | What | Protection | Reversible? |
 | --- | --- | --- |
-| User passwords | **Argon2id** (RFC 9106 low-memory profile), then keyed with an HMAC derived from the app secret (a pepper) | No (hash) |
+| User passwords | **Argon2id** (RFC 9106 low-memory profile), then the hash is sealed by the vault | No (hash) |
 | AI provider API keys, test-account credentials for targets, discovered credentials, tokens, evidence marked sensitive | **AES-256-GCM** with a random 96-bit nonce per value, versioned envelope (`v1:key-id:nonce:ciphertext`), **HKDF-SHA256** subkeys per purpose (providers, target credentials, discovered credentials, evidence) | Only with the app secret |
 | Passkeys | Public keys only; private keys never leave the user's device | n/a |
 | Session tokens | Random, stored hashed; cookies `HttpOnly`, `SameSite=Strict`, `Secure` | n/a |

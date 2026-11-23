@@ -5,17 +5,15 @@ import uuid
 from datetime import datetime, timedelta
 
 from sqlalchemy import func, select, update
-from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.passwords import hash_password, spend_the_same_time, verify_password
 from app.auth.tokens import hash_token, new_token
 from app.config import Settings
 from app.db.base import utc_now
-from app.db.models import AuthSecret, AuthSession, Role, User
+from app.db.models import AuthSession, Role, User
 
 USERNAME = re.compile(r"^[a-z0-9][a-z0-9._-]{2,63}$")
-PEPPER = "password-pepper"
 # A session's last-seen time is only rewritten when it is this old, so a busy page is not a write
 # for every request.
 TOUCH_AFTER = timedelta(seconds=60)
@@ -29,17 +27,6 @@ def normalize_username(raw: str) -> str:
 def is_valid_username(username: str) -> bool:
     """Whether a normalized username is allowed."""
     return USERNAME.fullmatch(username) is not None
-
-
-async def get_pepper(session: AsyncSession) -> bytes:
-    """The secret mixed into every password, made the first time it is needed."""
-    await session.execute(
-        insert(AuthSecret)
-        .values(name=PEPPER, value=uuid.uuid4().hex + uuid.uuid4().hex)
-        .on_conflict_do_nothing()
-    )
-    stored = await session.scalar(select(AuthSecret.value).where(AuthSecret.name == PEPPER))
-    return str(stored).encode()
 
 
 async def count_users(session: AsyncSession) -> int:
@@ -60,16 +47,16 @@ async def create_user(
         username=username,
         display_name=display_name.strip() or username,
         role=role.value,
-        password_hash=await hash_password(password, await get_pepper(session)),
+        password_hash=await hash_password(password),
     )
     session.add(user)
     await session.flush()
     return user
 
 
-async def set_password(session: AsyncSession, user: User, password: str) -> None:
+async def set_password(user: User, password: str) -> None:
     """Change an account's password and forget any lockout."""
-    user.password_hash = await hash_password(password, await get_pepper(session))
+    user.password_hash = await hash_password(password)
     user.password_changed_at = utc_now()
     user.failed_attempts = 0
     user.locked_until = None
@@ -88,15 +75,14 @@ async def authenticate(
     Every failure looks the same to the caller: an unknown name, a wrong password, a locked or a
     disabled account. An unknown name still costs a hash, so timing does not give it away.
     """
-    pepper = await get_pepper(session)
     user = await find_user(session, username)
     if user is None:
-        await spend_the_same_time(password, pepper)
+        await spend_the_same_time(password)
         return None
     if is_locked(user, now) or not user.is_active:
-        await spend_the_same_time(password, pepper)
+        await spend_the_same_time(password)
         return None
-    correct, stale = await verify_password(user.password_hash, password, pepper)
+    correct, stale = await verify_password(user.password_hash, password)
     if not correct:
         user.failed_attempts += 1
         if user.failed_attempts >= settings.lockout_attempts:
@@ -104,7 +90,7 @@ async def authenticate(
             user.failed_attempts = 0
         return None
     if stale:
-        user.password_hash = await hash_password(password, pepper)
+        user.password_hash = await hash_password(password)
     user.failed_attempts = 0
     user.locked_until = None
     user.last_sign_in_at = now

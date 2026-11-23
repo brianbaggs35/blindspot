@@ -114,7 +114,7 @@ async def reset_password(
     user = await _get(session, user_id)
     if reason := password_problem(body.password, user.username):
         raise AppError(422, "password_rejected", reason)
-    await set_password(session, user, body.password)
+    await set_password(user, body.password)
     await revoke_sessions(session, user.id, utc_now())
     audit.record(session, request, "user.password_reset", actor=who.user, target=("user", user.id))
     return Response(status_code=204)

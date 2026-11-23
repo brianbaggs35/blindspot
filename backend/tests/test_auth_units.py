@@ -16,8 +16,6 @@ from app.auth.ratelimit import FailureLimiter
 from app.auth.setup_code import SetupGate, new_code
 from app.auth.tokens import hash_token, new_token
 
-PEPPER = b"pepper-pepper-pepper-pepper-1234"
-
 
 @pytest.mark.parametrize(
     ("password", "username", "problem"),
@@ -37,22 +35,13 @@ def test_what_a_password_must_be(password: str, username: str, problem: str | No
 
 
 def test_a_hash_is_argon2id_and_checks_the_right_password() -> None:
-    stored = asyncio.run(passwords.hash_password("correct horse battery", PEPPER))
+    stored = asyncio.run(passwords.hash_password("correct horse battery"))
     assert stored.startswith("$argon2id$v=19$m=65536,t=3,p=4$")
-    assert asyncio.run(passwords.verify_password(stored, "correct horse battery", PEPPER)) == (
+    assert asyncio.run(passwords.verify_password(stored, "correct horse battery")) == (
         True,
         False,
     )
-    assert asyncio.run(passwords.verify_password(stored, "wrong horse battery", PEPPER)) == (
-        False,
-        False,
-    )
-
-
-def test_the_pepper_is_part_of_the_hash() -> None:
-    stored = asyncio.run(passwords.hash_password("correct horse battery", PEPPER))
-    other = b"another-pepper-another-pepper-12"
-    assert asyncio.run(passwords.verify_password(stored, "correct horse battery", other)) == (
+    assert asyncio.run(passwords.verify_password(stored, "wrong horse battery")) == (
         False,
         False,
     )
@@ -60,22 +49,22 @@ def test_the_pepper_is_part_of_the_hash() -> None:
 
 def test_a_hash_made_with_weaker_settings_is_flagged_for_rehashing() -> None:
     weak = PasswordHasher(time_cost=1, memory_cost=8, parallelism=1)
-    stored = weak.hash(passwords.mix("correct horse battery", PEPPER))
-    assert asyncio.run(passwords.verify_password(stored, "correct horse battery", PEPPER)) == (
+    stored = weak.hash("correct horse battery")
+    assert asyncio.run(passwords.verify_password(stored, "correct horse battery")) == (
         True,
         True,
     )
 
 
 def test_a_value_that_is_not_a_hash_is_just_wrong() -> None:
-    assert asyncio.run(passwords.verify_password("not a hash", "whatever12345", PEPPER)) == (
+    assert asyncio.run(passwords.verify_password("not a hash", "whatever12345")) == (
         False,
         False,
     )
 
 
 def test_the_decoy_check_runs() -> None:
-    asyncio.run(passwords.spend_the_same_time("whatever12345", PEPPER))
+    asyncio.run(passwords.spend_the_same_time("whatever12345"))
 
 
 class Clock:

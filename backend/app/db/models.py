@@ -5,7 +5,7 @@ from datetime import datetime
 from enum import StrEnum
 from typing import Any
 
-from sqlalchemy import CheckConstraint, DateTime, ForeignKey, String, Text, Uuid, func, text, true
+from sqlalchemy import CheckConstraint, DateTime, ForeignKey, String, Uuid, func, text, true
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -13,7 +13,7 @@ from app.db.base import Base, Timestamps, UUIDPrimaryKey, utc_now
 from app.vault.seal import Purpose
 from app.vault.types import SealedString
 
-__all__ = ["AppSetting", "AuditEvent", "AuthSecret", "AuthSession", "Base", "Role", "User"]
+__all__ = ["AppSetting", "AuditEvent", "AuthSession", "Base", "Role", "User"]
 
 
 class AppSetting(Base):
@@ -47,7 +47,8 @@ class User(UUIDPrimaryKey, Timestamps, Base):
     username: Mapped[str] = mapped_column(String(64), unique=True)
     display_name: Mapped[str] = mapped_column(String(100))
     role: Mapped[str] = mapped_column(String(16), default=Role.VIEWER.value)
-    password_hash: Mapped[str] = mapped_column(Text)
+    # The Argon2id hash, sealed by the vault on top of being a hash.
+    password_hash: Mapped[str] = mapped_column(SealedString(Purpose.AUTH))
     is_active: Mapped[bool] = mapped_column(default=True, server_default=true())
     password_changed_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=utc_now, server_default=func.now()
@@ -98,16 +99,3 @@ class AuditEvent(UUIDPrimaryKey, Base):
     ip_address: Mapped[str | None] = mapped_column(String(45), default=None)
     user_agent: Mapped[str | None] = mapped_column(String(256), default=None)
     detail: Mapped[dict[str, Any] | None] = mapped_column(JSONB, default=None)
-
-
-class AuthSecret(Base):
-    """Secrets the app makes for itself, sealed: today the pepper that is mixed into passwords
-    before they are hashed."""
-
-    __tablename__ = "auth_secret"
-
-    name: Mapped[str] = mapped_column(String(64), primary_key=True)
-    value: Mapped[str] = mapped_column(SealedString(Purpose.AUTH))
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), default=utc_now, server_default=func.now()
-    )
