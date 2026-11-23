@@ -30,6 +30,7 @@ jobs:
       backend: ${{ steps.pick.outputs.backend }}
       frontend: ${{ steps.pick.outputs.frontend }}
       database: ${{ steps.pick.outputs.database }}
+      container: ${{ steps.pick.outputs.container }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -42,6 +43,7 @@ jobs:
             echo "backend=$([[ -f backend/pyproject.toml ]] && echo true || echo false)"
             echo "frontend=$([[ -f frontend/package.json ]] && echo true || echo false)"
             echo "database=$([[ -f backend/alembic.ini ]] && echo true || echo false)"
+            echo "container=$([[ -f Dockerfile ]] && echo true || echo false)"
           } | tee -a "$GITHUB_OUTPUT"
 
   # Prettier over everything that is text: the docs, the workflows and the configuration.
@@ -283,6 +285,113 @@ jobs:
           if-no-files-found: ignore
           retention-days: 14
 
+  # The container, built and run as people will run it: scanned by Trivy, started read-only with
+  # every capability dropped but five, and smoke tested over https. The release builds and tests
+  # the same image for both CPUs; this finds a broken image in the pull request instead.
+  container:
+    name: Container
+    needs: detect
+    if: ${{ needs.detect.outputs.container == 'true' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      security-events: write # upload the image scan to code scanning
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+
+      # The base image's digest is what to pin it to (docs/how-to/container.md).
+      - name: Show the base image
+        run: docker buildx imagetools inspect cgr.dev/chainguard/wolfi-base:latest | head -8
+
+      - name: Build the image
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .
+          target: runtime
+          load: true
+          tags: blindspot:ci
+          provenance: false
+          sbom: false
+          build-args: |
+            RELEASE=ci
+            COMMIT=${{ github.sha }}
+            APK_REFRESH=${{ github.run_id }}
+            IMAGE_REFRESH=${{ github.run_id }}-${{ github.run_attempt }}
+
+      - name: Trivy scan of the image
+        id: trivy-image
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          version: v0.76.2
+          scan-type: image
+          image-ref: blindspot:ci
+          trivyignores: .trivyignore.yaml
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          limit-severities-for-sarif: true
+          format: sarif
+          output: trivy-image.sarif
+          exit-code: "1"
+        continue-on-error: true
+
+      - name: Show the image scan findings
+        if: ${{ steps.trivy-image.outcome == 'failure' }}
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          version: v0.76.2
+          skip-setup-trivy: true
+          scan-type: image
+          image-ref: blindspot:ci
+          trivyignores: .trivyignore.yaml
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          format: table
+          exit-code: "0"
+
+      - name: Upload the image scan to GitHub code scanning
+        if: ${{ !cancelled() && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) }}
+        uses: github/codeql-action/upload-sarif@1bd86f2fdb4b86187fa4059f16f31a3202acc9ea # v4.39.4
+        with:
+          sarif_file: trivy-image.sarif
+          category: trivy-image
+
+      - name: Enforce the Trivy threshold
+        env:
+          IMAGE_SCAN_OUTCOME: ${{ steps.trivy-image.outcome }}
+        run: ./.github/scripts/trivy-report.sh image "$IMAGE_SCAN_OUTCOME" trivy-image.sarif
+
+      - name: Start the container
+        run: ./.github/scripts/run-container.sh blindspot:ci blindspot-ci 8443
+
+      - name: Smoke test
+        run: ./.github/scripts/smoke-test.sh blindspot-ci 8443
+
+      # A restart must find everything a first start left, and nothing it can't repeat.
+      - name: Restart the container
+        run: |
+          docker restart blindspot-ci
+          ./.github/scripts/smoke-test.sh blindspot-ci 8443
+
+      - name: Stop cleanly
+        run: |
+          docker stop --time 40 blindspot-ci
+          code="$(docker inspect --format '{{.State.ExitCode}}' blindspot-ci)"
+          echo "exit code: $code"
+          [[ "$code" == "0" ]]
+
+      - name: Container logs
+        if: ${{ failure() }}
+        run: docker logs blindspot-ci || true
+
+      - name: Remove the container
+        if: ${{ always() }}
+        run: docker rm --force --volumes blindspot-ci || true
+
   # SonarQube Cloud: bugs, code smells, security hotspots, duplication and coverage, held to
   # its quality gate. It needs the SONAR_TOKEN secret; without it, as on pull requests from
   # forks, the job only says so. Settings are in sonar-project.properties.
@@ -363,7 +472,7 @@ jobs:
   # counts as passed; a failed or cancelled one does not.
   ci-gate:
     name: CI gate
-    needs: [detect, format, infrastructure, trivy, backend, frontend, sonarqube]
+    needs: [detect, format, infrastructure, trivy, backend, frontend, container, sonarqube]
     if: ${{ always() }}
     runs-on: ubuntu-24.04
     timeout-minutes: 5

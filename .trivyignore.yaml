@@ -1,5 +1,13 @@
 # Findings Trivy should not fail on. Each entry needs a reason and an expiry date, so nothing is
 # ignored forever by accident. Empty means everything is fixed or has no fix available.
 vulnerabilities: []
-misconfigurations: []
+misconfigurations:
+  # The container's entrypoint and its process supervisor run as root so that each service can be
+  # started as its own user (nginx, the API and PostgreSQL never run as root). The container runs
+  # with every capability dropped except the five that takes. See docs/how-to/container.md.
+  - id: AVD-DS-0002
+    paths:
+      - Dockerfile
+    statement: Only the supervisor runs as root; every service is started as its own user.
+    expired_at: 2027-06-01
 secrets: []

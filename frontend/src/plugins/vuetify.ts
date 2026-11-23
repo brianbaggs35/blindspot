@@ -1,5 +1,6 @@
 import { aliases, mdi } from "vuetify/iconsets/mdi-svg";
 import { createVuetify, type ThemeDefinition } from "vuetify";
+import { cspNonce } from "../csp";
 
 // Two themes on the same tokens. Cyan to indigo is the logo's ring; amber is for blind spots
 // and warnings only; red is for critical issues; green is for passed.
@@ -38,7 +39,7 @@ export const daylight: ThemeDefinition = {
 export function createBlindspotVuetify(defaultTheme: "midnight" | "daylight" = "midnight") {
   return createVuetify({
     icons: { defaultSet: "mdi", aliases, sets: { mdi } },
-    theme: { defaultTheme, themes: { midnight, daylight } },
+    theme: { defaultTheme, themes: { midnight, daylight }, cspNonce: cspNonce() },
     defaults: {
       VBtn: { rounded: "lg" },
       VCard: { rounded: "lg" },

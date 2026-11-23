@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Checks a running Blindspot container answers. It is given the container's name and the HTTPS
-# port it is published on. The app's own health endpoint is /api/health (added with the scaffold);
+# port it is published on (the container's 8443). The app's own health endpoint is /api/health (added with the scaffold);
 # the web app is served at /. The container's certificate is self-signed in CI, so it is not verified.
 # Usage: smoke-test.sh <container-name> <https-port>
 set -euo pipefail
@@ -34,6 +34,16 @@ check() {
 check /api/health 200
 check / 200
 check /api/does-not-exist 404
+
+# Nothing may listen on TCP except nginx: the API and the database use unix sockets.
+listening="$(docker exec "$container" cat /proc/net/tcp /proc/net/tcp6 | while read -r _ local _ state _; do
+  [[ "$state" == "0A" ]] && echo "$((16#${local##*:}))"
+done | sort -un | tr '\n' ' ')"
+if [[ "$listening" != "8080 8443 " ]]; then
+  echo "::error::The container listens on TCP ports: ${listening:-none}. Only 8080 and 8443 may."
+  exit 1
+fi
+echo "TCP ports: $listening"
 
 # The server must not announce itself.
 if curl --silent --insecure --max-time 10 --head "$base/" | grep -qi '^server:.*[0-9]'; then

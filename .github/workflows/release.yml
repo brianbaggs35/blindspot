@@ -190,7 +190,7 @@ jobs:
           output: sbom-${{ matrix.arch }}.spdx.json
 
       - name: Start the container
-        run: docker run --detach --name blindspot-smoke --publish 127.0.0.1:8443:443 blindspot:release
+        run: ./.github/scripts/run-container.sh blindspot:release blindspot-smoke 8443
 
       - name: Smoke test
         run: ./.github/scripts/smoke-test.sh blindspot-smoke 8443

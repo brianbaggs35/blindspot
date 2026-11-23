@@ -1,0 +1,14 @@
+#!/bin/sh
+# PostgreSQL 18, with no TCP port: the unix socket in /run/postgresql, readable by the pgsock
+# group (the API) only, and no password (docker/pg_hba.conf).
+exec setpriv --reuid=postgres --regid=postgres --init-groups --no-new-privs -- \
+  postgres -D /data/postgres \
+  -c listen_addresses= \
+  -c unix_socket_directories=/run/postgresql \
+  -c unix_socket_permissions=0770 \
+  -c unix_socket_group=pgsock \
+  -c hba_file=/etc/blindspot/pg_hba.conf \
+  -c password_encryption=scram-sha-256 \
+  -c log_destination=stderr \
+  -c logging_collector=off \
+  -c log_line_prefix='%m [%p] %q%u@%d '

@@ -1,0 +1,51 @@
+# Blindspot in one container: nginx (TLS), the API and PostgreSQL 18 (unix socket only).
+#
+#   docker compose up -d        then open https://localhost
+#
+# The first start makes a self-signed certificate, so the browser warns once. To use your own,
+# put fullchain.pem and privkey.pem in ./certs and uncomment the volume below.
+# docs/how-to/container.md has everything else: ports, certificates, backups and upgrades.
+name: blindspot
+
+services:
+  blindspot:
+    image: ghcr.io/brianbaggs35/blindspot:latest
+    build:
+      context: .
+      target: runtime
+    restart: unless-stopped
+    ports:
+      - "${BLINDSPOT_HTTPS_PORT:-443}:8443"
+      - "${BLINDSPOT_HTTP_PORT:-80}:8080"
+    environment:
+      # The port people reach https on, so that http:// redirects to the right address.
+      BLINDSPOT_PUBLIC_HTTPS_PORT: "${BLINDSPOT_HTTPS_PORT:-443}"
+      # Names and addresses the self-signed certificate should be valid for.
+      BLINDSPOT_HOSTNAMES: "${BLINDSPOT_HOSTNAMES:-}"
+      # Set to 1 once https works for the whole host name (HSTS can't be undone for a year).
+      BLINDSPOT_HSTS: "${BLINDSPOT_HSTS:-0}"
+    volumes:
+      - data:/data
+      # - ./certs:/certs:ro
+    # Hardening. The file system is read-only and everything that is written is on /data or a
+    # tmpfs. The entrypoint runs as root only to prepare /data and start each service as its own
+    # user, so it keeps the five capabilities that takes and nothing else.
+    read_only: true
+    tmpfs:
+      - /run:rw,noexec,nosuid,nodev,size=64m
+      - /tmp:rw,noexec,nosuid,nodev,size=64m
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - DAC_OVERRIDE
+      - FOWNER
+      - SETUID
+      - SETGID
+    security_opt:
+      - no-new-privileges:true
+    pids_limit: 512
+    stop_grace_period: 40s
+
+volumes:
+  data:
