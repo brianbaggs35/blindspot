@@ -27,7 +27,7 @@ describe("navigation", () => {
         { path: "/hidden", component },
       ],
     });
-    expect(navSections(router)).toEqual([
+    expect(navSections(router, false)).toEqual([
       {
         id: "work",
         title: "Work",
@@ -40,9 +40,32 @@ describe("navigation", () => {
     ]);
   });
 
+  it("leaves out pages only an administrator may open, for everyone else", () => {
+    const router = createRouter({
+      history: createMemoryHistory(),
+      routes: [
+        {
+          path: "/users",
+          component,
+          meta: { access: "admin", nav: { label: "Users", group: "system", order: 1, icon: "u" } },
+        },
+        {
+          path: "/account",
+          component,
+          meta: { nav: { label: "Account", group: "system", order: 2, icon: "a" } },
+        },
+      ],
+    });
+    expect(navSections(router, false)[0]?.items.map((item) => item.label)).toEqual(["Account"]);
+    expect(navSections(router, true)[0]?.items.map((item) => item.label)).toEqual([
+      "Users",
+      "Account",
+    ]);
+  });
+
   it("leaves out a group with no pages", () => {
     const router = createRouter({ history: createMemoryHistory(), routes: [] });
-    expect(navSections(router)).toEqual([]);
+    expect(navSections(router, true)).toEqual([]);
   });
 
   it("names the tab after the page, or just the app", () => {

@@ -2,6 +2,7 @@
 import { computed } from "vue";
 import { useRouter } from "vue-router";
 import { navSections } from "../navigation";
+import { useAuthStore } from "../stores/auth";
 
 defineProps<{ rail: boolean }>();
 
@@ -9,7 +10,8 @@ defineProps<{ rail: boolean }>();
 defineEmits<{ navigate: [] }>();
 
 const router = useRouter();
-const sections = computed(() => navSections(router));
+const auth = useAuthStore();
+const sections = computed(() => navSections(router, auth.isAdmin));
 </script>
 
 <template>

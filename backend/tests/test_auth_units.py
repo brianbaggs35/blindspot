@@ -3,6 +3,7 @@ and the cross-site check."""
 
 import asyncio
 import re
+from typing import cast
 
 import pytest
 from argon2 import PasswordHasher
@@ -15,6 +16,9 @@ from app.auth.csrf import came_from_this_site
 from app.auth.ratelimit import FailureLimiter
 from app.auth.setup_code import SetupGate, new_code
 from app.auth.tokens import hash_token, new_token
+from app.config import Settings, get_settings
+from app.log import configure_logging
+from app.main import create_app
 
 
 @pytest.mark.parametrize(
@@ -120,6 +124,34 @@ def test_a_setup_code_looks_like_one_and_is_checked_without_regard_to_case() -> 
     assert gate.accepts("BLND-AAAA-AAAA-AAAA") is False
     gate.close()
     assert gate.accepts(code) is False
+
+
+def test_a_setup_code_chosen_by_the_operator_is_used_and_not_printed(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    configure_logging("INFO")
+    gate = SetupGate("chosen-by-the-operator")
+    assert gate.open() == "chosen-by-the-operator"
+    assert gate.accepts("CHOSEN-BY-THE-OPERATOR")
+    output = capsys.readouterr().out
+    assert "BLINDSPOT_SETUP_CODE" in output
+    assert "chosen-by-the-operator" not in output
+
+
+def test_the_app_reads_the_chosen_setup_code_from_its_settings(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("BLINDSPOT_SETUP_CODE", "x" * 16)
+    get_settings.cache_clear()
+    app = create_app()
+    assert cast("SetupGate", app.state.setup_gate).open() == "x" * 16
+    get_settings.cache_clear()
+
+
+def test_a_chosen_setup_code_must_be_long_enough(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("BLINDSPOT_SETUP_CODE", "short")
+    with pytest.raises(ValueError, match="at least 16"):
+        Settings()
 
 
 def request_with(headers: dict[str, str]) -> Request:

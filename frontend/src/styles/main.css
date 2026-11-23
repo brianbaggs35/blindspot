@@ -144,3 +144,31 @@ pre,
     backdrop-filter: none;
   }
 }
+
+/* Sign-in and setup. */
+.bs-auth {
+  display: flex;
+  justify-content: center;
+  padding-top: 8vh;
+}
+
+.bs-auth-card {
+  width: 100%;
+  max-width: 440px;
+}
+
+.bs-rules {
+  margin: 0 0 8px;
+  padding: 0;
+  list-style: none;
+}
+
+.bs-facts {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 8px 16px;
+}
+
+.bs-facts dt {
+  color: rgba(var(--v-theme-on-surface), var(--v-medium-emphasis-opacity));
+}

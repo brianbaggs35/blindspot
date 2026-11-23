@@ -23,18 +23,27 @@ def new_code() -> str:
 class SetupGate:
     """Holds the code while setup is open, and forgets it once setup is done."""
 
-    def __init__(self) -> None:
+    def __init__(self, chosen: str | None = None) -> None:
         self.code: str | None = None
+        self._chosen = chosen
 
     def open(self) -> str:
-        """Make a code (if there is none) and print it."""
+        """Open setup with the code the operator chose, or make one and print it."""
         if self.code is None:
-            self.code = new_code()
-            log.warning(
-                "setup_required",
-                message="No administrator exists yet. Open the app and enter this setup code "
-                f"to create one: {self.code}",
-            )
+            if self._chosen is not None:
+                self.code = self._chosen
+                log.warning(
+                    "setup_required",
+                    message="No administrator exists yet. Open the app and enter the setup code "
+                    "from BLINDSPOT_SETUP_CODE to create one.",
+                )
+            else:
+                self.code = new_code()
+                log.warning(
+                    "setup_required",
+                    message="No administrator exists yet. Open the app and enter this setup "
+                    f"code to create one: {self.code}",
+                )
         return self.code
 
     def close(self) -> None:
@@ -44,7 +53,7 @@ class SetupGate:
     def accepts(self, given: str) -> bool:
         """Whether this is the current code (compared in constant time)."""
         return self.code is not None and hmac.compare_digest(
-            self.code.encode(), given.strip().upper().encode()
+            self.code.upper().encode(), given.strip().upper().encode()
         )
 
     async def prepare(self, database: Database) -> None:

@@ -1,6 +1,7 @@
 import type { Router } from "vue-router";
 import { mdiMotionPauseOutline, mdiMotionPlayOutline, mdiThemeLightDark } from "@mdi/js";
 import { navSections } from "./navigation";
+import { useAuthStore } from "./stores/auth";
 import { useThemeStore } from "./stores/theme";
 import { useUiStore } from "./stores/ui";
 
@@ -16,7 +17,7 @@ export interface Command {
 export function buildCommands(router: Router): Command[] {
   const theme = useThemeStore();
   const ui = useUiStore();
-  const pages = navSections(router).flatMap((section) =>
+  const pages = navSections(router, useAuthStore().isAdmin).flatMap((section) =>
     section.items.map((item): Command => ({
       id: `go:${item.to}`,
       title: item.label,

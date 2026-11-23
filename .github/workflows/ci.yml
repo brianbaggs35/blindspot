@@ -301,6 +301,21 @@ jobs:
     defaults:
       run:
         working-directory: frontend
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_USER: blindspot
+          POSTGRES_DB: blindspot
+          # A throwaway database only this job can reach, so no password is kept for it.
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -h 127.0.0.1 -U blindspot"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -333,6 +348,7 @@ jobs:
       - name: Run this shard
         env:
           E2E_COVERAGE: "1"
+          BLINDSPOT_DATABASE_URL: postgresql+psycopg://blindspot@127.0.0.1:5432/blindspot
           SHARD: ${{ matrix.shard }}
         run: npm run e2e -- --shard="$SHARD/3"
 
@@ -390,7 +406,12 @@ jobs:
 
       - name: Start the container
         run: |
-          ./.github/scripts/run-container.sh blindspot:e2e blindspot-e2e 8443
+          # The setup code and the relaxed limits are what e2e/accounts.ts expects; the tests
+          # create many accounts and sign in often from one address.
+          ./.github/scripts/run-container.sh blindspot:e2e blindspot-e2e 8443 \
+            --env BLINDSPOT_SETUP_CODE=e2e-setup-code-0123456789 \
+            --env BLINDSPOT_THROTTLE_FAILURES=1000 \
+            --env BLINDSPOT_PASSKEY_FAILURES=1000
           ./.github/scripts/smoke-test.sh blindspot-e2e 8443
 
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
@@ -411,7 +432,7 @@ jobs:
         working-directory: frontend
         env:
           E2E_MODE: container
-          E2E_BASE_URL: https://127.0.0.1:8443
+          E2E_BASE_URL: https://localhost:8443
           SHARD: ${{ matrix.shard }}
         run: npm run e2e -- --shard="$SHARD/3"
 

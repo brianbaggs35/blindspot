@@ -47,6 +47,8 @@ What the specs cover:
 - `layout.spec.ts`: no horizontal scroll at 320, 390, 600, 768, 1024 and 1280 px, and no animation under `prefers-reduced-motion`.
 - `a11y.spec.ts`: axe-core (WCAG 2.2 A and AA, and best practice) on every page, in both themes, at all six widths. It fails on any problem not listed in `e2e/axe-baseline.json`. That file is the "previous run": it starts empty, and an entry needs a reason, so a new problem cannot slip in and an old one is removed by deleting its line.
 
+Most specs run **signed in as an administrator**. `e2e/global-setup.ts` creates that account through the API (or signs in when it exists) and saves the session; the API the tests start gets its settings from `e2e/accounts.ts` (a fixed setup code, relaxed throttles, the `BLINDSPOT_DATABASE_URL` you export). Specs that need a signed-out browser use `SIGNED_OUT`; specs that change accounts make their own with `e2e/people.ts` so they never lock the shared one. Passkey specs use a virtual authenticator and run in host mode only. The database must be PostgreSQL: CI starts a Postgres 18 service, and locally export `BLINDSPOT_DATABASE_URL`.
+
 **When you add a page**, add it to `e2e/pages.ts`; the layout and accessibility specs then cover it. On a machine where Playwright's own browser is not installed, point `E2E_CHROMIUM` at a Chromium binary.
 
 Reports (HTML, traces and screenshots of failures, coverage) are uploaded as artifacts on every CI run.

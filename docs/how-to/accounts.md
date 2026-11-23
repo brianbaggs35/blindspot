@@ -18,6 +18,10 @@ password. Setup works once: after the first account exists, the endpoint answers
 is made again at each start while no account exists, so an old code never works. Guessing it is
 throttled like a failed sign-in.
 
+To choose the code yourself (for an unattended install or a test), set `BLINDSPOT_SETUP_CODE` to
+16 to 64 characters. It is read as secret and never printed; the log then only says that setup
+is waiting. Treat it like a password and unset it once the first administrator exists.
+
 ## Passwords
 
 - Passwords need 12 to 256 characters, at least four different ones, and must not be a very

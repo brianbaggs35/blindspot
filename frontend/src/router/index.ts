@@ -1,6 +1,9 @@
-import { mdiRadar } from "@mdi/js";
+import { mdiAccountCircleOutline, mdiRadar } from "@mdi/js";
 import { createRouter, createWebHistory, type RouteRecordRaw } from "vue-router";
+import { setSessionEndedHandler } from "../api/client";
 import { pageTitle } from "../navigation";
+import { useAuthStore } from "../stores/auth";
+import { guard } from "./guard";
 
 export const routes: RouteRecordRaw[] = [
   {
@@ -8,6 +11,33 @@ export const routes: RouteRecordRaw[] = [
     name: "home",
     component: () => import("../views/HomeView.vue"),
     meta: { nav: { label: "Overview", group: "work", order: 10, icon: mdiRadar } },
+  },
+  {
+    path: "/setup",
+    name: "setup",
+    component: () => import("../views/SetupView.vue"),
+    meta: { title: "Set up Blindspot", access: "public", layout: "bare" },
+  },
+  {
+    path: "/sign-in",
+    name: "sign-in",
+    component: () => import("../views/SignInView.vue"),
+    meta: { title: "Sign in", access: "public", layout: "bare" },
+  },
+  {
+    path: "/account",
+    name: "account",
+    component: () => import("../views/AccountView.vue"),
+    meta: {
+      title: "Account",
+      nav: { label: "Account", group: "system", order: 90, icon: mdiAccountCircleOutline },
+    },
+  },
+  {
+    path: "/forbidden",
+    name: "forbidden",
+    component: () => import("../views/ForbiddenView.vue"),
+    meta: { title: "No access" },
   },
   {
     path: "/:pathMatch(.*)*",
@@ -19,8 +49,17 @@ export const routes: RouteRecordRaw[] = [
 
 export function createBlindspotRouter(history = createWebHistory()) {
   const router = createRouter({ history, routes });
+  router.beforeEach(guard);
   router.afterEach((to) => {
     document.title = pageTitle(to.meta.title);
+  });
+  // A session that ends while a page is open (it expired, or an administrator ended it) sends the
+  // person to sign in again, and back to this page afterwards.
+  setSessionEndedHandler(() => {
+    const auth = useAuthStore();
+    if (!auth.isSignedIn) return;
+    auth.sessionEnded();
+    void router.push({ name: "sign-in", query: { next: router.currentRoute.value.fullPath } });
   });
   return router;
 }

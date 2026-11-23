@@ -2,7 +2,9 @@ import { createPinia, setActivePinia } from "pinia";
 import { beforeEach, describe, expect, it } from "vitest";
 import { createMemoryHistory } from "vue-router";
 import { buildCommands, filterCommands, type Command } from "../src/commands";
+import { admin } from "./helpers";
 import { createBlindspotRouter } from "../src/router";
+import { useAuthStore } from "../src/stores/auth";
 import { useThemeStore } from "../src/stores/theme";
 import { useUiStore } from "../src/stores/ui";
 
@@ -13,13 +15,15 @@ function command(title: string, hint: string): Command {
 describe("commands", () => {
   beforeEach(() => {
     setActivePinia(createPinia());
+    useAuthStore().$patch({ loaded: true, user: admin });
   });
 
   it("offers every page in the menu and the appearance actions", () => {
     const commands = buildCommands(createBlindspotRouter(createMemoryHistory()));
-    expect(commands.map((entry) => entry.id)).toEqual(["go:/", "theme", "effects"]);
+    expect(commands.map((entry) => entry.id)).toEqual(["go:/", "go:/account", "theme", "effects"]);
     expect(commands.map((entry) => entry.title)).toEqual([
       "Overview",
+      "Account",
       "Switch to the light theme",
       "Turn visual effects off",
     ]);
@@ -30,12 +34,12 @@ describe("commands", () => {
     const first = buildCommands(router);
     await first[0]?.run();
     expect(router.currentRoute.value.path).toBe("/");
-    first[1]?.run();
     first[2]?.run();
+    first[3]?.run();
     expect(useThemeStore().name).toBe("daylight");
     expect(useUiStore().effects).toBe(false);
     const second = buildCommands(router);
-    expect(second.map((entry) => entry.title).slice(1)).toEqual([
+    expect(second.map((entry) => entry.title).slice(2)).toEqual([
       "Switch to the dark theme",
       "Turn visual effects on",
     ]);

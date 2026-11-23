@@ -17,6 +17,7 @@ Then open <https://localhost>. The first start makes a self-signed certificate, 
 | `BLINDSPOT_HSTS`            | `0`     | `1` sends `Strict-Transport-Security`. It covers the whole host name and lasts a year, so it is opt-in                                                                                                               |
 | `BLINDSPOT_SECRET_KEY`      | none    | The key that seals stored credentials (32 characters or more). Empty: one is made on first start in `/data/secrets`. See [Secrets](secrets.md)                                                                       |
 | `BLINDSPOT_SECRET_KEY_FILE` | none    | The same key, read from a file (a Docker secret), instead of the variable                                                                                                                                            |
+| `BLINDSPOT_SETUP_CODE`      | none    | The first-run setup code, 16 to 64 characters, instead of one made and printed at start. For unattended installs and tests; see [Accounts](accounts.md)                                                              |
 
 Set them in the shell or in a `.env` file next to `compose.yaml`.
 

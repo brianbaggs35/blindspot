@@ -1,12 +1,12 @@
 import { flushPromises } from "@vue/test-utils";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { nextTick } from "vue";
 import { VNavigationDrawer } from "vuetify/components";
 import App from "../src/App.vue";
 import { useThemeStore } from "../src/stores/theme";
 import { useUiStore } from "../src/stores/ui";
 import HomeView from "../src/views/HomeView.vue";
-import { mountWithApp, setWidth } from "./helpers";
+import { mockApi, mountWithApp, setWidth } from "./helpers";
 
 describe("App", () => {
   beforeEach(() => {
@@ -116,6 +116,57 @@ describe("App", () => {
     document.getElementById("content")?.removeAttribute("id");
     await wrapper.get("a.bs-skip").trigger("click");
     expect(document.activeElement).toBe(document.body);
+  });
+});
+
+describe("the shell around the sign-in page and for a signed-in person", () => {
+  beforeEach(() => {
+    document.body.innerHTML = "";
+    setWidth(1280);
+  });
+
+  it("shows no menu, search or account menu to someone who is not signed in", async () => {
+    const { wrapper } = await mountWithApp(App, "/sign-in", {}, { user: null });
+    await flushPromises();
+    expect(wrapper.find("nav[aria-label='Main']").exists()).toBe(false);
+    expect(wrapper.find("button[aria-label='Collapse the menu']").exists()).toBe(false);
+    expect(wrapper.find("button[aria-label^='Account menu']").exists()).toBe(false);
+    expect(wrapper.text()).toContain("Sign in to Blindspot");
+    const ui = useUiStore();
+    window.dispatchEvent(new KeyboardEvent("keydown", { key: "k", ctrlKey: true }));
+    expect(ui.paletteOpen).toBe(false);
+  });
+
+  it("offers the account and sign-out from the account menu, and signs out", async () => {
+    const { calls } = mockApi({ "POST /api/auth/logout": { status: 204 } });
+    const { wrapper, router, auth } = await mountWithApp(App);
+    await flushPromises();
+    await wrapper.get("button[aria-label='Account menu for Ada Admin']").trigger("click");
+    await flushPromises();
+    const items = Array.from(document.body.querySelectorAll<HTMLElement>(".v-menu .v-list-item"));
+    expect(items.map((item) => item.textContent)).toEqual([
+      expect.stringContaining("Ada Admin"),
+      expect.stringContaining("Account"),
+      expect.stringContaining("Sign out"),
+    ]);
+    items[2]?.click();
+    await vi.waitFor(() => {
+      expect(router.currentRoute.value.name).toBe("sign-in");
+    });
+    expect(auth.user).toBeNull();
+    expect(calls[0]?.key).toBe("POST /api/auth/logout");
+  });
+
+  it("still goes to the sign-in page when sign-out could not reach the server", async () => {
+    mockApi({ "POST /api/auth/logout": { status: 500, json: {} } });
+    const { wrapper, router } = await mountWithApp(App);
+    await flushPromises();
+    await wrapper.get("button[aria-label='Account menu for Ada Admin']").trigger("click");
+    await flushPromises();
+    document.body.querySelectorAll<HTMLElement>(".v-menu .v-list-item")[2]?.click();
+    await vi.waitFor(() => {
+      expect(router.currentRoute.value.name).toBe("sign-in");
+    });
   });
 });
 

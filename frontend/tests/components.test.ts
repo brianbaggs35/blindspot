@@ -5,6 +5,10 @@ import { describe, expect, it } from "vitest";
 import { VDialog } from "vuetify/components";
 import { createBlindspotVuetify } from "../src/plugins/vuetify";
 import { createBlindspotRouter } from "../src/router";
+import AuthCard from "../src/components/AuthCard.vue";
+import FormDialog from "../src/components/FormDialog.vue";
+import PasswordField from "../src/components/PasswordField.vue";
+import PasswordRules from "../src/components/PasswordRules.vue";
 import CommandPalette from "../src/components/CommandPalette.vue";
 import NavMenu from "../src/components/NavMenu.vue";
 import PageHeader from "../src/components/PageHeader.vue";
@@ -38,7 +42,7 @@ describe("NavMenu", () => {
     });
     expect(wrapper.find(".v-divider").exists()).toBe(true);
     expect(wrapper.text()).not.toContain("System");
-    expect(wrapper.findAll("a")).toHaveLength(2);
+    expect(wrapper.findAll("a")).toHaveLength(3);
   });
 
   it("says when a link is used", async () => {
@@ -51,6 +55,88 @@ describe("NavMenu", () => {
     const { wrapper } = await mountWithApp(NavMenu, "/", { rail: true });
     expect(wrapper.text()).not.toContain("Work");
     expect(wrapper.get("a").attributes("href")).toBe("/");
+  });
+});
+
+describe("PasswordField", () => {
+  it("shows and hides the password, saying what the button does", async () => {
+    const { wrapper } = await mountWithApp(PasswordField, "/", {
+      modelValue: "secret",
+      label: "Password",
+      autocomplete: "current-password",
+    });
+    expect(wrapper.get("input").attributes("type")).toBe("password");
+    await wrapper.get("[aria-label='Show the password']").trigger("click");
+    expect(wrapper.get("input").attributes("type")).toBe("text");
+    await wrapper.get("[aria-label='Hide the password']").trigger("click");
+    expect(wrapper.get("input").attributes("type")).toBe("password");
+  });
+});
+
+describe("PasswordRules", () => {
+  it("says which rules are met, in words as well as colour", async () => {
+    const { wrapper } = await mountWithApp(PasswordRules, "/", {
+      password: "abc",
+      username: "ann",
+    });
+    expect(wrapper.text()).toContain("At least 12 characters (not yet)");
+    expect(wrapper.text()).toContain("At most 256 characters (done)");
+  });
+});
+
+describe("AuthCard", () => {
+  it("shows the logo, the title and the subtitle when given", async () => {
+    const { wrapper } = await mountWithApp(AuthCard, "/", { title: "Hello", subtitle: "There" });
+    expect(wrapper.get("h1").text()).toBe("Hello");
+    expect(wrapper.text()).toContain("There");
+    expect(wrapper.find("img").attributes("alt")).toBe("");
+    const bare = await mountWithApp(AuthCard, "/", { title: "Hello" });
+    expect(bare.wrapper.find("p").exists()).toBe(false);
+  });
+});
+
+describe("FormDialog", () => {
+  const buttons = () =>
+    Array.from(document.body.querySelectorAll<HTMLButtonElement>(".v-dialog button"));
+
+  it("shows its fields and the error, and says when it is submitted", async () => {
+    const { wrapper } = await mountWithApp(FormDialog, "/", {
+      modelValue: true,
+      title: "Do it",
+      submitLabel: "Go",
+      error: "Nope",
+    });
+    await flushPromises();
+    expect(document.body.textContent).toContain("Do it");
+    expect(document.body.querySelector("[role=alert]")?.textContent).toContain("Nope");
+    document.body.querySelector("form")?.dispatchEvent(new Event("submit", { cancelable: true }));
+    expect(wrapper.emitted("submit")).toHaveLength(1);
+  });
+
+  it("closes when the dialog itself asks to (a click outside, Escape)", async () => {
+    const { wrapper } = await mountWithApp(FormDialog, "/", {
+      modelValue: true,
+      title: "Do it",
+      submitLabel: "Go",
+    });
+    wrapper.getComponent(VDialog).vm.$emit("update:modelValue", false);
+    expect(wrapper.emitted("update:modelValue")).toEqual([[false]]);
+  });
+
+  it("closes from Cancel, and cannot be closed from it while it is working", async () => {
+    const { wrapper } = await mountWithApp(FormDialog, "/", {
+      modelValue: true,
+      title: "Do it",
+      submitLabel: "Go",
+    });
+    await flushPromises();
+    buttons()
+      .find((button) => button.textContent.trim() === "Cancel")
+      ?.click();
+    await flushPromises();
+    expect(wrapper.emitted("update:modelValue")).toEqual([[false]]);
+    await wrapper.setProps({ busy: true, danger: true });
+    expect(buttons().find((button) => button.textContent.trim() === "Cancel")?.disabled).toBe(true);
   });
 });
 
@@ -147,6 +233,7 @@ describe("CommandPalette", () => {
     await flushPromises();
     expect(items().map((item) => item.textContent)).toEqual([
       expect.stringContaining("Overview"),
+      expect.stringContaining("Account"),
       expect.stringContaining("Switch to the light theme"),
       expect.stringContaining("Turn visual effects off"),
     ]);
@@ -179,7 +266,7 @@ describe("CommandPalette", () => {
 
   it("runs a command that is clicked, and starts empty the next time", async () => {
     const { ui } = await open();
-    items()[2]?.click();
+    items()[3]?.click();
     await flushPromises();
     expect(ui.effects).toBe(false);
     expect(ui.paletteOpen).toBe(false);
