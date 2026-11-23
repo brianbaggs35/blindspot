@@ -34,6 +34,7 @@ BUNDLED = Path(__file__).parent / "bundled"
 WSTG_UPSTREAM = "https://raw.githubusercontent.com/OWASP/wstg/master/checklists/checklist.json"
 WSTG_SNAPSHOT_DATE = date(2026, 11, 23)
 MAX_FILE_BYTES = 2_000_000
+TOOLS_FILE = "tools.yaml"
 
 # What the target must show for a WSTG test to apply. Tests not listed here always apply.
 WSTG_REQUIRES: dict[str, list[Tag]] = {
@@ -151,7 +152,7 @@ def wstg_spec(checklist: bytes, *, version: str) -> MethodologySpec:
     except ValidationError as error:
         raise PackError(f"The WSTG checklist is not valid: {describe(error)}") from None
     folder = BUNDLED / "wstg"
-    tools = parse(ToolsFile, _read_yaml(folder / "tools.yaml"), "The WSTG tool map")
+    tools = parse(ToolsFile, _read_yaml(folder / TOOLS_FILE), "The WSTG tool map")
     authored = _authored([_read_yaml(folder / "playbooks.yaml")], "playbooks.yaml")
     return assemble(draft, tools, authored, strict=False)
 
@@ -174,10 +175,10 @@ def load_pack(folder: Path) -> MethodologySpec:
     draft = parse(Draft, _read_yaml(main), "methodology.yaml")
     if draft.id != folder.name:
         raise PackError(f"The folder is called {folder.name} but the methodology id is {draft.id}")
-    tools_path = folder / "tools.yaml"
+    tools_path = folder / TOOLS_FILE
     if not tools_path.is_file():
         raise PackError("There is no tools.yaml: every test needs its tools, or manual review")
-    tools = parse(ToolsFile, _read_yaml(tools_path), "tools.yaml")
+    tools = parse(ToolsFile, _read_yaml(tools_path), TOOLS_FILE)
     playbooks = sorted((folder / "playbooks").glob("*.yaml"))
     authored = _authored([_read_yaml(path) for path in playbooks], "A playbook file")
     reporting_path = folder / "reporting.yaml"
