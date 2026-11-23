@@ -45,6 +45,9 @@ The page is a convenience; the API holds the line for the actions that matter:
 
 ## Warnings elsewhere
 
-The authorization step, the scope and the launch check are described in
+One component (`AuthorizationWarning`) says the same thing wherever people act: at the top of the
+new and edit pentest form, on the scope card and on the authorization card. Start and Resume open
+a launch dialog that repeats it and asks for the permission statement to be ticked again. The
+authorization step, the scope and the launch check are described in
 [Pentests](pentests.md#the-authorization-gate). Warnings in the places that arrive later (agents,
 tool settings, the chatbot and report export) are added with those features.
