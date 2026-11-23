@@ -53,7 +53,7 @@ def _gate(request: Request) -> SetupGate:
     return cast("SetupGate", request.app.state.setup_gate)
 
 
-def _too_many(request: Request, wait: float) -> JSONResponse:
+def too_many(request: Request, wait: float) -> JSONResponse:
     response = problem(
         request, 429, "too_many_attempts", "Too many attempts. Try again in a few minutes."
     )
@@ -61,7 +61,7 @@ def _too_many(request: Request, wait: float) -> JSONResponse:
     return response
 
 
-def _set_cookie(response: Response, settings: Settings, token: str) -> None:
+def set_cookie(response: Response, settings: Settings, token: str) -> None:
     response.set_cookie(
         COOKIE_NAME,
         token,
@@ -73,7 +73,7 @@ def _set_cookie(response: Response, settings: Settings, token: str) -> None:
     )
 
 
-def _clear_cookie(response: Response, settings: Settings) -> None:
+def clear_cookie(response: Response, settings: Settings) -> None:
     response.delete_cookie(
         COOKIE_NAME, httponly=True, secure=settings.cookie_secure, samesite="strict", path="/"
     )
@@ -97,7 +97,7 @@ async def setup(
     """Make the first administrator. Works once, and only with the code from the log."""
     limiter, address = _limiter(request), audit.client_address(request) or "unknown"
     if wait := limiter.blocked_for(address):
-        return _too_many(request, wait)
+        return too_many(request, wait)
     await session.execute(text("SELECT pg_advisory_xact_lock(:key)"), {"key": SETUP_LOCK_KEY})
     if await count_users(session) > 0:
         raise AppError(409, "setup_complete", "Setup has already been done")
@@ -131,7 +131,7 @@ async def setup(
     )
     audit.record(session, request, "auth.setup", actor=user, target=("user", user.id))
     _gate(request).close()
-    _set_cookie(response, settings, token)
+    set_cookie(response, settings, token)
     return UserOut.model_validate(user)
 
 
@@ -142,7 +142,7 @@ async def login(
     """Sign in. Every kind of failure gets the same answer."""
     limiter, address = _limiter(request), audit.client_address(request) or "unknown"
     if wait := limiter.blocked_for(address):
-        return _too_many(request, wait)
+        return too_many(request, wait)
     settings, now = get_settings(), utc_now()
     username = normalize_username(body.username)
     user = await authenticate(session, settings, username, body.password, now)
@@ -166,7 +166,7 @@ async def login(
         agent=audit.client_agent(request),
     )
     audit.record(session, request, "auth.login", actor=user)
-    _set_cookie(response, settings, token)
+    set_cookie(response, settings, token)
     return UserOut.model_validate(user)
 
 
@@ -176,7 +176,7 @@ async def logout(request: Request, who: SignedIn, session: SessionDep) -> Respon
     who.session.revoked_at = utc_now()
     audit.record(session, request, "auth.logout", actor=who.user)
     response = Response(status_code=204)
-    _clear_cookie(response, get_settings())
+    clear_cookie(response, get_settings())
     return response
 
 
@@ -193,7 +193,7 @@ async def change_password(
     """Change your own password. Your other browsers are signed out."""
     limiter, address = _limiter(request), audit.client_address(request) or "unknown"
     if wait := limiter.blocked_for(address):
-        return _too_many(request, wait)
+        return too_many(request, wait)
     user = who.user
     correct, _ = await verify_password(user.password_hash, body.current_password)
     if not correct:

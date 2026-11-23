@@ -65,6 +65,9 @@ def create_app() -> FastAPI:
     app.state.limiter = FailureLimiter(
         settings.throttle_failures, settings.throttle_window_minutes * 60
     )
+    app.state.passkey_limiter = FailureLimiter(
+        settings.passkey_failures, settings.throttle_window_minutes * 60
+    )
     app.state.setup_gate = SetupGate()
     # The last one added runs first: the request id is made before anything can refuse a request.
     app.middleware("http")(csrf_guard)

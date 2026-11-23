@@ -43,6 +43,28 @@ throttled like a failed sign-in.
   (`BLINDSPOT_LOCKOUT_ATTEMPTS`, `BLINDSPOT_LOCKOUT_MINUTES`, `BLINDSPOT_THROTTLE_FAILURES`,
   `BLINDSPOT_THROTTLE_WINDOW_MINUTES`).
 
+## Passkeys
+
+Besides the password, an account can have up to 20 **passkeys** (WebAuthn, handled by the
+`webauthn` library). A passkey always needs the device's own check (a PIN or a fingerprint), and
+it is _discoverable_, so the sign-in page can offer "Sign in with a passkey" without asking for a
+username.
+
+- Adding or removing a passkey asks for the password again, so a stolen session alone cannot
+  plant a way back in.
+- Only the public key, the credential id, a name, the counter and the device's transports are
+  stored. A challenge works once and for five minutes.
+- A counter that goes backwards means the passkey may have been copied: the sign-in is refused and
+  `passkey.clone_suspected` is added to the audit trail. Passkeys that sync between devices
+  report 0 every time, and are allowed.
+- Failed passkey attempts are throttled per address, apart from the password limits
+  (`BLINDSPOT_PASSKEY_FAILURES` in `BLINDSPOT_THROTTLE_WINDOW_MINUTES`).
+- **Passkeys belong to the server name.** The name is the first entry of `BLINDSPOT_HOSTNAMES`
+  (or `localhost`), with `BLINDSPOT_PUBLIC_HTTPS_PORT` when it is not 443; set
+  `BLINDSPOT_PUBLIC_ORIGIN` to give the whole origin yourself. Passkeys only work when the app is
+  opened at that address, and **changing it makes every passkey unusable** (passwords keep working,
+  and new passkeys can be added). A passkey made for another site is refused.
+
 ## Sessions
 
 - The cookie `blindspot_session` holds 256 random bits and is `HttpOnly`, `Secure` and
@@ -74,21 +96,25 @@ add their own events. Administrators read it with `GET /api/audit`, newest first
 
 ## API
 
-| Route                            | Who       | What                                           |
-| -------------------------------- | --------- | ---------------------------------------------- |
-| `GET /api/auth/status`           | anyone    | Is setup needed, and who is signed in          |
-| `POST /api/auth/setup`           | anyone    | The first administrator (needs the setup code) |
-| `POST /api/auth/login`           | anyone    | Sign in                                        |
-| `POST /api/auth/logout`          | signed in | Sign out of this browser                       |
-| `GET /api/auth/me`               | signed in | Who you are                                    |
-| `POST /api/auth/password`        | signed in | Change your password                           |
-| `GET /api/auth/sessions`         | signed in | Your sessions                                  |
-| `DELETE /api/auth/sessions/{id}` | signed in | End one of them                                |
-| `GET/POST /api/users`            | admin     | List and add accounts                          |
-| `PATCH/DELETE /api/users/{id}`   | admin     | Change (name, role, on or off) or remove       |
-| `POST /api/users/{id}/password`  | admin     | Set a new password                             |
-| `POST /api/users/{id}/sign-out`  | admin     | Sign the account out everywhere                |
-| `GET /api/audit`                 | admin     | The audit trail                                |
+| Route                                                      | Who       | What                                           |
+| ---------------------------------------------------------- | --------- | ---------------------------------------------- |
+| `GET /api/auth/status`                                     | anyone    | Is setup needed, and who is signed in          |
+| `POST /api/auth/setup`                                     | anyone    | The first administrator (needs the setup code) |
+| `POST /api/auth/login`                                     | anyone    | Sign in                                        |
+| `POST /api/auth/logout`                                    | signed in | Sign out of this browser                       |
+| `GET /api/auth/me`                                         | signed in | Who you are                                    |
+| `POST /api/auth/password`                                  | signed in | Change your password                           |
+| `GET /api/auth/sessions`                                   | signed in | Your sessions                                  |
+| `DELETE /api/auth/sessions/{id}`                           | signed in | End one of them                                |
+| `GET /api/auth/passkeys`                                   | signed in | Your passkeys                                  |
+| `POST /api/auth/passkeys/register/options`, `.../register` | signed in | Add a passkey (asks for the password)          |
+| `PATCH/DELETE /api/auth/passkeys/{id}`                     | signed in | Rename, or remove (asks for the password)      |
+| `POST /api/auth/passkeys/login/options`, `.../login`       | anyone    | Sign in with a passkey                         |
+| `GET/POST /api/users`                                      | admin     | List and add accounts                          |
+| `PATCH/DELETE /api/users/{id}`                             | admin     | Change (name, role, on or off) or remove       |
+| `POST /api/users/{id}/password`                            | admin     | Set a new password                             |
+| `POST /api/users/{id}/sign-out`                            | admin     | Sign the account out everywhere                |
+| `GET /api/audit`                                           | admin     | The audit trail                                |
 
 An administrator cannot change the role or status of, or delete, their own account, so there is
 always one administrator who can sign in.
