@@ -24,7 +24,9 @@ def test_the_envelope_shows_neither_the_value_nor_its_length_class() -> None:
 
 def test_the_same_value_is_sealed_differently_each_time() -> None:
     vault = Vault(KEY)
-    assert vault.seal(Purpose.EVIDENCE, "same") != vault.seal(Purpose.EVIDENCE, "same")
+    first = vault.seal(Purpose.EVIDENCE, "same")
+    second = vault.seal(Purpose.EVIDENCE, "same")
+    assert first != second
 
 
 @pytest.mark.parametrize("value", ["", "ünïcödé ✓", "x" * 100_000])
@@ -44,8 +46,9 @@ def test_a_changed_envelope_is_refused() -> None:
     vault = Vault(KEY)
     version, key_id, nonce, ciphertext = vault.seal(Purpose.PROVIDERS, "value").split(":")
     flipped = ("A" if ciphertext[0] != "A" else "B") + ciphertext[1:]
+    damaged = ":".join([version, key_id, nonce, flipped])
     with pytest.raises(VaultError):
-        vault.open(Purpose.PROVIDERS, ":".join([version, key_id, nonce, flipped]))
+        vault.open(Purpose.PROVIDERS, damaged)
 
 
 @pytest.mark.parametrize(
@@ -53,20 +56,24 @@ def test_a_changed_envelope_is_refused() -> None:
     ["", "plain text", "v2:00000000:AAAA:AAAA", "v1:only:three", "v1::::"],
 )
 def test_text_that_is_not_an_envelope_is_refused(envelope: str) -> None:
+    vault = Vault(KEY)
     with pytest.raises(VaultError):
-        Vault(KEY).open(Purpose.PROVIDERS, envelope)
+        vault.open(Purpose.PROVIDERS, envelope)
 
 
 @pytest.mark.parametrize("damage", ["A:A", "!!!!:!!!!", "AAAAAAAAAAAAAAAA:AAAA"])
 def test_damaged_encoding_is_refused(damage: str) -> None:
+    vault = Vault(KEY)
+    envelope = f"v1:{KEY.id}:{damage}"
     with pytest.raises(VaultError, match="damaged"):
-        Vault(KEY).open(Purpose.PROVIDERS, f"v1:{KEY.id}:{damage}")
+        vault.open(Purpose.PROVIDERS, envelope)
 
 
 def test_a_value_from_an_unknown_key_is_refused() -> None:
     envelope = Vault(OTHER).seal(Purpose.PROVIDERS, "value")
+    vault = Vault(KEY)
     with pytest.raises(VaultError, match="does not have"):
-        Vault(KEY).open(Purpose.PROVIDERS, envelope)
+        vault.open(Purpose.PROVIDERS, envelope)
 
 
 def test_a_previous_key_still_opens_what_it_sealed() -> None:

@@ -86,9 +86,10 @@ async def test_a_sealed_column_cannot_be_used_without_a_vault(
     sessions: async_sessionmaker[AsyncSession],
 ) -> None:
     set_vault(None)
+    credential = Credential(name="a", secret="x")
     with pytest.raises(StatementError) as raised:  # SQLAlchemy wraps what a type raises
         async with sessions.begin() as session:
-            session.add(Credential(name="a", secret="x"))
+            session.add(credential)
     assert isinstance(raised.value.orig, VaultError)
 
 

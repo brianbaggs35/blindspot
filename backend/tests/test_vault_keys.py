@@ -20,7 +20,8 @@ def settings(monkeypatch: pytest.MonkeyPatch, **env: str) -> Settings:
 
 def test_a_generated_key_is_long_and_different_each_time() -> None:
     assert len(generate_key()) == 96
-    assert generate_key() != generate_key()
+    first, second = generate_key(), generate_key()
+    assert first != second
 
 
 def test_a_short_key_is_refused() -> None:
@@ -49,8 +50,9 @@ def test_the_key_can_be_given_as_a_file(monkeypatch: pytest.MonkeyPatch, tmp_pat
 def test_a_key_file_that_cannot_be_read_is_an_error(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
+    config = settings(monkeypatch, SECRET_KEY_FILE=str(tmp_path / "missing"))
     with pytest.raises(VaultError, match="cannot be read"):
-        load_key(settings(monkeypatch, SECRET_KEY_FILE=str(tmp_path / "missing")))
+        load_key(config)
 
 
 def test_without_a_key_one_is_generated_once_and_kept_private(
@@ -70,8 +72,9 @@ def test_a_key_that_cannot_be_saved_says_what_to_do(
 ) -> None:
     blocked = tmp_path / "file"
     blocked.write_text("not a directory")
+    config = settings(monkeypatch, DATA_DIR=str(blocked))
     with pytest.raises(VaultError, match="BLINDSPOT_SECRET_KEY"):
-        load_key(settings(monkeypatch, DATA_DIR=str(blocked)))
+        load_key(config)
 
 
 def test_the_vault_opens_what_the_previous_key_sealed(monkeypatch: pytest.MonkeyPatch) -> None:

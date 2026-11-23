@@ -24,7 +24,7 @@ _PATTERNS = [
     # Credentials in a URL.
     re.compile(r"(?<=://)[^/\s:@]+:[^/\s@]+(?=@)"),
 ]
-_BEARER = re.compile(r"(?i)\b(bearer|basic)\s+[A-Za-z0-9._~+/=-]{8,}")
+_BEARER = re.compile(r"(?i)\b(bearer|basic)\s+[a-z0-9._~+/=-]{8,}")
 _ASSIGNMENT = re.compile(
     r"(?i)(\b[\w-]*(?:api[_-]?key|secret|(?<![a-z])token(?![a-z])|passw(?:or)?d|passwd"
     r"|authorization|cookie)[\w-]*"
