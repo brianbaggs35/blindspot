@@ -39,7 +39,7 @@ export const CHECK_CHOICES = STATES.map((state) => ({
 }));
 
 /** A test is finished once somebody has said what came of it, or that it does not apply. */
-const FINISHED: readonly CheckStatus[] = ["passed", "finding", "not_applicable"];
+const FINISHED: ReadonlySet<CheckStatus> = new Set(["passed", "finding", "not_applicable"]);
 
 export function finished(counts: Record<CheckStatus, number>): number {
   return counts.passed + counts.finding + counts.not_applicable;
@@ -51,7 +51,7 @@ export function percent(done: number, total: number): number {
 }
 
 export function categoryFinished(category: CheckCategory): number {
-  return category.tests.filter((test) => FINISHED.includes(test.status)).length;
+  return category.tests.filter((test) => FINISHED.has(test.status)).length;
 }
 
 export interface CheckFilter {

@@ -125,7 +125,7 @@ test.describe("Pentest checklist (administrator)", () => {
     const name = uniqueName("features");
     const id = await makeThroughApi(playwright, baseURL, name);
     await open(page, id, name);
-    await page.getByLabel("Only tests that apply").check({ force: true });
+    await page.locator(".v-switch", { hasText: "Only tests that apply" }).click();
     const before = await page.getByText(/Showing \d+ of \d+ tests\./).textContent();
     await page.getByRole("combobox", { name: "Features" }).fill("saml");
     await page.getByRole("combobox", { name: "Features" }).press("Enter");
