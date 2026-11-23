@@ -12,6 +12,7 @@ from app.db.session import Database
 from app.errors import install_error_handlers
 from app.health import router as health_router
 from app.log import configure_logging
+from app.vault import open_vault
 
 REQUEST_ID_HEADER = "X-Request-ID"
 
@@ -31,8 +32,10 @@ async def add_request_id(
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
-    """Open the database pool when the server starts and close it when it stops. Connecting is
-    lazy, so the server starts even while the database is still coming up (see /api/ready)."""
+    """Open the vault and the database pool when the server starts, and close the pool when it
+    stops. A missing or too short secret key stops the server from starting. Connecting to the
+    database is lazy, so the server starts while the database is still coming up (/api/ready)."""
+    app.state.vault = open_vault(get_settings())
     app.state.database = Database(get_settings().database_url)
     try:
         yield

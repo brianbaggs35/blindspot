@@ -13,6 +13,9 @@ from psycopg import sql
 from app.config import get_settings
 from app.db.events import connection_string
 from app.main import create_app
+from app.vault import set_vault
+
+TEST_SECRET_KEY = "test-key-0123456789abcdef0123456789abcdef"
 
 
 @pytest.fixture(autouse=True)
@@ -20,9 +23,12 @@ def _fresh_settings(monkeypatch: pytest.MonkeyPatch) -> Iterator[None]:
     """Every test reads the environment afresh."""
     monkeypatch.setenv("BLINDSPOT_ENVIRONMENT", "test")
     monkeypatch.setenv("BLINDSPOT_RELEASE", "1.2.3")
+    monkeypatch.setenv("BLINDSPOT_SECRET_KEY", TEST_SECRET_KEY)
+    set_vault(None)
     get_settings.cache_clear()
     yield
     get_settings.cache_clear()
+    set_vault(None)
 
 
 @pytest.fixture

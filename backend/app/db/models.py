@@ -9,6 +9,8 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base, utc_now
 
+__all__ = ["AppSetting", "Base"]
+
 
 class AppSetting(Base):
     """One named setting that the administrators can change in the app."""

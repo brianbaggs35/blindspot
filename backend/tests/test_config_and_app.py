@@ -30,3 +30,11 @@ def test_docs_are_on_in_development(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("BLINDSPOT_ENVIRONMENT", "development")
     get_settings.cache_clear()
     assert create_app().docs_url == "/api/docs"
+
+
+def test_an_empty_variable_counts_as_not_set(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("BLINDSPOT_SECRET_KEY", "")
+    monkeypatch.setenv("BLINDSPOT_SECRET_KEY_FILE", "")
+    config = Settings()
+    assert config.secret_key is None
+    assert config.secret_key_file is None
