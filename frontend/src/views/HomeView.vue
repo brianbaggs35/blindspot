@@ -1,13 +1,15 @@
 <script setup lang="ts">
 import { mdiRadar } from "@mdi/js";
+import PageHeader from "../components/PageHeader.vue";
 </script>
 
 <template>
-  <v-container class="fill-height" fluid>
-    <v-row align="center" justify="center">
+  <v-container fluid>
+    <PageHeader title="Overview" subtitle="Everything Blindspot knows, in one place." />
+    <v-row>
       <v-col cols="12" md="8" lg="6">
         <v-card class="pa-6" variant="tonal" color="primary">
-          <v-card-title tag="h1" class="d-flex align-center ga-3 text-h5">
+          <v-card-title tag="h2" class="d-flex align-center ga-3 text-h6">
             <v-icon :icon="mdiRadar" aria-hidden="true" />
             Find what you cannot see
           </v-card-title>
