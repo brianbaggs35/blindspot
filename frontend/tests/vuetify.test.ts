@@ -1,3 +1,4 @@
+import { createApp } from "vue";
 import { describe, expect, it } from "vitest";
 import { createBlindspotVuetify, daylight, midnight } from "../src/plugins/vuetify";
 
@@ -45,5 +46,18 @@ describe("themes", () => {
   it("starts in the requested theme", () => {
     expect(createBlindspotVuetify("daylight").theme.name.value).toBe("daylight");
     expect(createBlindspotVuetify().theme.name.value).toBe("midnight");
+  });
+
+  it("puts the page's nonce on Vuetify's theme styles, so they pass the Content-Security-Policy", () => {
+    document.head.innerHTML = '<meta name="csp-nonce" content="abc123" />';
+    const app = createApp({ render: () => null }).use(createBlindspotVuetify());
+    app.mount(document.createElement("div"));
+    try {
+      const styles = document.getElementById("vuetify-theme-stylesheet");
+      expect(styles?.getAttribute("nonce")).toBe("abc123");
+    } finally {
+      app.unmount();
+      document.head.innerHTML = "";
+    }
   });
 });

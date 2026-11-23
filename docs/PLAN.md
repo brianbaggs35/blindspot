@@ -85,11 +85,12 @@ Multi-tenant SaaS, scheduled continuous scanning, non-web targets (network, mobi
 
 ```
                       https (443) / http redirect (80)
+                      (inside: 8443 and 8080, so no capability is needed)
                                    │
  ┌─────────────────────────────────▼───────────────────────────────────────┐
  │ blindspot container  (Chainguard Wolfi, non-root, read-only rootfs)     │
  │                                                                         │
- │   supervisord                                                           │
+ │   s6 (supervision)                                                      │
  │    ├─ nginx (mainline)   TLS 1.3, security headers, rate limits,        │
  │    │                     serves the built Vue app, proxies /api + SSE   │
  │    ├─ api                FastAPI (uvicorn): REST + Server-Sent Events   │
@@ -105,7 +106,7 @@ Multi-tenant SaaS, scheduled continuous scanning, non-web targets (network, mobi
       (caps dropped, rlimits, timeouts)          (allow-list of API calls)  tool containers
 ```
 
-Processes: **nginx** terminates TLS and serves the static web app. **api** handles requests and streams events to browsers. **worker** executes missions so a slow scan never blocks a request. **postgres** is the single source of truth. They talk through the database (`LISTEN/NOTIFY` for live events) and never through open network ports.
+Processes (supervised by **s6**, which has no Python dependency; Wolfi's `supervisor` package pulls in a second Python, 3.13): **nginx** terminates TLS and serves the static web app. **api** handles requests and streams events to browsers. **worker** executes missions so a slow scan never blocks a request. **postgres** is the single source of truth. They talk through the database (`LISTEN/NOTIFY` for live events) and never through open network ports.
 
 ### 3.2 A test run, end to end
 
@@ -200,7 +201,7 @@ Chainguard Wolfi base image. Package names and versions read from the Wolfi x86_
 | Database | `postgresql-18` | 18.7 |
 | Runtime | `python-3.14` | 3.14.10 |
 | Frontend build stage | `nodejs-24` | 24.22.3 |
-| Process supervisor | `supervisor` | 4.3.0 |
+| Process supervisor | `s6` | 2.15.1.1 |
 | Privilege dropping | `setpriv` | 2.42.4 |
 | Tools available as packages | `nmap` 7.94, `nuclei` 3.11.1, `sqlmap` 1.10, `semgrep` 1.165.0, `gitleaks` 8.30.1, `osv-scanner` 2.7.1, `trivy` 0.70.0, `docker-cli` 29.10.0 | |
 | **Not in Wolfi** | `ffuf`, `testssl.sh`, `lego` | see below |
@@ -588,7 +589,7 @@ The **tool registry** is separate and shared: a methodology only references tool
 
 ### 12.4 TLS and web hardening
 
-nginx mainline with TLS 1.3, HTTP redirects to HTTPS, a strict Content-Security-Policy (no `unsafe-inline` or `unsafe-eval`), `X-Content-Type-Options`, `Referrer-Policy`, `Permissions-Policy`, rate limits on `/api`, request-size limits, HSTS as an opt-in setting (it covers the whole host). Certificates: self-signed on first start; `make cert` and `make cert-renew` for Let's Encrypt (HTTP-01, or DNS-01 through a provider plugin); drop your own `fullchain.pem` and `privkey.pem` into `./certs`; a renewed certificate reloads without a restart; an expired one makes the container unhealthy.
+nginx mainline with TLS 1.3, HTTP redirects to HTTPS, a strict Content-Security-Policy (no inline scripts, no `unsafe-eval`; styles by per-request nonce, plus inline style _attributes_ only, which Vuetify sets and which cannot run script), `X-Content-Type-Options`, `Referrer-Policy`, `Permissions-Policy`, rate limits on `/api`, request-size limits, HSTS as an opt-in setting (it covers the whole host). Certificates: self-signed on first start; `make cert` and `make cert-renew` for Let's Encrypt (HTTP-01, or DNS-01 through a provider plugin); drop your own `fullchain.pem` and `privkey.pem` into `./certs`; a renewed certificate reloads without a restart; an expired one makes the container unhealthy.
 
 ### 12.5 Outbound safety (SSRF and data leaving the machine)
 
@@ -805,7 +806,7 @@ Path filters so docs-only PRs skip heavy jobs; Playwright browser caching; branc
 blindspot/
 ├─ backend/            FastAPI app, worker, tools, agents, migrations, tests
 ├─ frontend/           Vue app, tests, e2e
-├─ docker/             Dockerfile helpers, nginx, supervisor, entrypoint scripts
+├─ docker/             Dockerfile helpers, nginx, s6 services, entrypoint scripts
 ├─ methodologies/      bundled methodology packs (WSTG snapshot)
 ├─ tools/              tool manifests and parser fixtures
 ├─ .github/            workflows, scripts, dependabot, templates
@@ -830,7 +831,7 @@ Jira: [BLI board](https://brianbaggs.atlassian.net/jira/software/projects/BLI/bo
 | 2 | BLI-1 | CI pipeline (first build PR) | `ci.yml`, CodeQL, zizmor, actionlint, hadolint, release, Dependabot, PR hygiene, dependency-freshness check, Makefile targets. Path-aware: jobs for code that does not exist yet report "nothing to check" and a single required `ci-gate` job summarizes them, so this PR is green by itself and every PR after it runs the full pipeline |
 | 3 | BLI-5 | Scaffold backend and frontend | uv, FastAPI health, Vue/Vuetify/TS 6 shell, ruff, pyright, bandit, ESLint, Prettier, vue-tsc, pytest and Vitest at 100%. First PR to run through the full CI |
 | 4 | BLI-2 | SonarQube | `sonar-project.properties`, Sonar job with issue list |
-| 5 | BLI-6 | Single container | Wolfi image, nginx TLS, supervisord, PostgreSQL 18 on a unix socket, compose hardening, hadolint, Trivy |
+| 5 | BLI-6 | Single container | Wolfi image, nginx TLS, s6, PostgreSQL 18 on a unix socket, compose hardening, hadolint, Trivy |
 | 6 | BLI-7 | Playwright harness | Container and host modes, sharding, coverage merge, axe |
 | 7 | BLI-8 | Database layer | SQLAlchemy, Alembic, idempotent migration helpers, advisory lock, pre-upgrade backup, migration CI checks |
 | 8 | BLI-9 | Secrets vault | AES-256-GCM, HKDF, sealed column types, key rotation |

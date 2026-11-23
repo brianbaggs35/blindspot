@@ -18,7 +18,7 @@ TRIVY_FLAGS := --severity HIGH,CRITICAL --ignore-unfixed --exit-code 1
 
 # Dockerfiles and shell scripts anywhere in the repository (not dependencies or build output).
 DOCKERFILES := $(shell git ls-files '*Dockerfile' '*Dockerfile.*' 2>/dev/null)
-SHELL_SCRIPTS := $(shell git ls-files '*.sh' 2>/dev/null)
+SHELL_SCRIPTS := $(shell git ls-files '*.sh' 'docker/s6/*/run' 2>/dev/null)
 
 help: ## Show this help
 	@awk 'BEGIN {FS = ":.*## "} /^[a-zA-Z0-9_-]+:.*## / {printf "  \033[36m%-18s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
