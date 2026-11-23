@@ -37,7 +37,8 @@ def test_all_133_wstg_tests_import_with_their_objectives_and_references() -> Non
 
 
 def test_importing_wstg_twice_gives_the_same_fingerprint() -> None:
-    assert bundled()[0].content_hash() == bundled()[0].content_hash()
+    first, second = bundled(), bundled()
+    assert first[0].content_hash() == second[0].content_hash()
 
 
 def test_every_wstg_test_has_a_way_to_run_and_a_playbook() -> None:
