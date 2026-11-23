@@ -23,9 +23,10 @@ Every pull request and every push to `master` runs the checks below. Each one ma
 | **Trivy**                                | Vulnerable dependencies, leaked secrets and Dockerfile mistakes; high and critical findings with a fix fail the job                                    |
 | **Backend**                              | ruff, ruff format, pyright, bandit, pip-audit, migrations on PostgreSQL 18 (checked twice, with the newest migration re-applied), pytest with coverage |
 | **Frontend**                             | ESLint, Prettier, vue-tsc, Vitest with coverage, npm audit                                                                                             |
+| **SonarQube**                            | Bugs, code smells, security hotspots, duplication and coverage from both test reports, held to the quality gate; then lists what it found              |
 | **CI gate**                              | Passes only when every job that ran passed. A job skipped because its code does not exist yet counts as passed                                         |
 
-Later tickets add the SonarQube job with its issue list (BLI-2), the container job (BLI-6) and the Playwright jobs with merged coverage (BLI-7).
+Later tickets add the container job (BLI-6) and the Playwright jobs with merged coverage (BLI-7).
 
 ## Branch protection (one-time setup)
 
@@ -43,3 +44,9 @@ Secret values are never printed. Workflows use them only through `secrets.*` and
 ## Why the actions are pinned to commit SHAs
 
 A tag such as `v4` can be moved to different code. Every third-party action is pinned to the full commit SHA with the version in a comment, and Dependabot proposes updates, so what runs in CI only changes when someone reviews it. `zizmor` fails the build for an unpinned action.
+
+## SonarQube
+
+`sonar-project.properties` holds the settings (organization `brianbaggs35`, project `brianbaggs35_blindspot`). The job runs after the backend and frontend jobs, downloads their coverage reports and waits for the quality gate. Whether or not the gate passes, `.github/scripts/sonar-report.sh` then prints what SonarQube found: the conditions that were not met, the open issues and security hotspots in the new code (with file, line and rule), and the issues already on the branch the pull request merges into. A pull request with any open issue fails, so none reach `master`. To clear an issue that is a real exception, mark it accepted or a false positive in SonarQube Cloud, or add a one-file entry with its reason to `sonar-project.properties`.
+
+The project's Automatic Analysis must be off in SonarQube Cloud, or it conflicts with the analysis CI sends.

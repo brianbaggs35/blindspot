@@ -283,11 +283,81 @@ jobs:
           if-no-files-found: ignore
           retention-days: 14
 
+  # SonarQube Cloud: bugs, code smells, security hotspots, duplication and coverage, held to
+  # its quality gate. It needs the SONAR_TOKEN secret; without it, as on pull requests from
+  # forks, the job only says so. Settings are in sonar-project.properties.
+  sonarqube:
+    name: SonarQube
+    needs: [detect, backend, frontend]
+    if: ${{ needs.detect.outputs.backend == 'true' && needs.detect.outputs.frontend == 'true' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+    steps:
+      - name: Check for the SonarQube token
+        if: ${{ env.SONAR_TOKEN == '' }}
+        run: echo "::notice::SONAR_TOKEN isn't set, so the SonarQube analysis was skipped."
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        if: ${{ env.SONAR_TOKEN != '' }}
+        with:
+          # The full history, so SonarQube can tell new code from old.
+          fetch-depth: 0
+          persist-credentials: false
+
+      # The web app's packages too, so the TypeScript analysis sees the same types and
+      # settings vue-tsc does.
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        if: ${{ env.SONAR_TOKEN != '' }}
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install the web app's packages
+        if: ${{ env.SONAR_TOKEN != '' }}
+        working-directory: frontend
+        run: npm ci --ignore-scripts --no-audit --no-fund
+
+      - name: Download the backend's coverage
+        if: ${{ env.SONAR_TOKEN != '' }}
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: backend-coverage
+          path: backend
+
+      - name: Download the frontend's coverage
+        if: ${{ env.SONAR_TOKEN != '' }}
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: frontend-coverage
+          path: frontend/coverage
+
+      - name: SonarQube analysis and quality gate
+        id: scan
+        if: ${{ env.SONAR_TOKEN != '' }}
+        uses: SonarSource/sonarqube-scan-action@59202af334b4ba7b5db01b701b8e79f8b3bef0f4 # v8.5.0
+        with:
+          args: -Dsonar.qualitygate.wait=true
+
+      # Whenever the analysis ran: why the quality gate failed, if it did, and the new code's open
+      # issues and security hotspots, so they can be fixed without opening SonarQube Cloud. Empty
+      # lists aren't shown. The quality gate lets code smells through, so a pull request with any
+      # open issue fails here instead, and none reach master.
+      - name: What SonarQube found
+        if: ${{ !cancelled() && (steps.scan.outcome == 'success' || steps.scan.outcome == 'failure') }}
+        env:
+          PULL_REQUEST: ${{ github.event.pull_request.number }}
+          BASE_BRANCH: ${{ github.base_ref }}
+          BRANCH: ${{ github.ref_name }}
+        run: ./.github/scripts/sonar-report.sh
+
   # The one check to require in branch protection. A skipped job (code that doesn't exist yet)
   # counts as passed; a failed or cancelled one does not.
   ci-gate:
     name: CI gate
-    needs: [detect, format, infrastructure, trivy, backend, frontend]
+    needs: [detect, format, infrastructure, trivy, backend, frontend, sonarqube]
     if: ${{ always() }}
     runs-on: ubuntu-24.04
     timeout-minutes: 5
