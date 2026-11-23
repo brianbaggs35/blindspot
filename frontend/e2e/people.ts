@@ -49,10 +49,17 @@ async function acceptTermsAs(
     ignoreHTTPSErrors: true,
     extraHTTPHeaders: { Origin: origin },
   });
-  const login = await own.post("/api/auth/login", {
-    data: { username: person.username, password: person.password },
-  });
-  expect(login.ok()).toBe(true);
+  // The API is shared with every other spec, so a busy moment gets a few tries before it is a failure.
+  let status = 0;
+  for (let attempt = 0; attempt < 4 && status !== 200; attempt++) {
+    if (attempt > 0) await new Promise((done) => setTimeout(done, 500 * attempt));
+    status = (
+      await own.post("/api/auth/login", {
+        data: { username: person.username, password: person.password },
+      })
+    ).status();
+  }
+  expect(status, "signing in through the API to accept the terms").toBe(200);
   const terms = (await (await own.get("/api/terms")).json()) as { version: string };
   const accepted = await own.post("/api/terms/accept", { data: { version: terms.version } });
   expect(accepted.ok()).toBe(true);
@@ -79,7 +86,7 @@ export async function createPerson(
 export async function signInThroughThePage(
   page: Page,
   person: Person,
-  { landsOn = "Overview" }: { landsOn?: string } = {},
+  { landsOn = "Overview" }: { landsOn?: string | undefined } = {},
 ): Promise<void> {
   await page.goto("/sign-in");
   await page.getByLabel("Username").fill(person.username);
