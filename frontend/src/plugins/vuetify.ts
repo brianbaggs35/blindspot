@@ -34,6 +34,8 @@ export const daylight: ThemeDefinition = {
     warning: "#b45309",
     error: "#b91c1c",
   },
+  // Vuetify's light-theme secondary text (60%) falls short of WCAG AA on our surfaces.
+  variables: { "medium-emphasis-opacity": 0.75, "high-emphasis-opacity": 0.92 },
 };
 
 export function createBlindspotVuetify(defaultTheme: "midnight" | "daylight" = "midnight") {

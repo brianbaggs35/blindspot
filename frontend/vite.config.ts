@@ -15,8 +15,10 @@ export default defineConfig({
   },
   // In development and in the host-mode tests the API runs on its own port; in the container
   // nginx serves both.
-  server: { proxy: { "/api": "http://127.0.0.1:8000" } },
-  preview: { proxy: { "/api": "http://127.0.0.1:8000" } },
+  // The Host header is passed on as the browser sent it, as nginx does: the API compares it with
+  // the Origin of every request that changes something (and passkeys belong to it).
+  server: { proxy: { "/api": { target: "http://127.0.0.1:8000", changeOrigin: false } } },
+  preview: { proxy: { "/api": { target: "http://127.0.0.1:8000", changeOrigin: false } } },
   test: {
     environment: "jsdom",
     globals: true,

@@ -5,9 +5,9 @@ import { mdiAlertCircleOutline, mdiInboxOutline } from "@mdi/js";
 // Loading shows the shape of what is coming instead of a spinner.
 defineProps<{
   state: "loading" | "empty" | "error" | "ready";
-  title?: string;
-  message?: string;
-  actionLabel?: string;
+  title?: string | undefined;
+  message?: string | undefined;
+  actionLabel?: string | undefined;
 }>();
 
 defineEmits<{ action: [] }>();

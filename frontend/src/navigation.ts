@@ -35,13 +35,18 @@ declare module "vue-router" {
     title?: string;
     /** Present when the page belongs in the menu. */
     nav?: NavSettings;
+    /** Who may open it: anyone, a signed-in person (the default), or only an administrator. */
+    access?: "public" | "user" | "admin";
+    /** `bare` pages (setup, sign-in) are shown without the menu. */
+    layout?: "bare";
   }
 }
 
-export function navSections(router: Router): NavSection[] {
+/** The menu for this person: pages only an administrator may open are left out for others. */
+export function navSections(router: Router, isAdmin: boolean): NavSection[] {
   const listed = router.getRoutes().flatMap((route) => {
-    const { nav } = route.meta;
-    return nav ? [{ nav, to: route.path }] : [];
+    const { nav, access } = route.meta;
+    return nav && (access !== "admin" || isAdmin) ? [{ nav, to: route.path }] : [];
   });
   return NAV_GROUPS.map(({ id, title }) => ({
     id,

@@ -58,6 +58,21 @@ Three things are kept in the browser's local storage, and only there: `blindspot
 `blindspot.nav` (collapsed or not) and `blindspot.effects`. Storage can be blocked, so every read
 and write goes through `src/storage.ts` and the app works without it.
 
+## Sign-in, setup and the account page
+
+| Page      | Path         | Who                                                                                                    |
+| --------- | ------------ | ------------------------------------------------------------------------------------------------------ |
+| Setup     | `/setup`     | Anyone, only while no administrator exists (setup code from the log or `BLINDSPOT_SETUP_CODE`)         |
+| Sign in   | `/sign-in`   | Anyone; a password or a passkey. `?next=` returns you to the page you asked for (same-site paths only) |
+| Account   | `/account`   | Anyone signed in: change password, add or remove passkeys, end sessions                                |
+| Forbidden | `/forbidden` | Shown when a viewer opens an admin-only page                                                           |
+
+The router guard (`src/router/guard.ts`) sends signed-out visitors to setup or sign-in and
+viewers away from admin pages; the API still enforces every rule. A `401` from any call ends
+the session in the app and returns to sign-in. Sign-in failures use one message whether the
+password was wrong or the account is locked. Passkeys need a host name (`localhost`), not an IP
+address, and a certificate the browser accepts.
+
 ## Checks
 
 `npm test` (100% coverage target, 95% minimum) covers every component and store. The Playwright

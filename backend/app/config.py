@@ -41,6 +41,9 @@ class Settings(BaseSettings):
     # While rotating, the key the data is sealed with now.
     previous_secret_key: SecretStr | None = None
     database_url: str = Field(default_factory=lambda: SOCKET_DATABASE_URL)
+    # A first-run setup code you choose, instead of the random one printed in the log: for
+    # provisioning and automated tests. It only works until the first administrator exists.
+    setup_code: SecretStr | None = Field(default=None, min_length=16, max_length=64)
     # Sessions: signed out after this long without a request, and at the latest after the total.
     session_idle_minutes: int = Field(default=60, ge=1, le=1440)
     session_total_hours: int = Field(default=12, ge=1, le=720)
