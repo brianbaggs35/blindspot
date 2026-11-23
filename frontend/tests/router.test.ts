@@ -31,6 +31,8 @@ describe("router", () => {
       "/",
       "/setup",
       "/sign-in",
+      "/users",
+      "/audit",
       "/account",
       "/forbidden",
       "/:pathMatch(.*)*",

@@ -233,6 +233,8 @@ describe("CommandPalette", () => {
     await flushPromises();
     expect(items().map((item) => item.textContent)).toEqual([
       expect.stringContaining("Overview"),
+      expect.stringContaining("Users"),
+      expect.stringContaining("Audit log"),
       expect.stringContaining("Account"),
       expect.stringContaining("Switch to the light theme"),
       expect.stringContaining("Turn visual effects off"),
@@ -266,7 +268,7 @@ describe("CommandPalette", () => {
 
   it("runs a command that is clicked, and starts empty the next time", async () => {
     const { ui } = await open();
-    items()[3]?.click();
+    items()[5]?.click();
     await flushPromises();
     expect(ui.effects).toBe(false);
     expect(ui.paletteOpen).toBe(false);

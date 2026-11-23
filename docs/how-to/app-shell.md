@@ -73,6 +73,20 @@ the session in the app and returns to sign-in. Sign-in failures use one message 
 password was wrong or the account is locked. Passkeys need a host name (`localhost`), not an IP
 address, and a certificate the browser accepts.
 
+## Users and the audit log (administrators)
+
+| Page      | Path     | What it does                                                                                                                               |
+| --------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| Users     | `/users` | List, add, edit (name, role, whether the account can sign in), reset a password, sign out everywhere, delete. Each risky step asks first   |
+| Audit log | `/audit` | The audit trail, newest first. Filter by action, outcome, username and the day to start from; "Show older events" pages with `next_before` |
+
+Both are `access: "admin"` routes: an administrator sees them in the menu and the command
+palette, a viewer sees neither and gets the "No access" page if they open the address. The API
+refuses the same requests whatever the page does. You cannot change the role or status of, or
+delete, your own account (the API says so, and the page switches the controls off). The audit
+log is read-only here. Action codes the page does not know are shown as they are; add a line to
+`src/audit.ts` when a new action is added to the API.
+
 ## Checks
 
 `npm test` (100% coverage target, 95% minimum) covers every component and store. The Playwright

@@ -40,3 +40,22 @@ export interface Ceremony {
   challenge_id: string;
   options: Record<string, unknown>;
 }
+
+export interface AuditEvent {
+  id: string;
+  created_at: string;
+  actor_id: string | null;
+  actor_name: string | null;
+  action: string;
+  outcome: string;
+  target_type: string | null;
+  target_id: string | null;
+  ip_address: string | null;
+  user_agent: string | null;
+  detail: Record<string, unknown> | null;
+}
+
+export interface AuditPage {
+  items: AuditEvent[];
+  next_before: string | null;
+}

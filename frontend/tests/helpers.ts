@@ -1,4 +1,4 @@
-import { mount } from "@vue/test-utils";
+import { flushPromises, mount } from "@vue/test-utils";
 import { createPinia, setActivePinia } from "pinia";
 import { vi } from "vitest";
 import type { Component } from "vue";
@@ -92,4 +92,29 @@ export function mockApi(handlers: Record<string, Handler>) {
   });
   vi.stubGlobal("fetch", fetchMock);
   return { fetchMock, calls };
+}
+
+// Dialogs and menus are teleported to the body, outside the wrapper, so they are found there.
+export function dialogButton(label: string) {
+  // The newest dialog is last in the page; one that was closed may still be there.
+  return Array.from(document.body.querySelectorAll<HTMLButtonElement>(".v-dialog button"))
+    .filter((button) => button.textContent.trim() === label)
+    .at(-1);
+}
+
+export async function fillDialog(values: Record<string, string>) {
+  for (const [selector, value] of Object.entries(values)) {
+    const input = document.body.querySelector<HTMLInputElement>(`.v-dialog ${selector}`);
+    if (input === null) throw new Error(`no ${selector} in the dialog`);
+    input.value = value;
+    input.dispatchEvent(new Event("input"));
+  }
+  await flushPromises();
+}
+
+export async function submitDialog() {
+  document.body
+    .querySelector<HTMLFormElement>(".v-dialog form")
+    ?.dispatchEvent(new Event("submit", { cancelable: true }));
+  await flushPromises();
 }
