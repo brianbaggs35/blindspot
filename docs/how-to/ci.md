@@ -24,10 +24,13 @@ Every pull request and every push to `master` runs the checks below. Each one ma
 | **Backend**                              | ruff, ruff format, pyright, bandit, pip-audit, migrations on PostgreSQL 18 (checked twice, with the newest migration re-applied), pytest with coverage                                           |
 | **Frontend**                             | ESLint, Prettier, vue-tsc, Vitest with coverage, npm audit                                                                                                                                       |
 | **Container**                            | Builds the image, scans it with Trivy, starts it read-only with its capabilities dropped, smoke tests it over https (including that only nginx listens on TCP), restarts it and stops it cleanly |
+| **End to end, host (1/3 to 3/3)**        | Playwright against the API and the built web app, with browser coverage of `src/` collected per shard                                                                                            |
+| **End to end, container (1/3 to 3/3)**   | The same Playwright tests against the real image, started read-only with its capabilities dropped                                                                                                |
+| **End to end report and coverage**       | Merges the shards' coverage (fails below 80% of lines, warns below 90%) and publishes one HTML report                                                                                            |
 | **SonarQube**                            | Bugs, code smells, security hotspots, duplication and coverage from both test reports, held to the quality gate; then lists what it found                                                        |
 | **CI gate**                              | Passes only when every job that ran passed. A job skipped because its code does not exist yet counts as passed                                                                                   |
 
-Later tickets add the Playwright jobs with merged coverage (BLI-7).
+See [Development](development.md#end-to-end-tests) for the Playwright tests.
 
 ## Branch protection (one-time setup)
 

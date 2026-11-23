@@ -1,0 +1,4 @@
+{
+  "comment": "Accessibility problems already known, each with the reason it is accepted for now. The tests fail on anything not listed here, so a new problem cannot slip in; fixing one means deleting its line. Keep this empty if you can.",
+  "known": []
+}

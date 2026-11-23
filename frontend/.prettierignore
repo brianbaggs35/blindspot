@@ -3,3 +3,5 @@ coverage
 e2e-results
 node_modules
 package-lock.json
+dist-e2e
+e2e-results

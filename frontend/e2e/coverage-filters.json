@@ -1,0 +1,4 @@
+{
+  "entryFilter": { "**/assets/*.js": true },
+  "sourceFilter": { "**/node_modules/**": false, "**/src/**": true }
+}

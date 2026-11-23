@@ -7,7 +7,7 @@ import globals from "globals";
 import tseslint from "typescript-eslint";
 
 export default tseslint.config(
-  { ignores: ["dist", "coverage", "e2e-results", "node_modules"] },
+  { ignores: ["dist", "dist-e2e", "coverage", "e2e-results", "node_modules"] },
   js.configs.recommended,
   ...tseslint.configs.strictTypeChecked,
   ...vue.configs["flat/recommended"],
@@ -29,8 +29,13 @@ export default tseslint.config(
     rules: { "vue/multi-word-component-names": "off" },
   },
   {
-    files: ["eslint.config.js", "vite.config.ts"],
+    files: ["eslint.config.js", "vite.config.ts", "e2e/scripts/*.mjs"],
     ...tseslint.configs.disableTypeChecked,
+  },
+  {
+    // The end-to-end tests and their scripts run in Node, not the browser.
+    files: ["e2e/**/*.{ts,mjs}", "playwright.config.ts"],
+    languageOptions: { globals: { ...globals.node } },
   },
   prettier,
 );
