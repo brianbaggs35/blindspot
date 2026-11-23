@@ -107,10 +107,10 @@ test.describe("Methodologies (administrator)", () => {
     await page.goto("/methodologies");
     const toggle = page.getByLabel("Offer this methodology for new pentests");
     await expect(toggle).toBeChecked();
-    await toggle.click({ force: true });
+    await page.getByText("Offer this methodology for new pentests").click();
     await expect(page.getByText(`${WSTG} is off.`)).toBeVisible();
     await expect(toggle).not.toBeChecked();
-    await toggle.click({ force: true });
+    await page.getByText("Offer this methodology for new pentests").click();
     await expect(page.getByText(`${WSTG} is on.`)).toBeVisible();
     await expect(toggle).toBeChecked();
   });
