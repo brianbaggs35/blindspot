@@ -8,6 +8,6 @@ misconfigurations:
   - id: AVD-DS-0002
     paths:
       - Dockerfile
-    statement: Only the supervisor runs as root; every service is started as its own user.
+    statement: Only the supervisor and nginx's master process run as root; the API, PostgreSQL and the nginx workers run as their own users.
     expired_at: 2027-06-01
 secrets: []
