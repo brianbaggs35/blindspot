@@ -71,7 +71,7 @@ describe("PageHeader", () => {
 describe("StateView", () => {
   it("shows the shape of what is loading, and says so to a screen reader", async () => {
     const { wrapper } = await mountWithApp(StateView, "/", { state: "loading" });
-    expect(wrapper.get("[role='status']").text()).toContain("Loading");
+    expect(wrapper.get("output").attributes("aria-label")).toBe("Loading");
     expect(wrapper.find(".v-skeleton-loader").exists()).toBe(true);
   });
 
