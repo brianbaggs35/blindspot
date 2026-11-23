@@ -62,6 +62,10 @@ expect_pass "hotspots are listed" run 12
 assert_contains "names the hotspot" "frontend/src/a.ts:3  typescript:S5332  Use https."
 assert_contains "lists the base branch's issues" "Open issues on main:"
 
+rm "$tmp/fake/base.json"
+expect_pass "a base branch SonarQube will not list is not a failure" run 12
+assert_contains "says why nothing is listed" "does not list issues on main"
+
 rm "$tmp/fake/gate.json"
 expect_fail "an API failure fails loudly" run 12
 finish
