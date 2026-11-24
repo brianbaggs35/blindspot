@@ -48,3 +48,7 @@ How-to guides (quick start, running your first pentest, providers, operations) a
 ## Contributing
 
 Every change starts with a Jira ticket on the BLI board. Branch names, commit subjects and PR titles start with the ticket key, for example `BLI-5-scaffold`, and commit messages are a single line such as `BLI-5 Scaffold backend and frontend`. The full rules, and what CI checks, are in [Contributing](docs/how-to/contributing.md).
+
+## License
+
+Blindspot is released under the [Apache License 2.0](LICENSE).
