@@ -51,6 +51,22 @@ commit -m "BLI-12 Add the app shell"
 expect_pass "a fix picked up from a lower pull request is allowed" check "BLI-12 Add the app shell" "BLI-12-app-shell"
 git -C "$repo" reset -q --hard "$base"
 
+# A commit whose subject the base branch already has is a fix cherry-picked up from a lower pull
+# request: it is not checked again, even when a conflicted cherry-pick left a body behind.
+git -C "$repo" checkout -q -b picked "$base"
+commit -m "BLI-12 Add the app shell"
+commit -m "BLI-8 A fix made lower down" -m "# Conflicts:"
+git -C "$repo" checkout -q master
+git -C "$repo" reset -q --hard "$base"
+commit -m "BLI-8 A fix made lower down"
+base="$(git -C "$repo" rev-parse HEAD)"
+git -C "$repo" checkout -q picked
+expect_pass "a fix cherry-picked up from a lower pull request is not checked again" check "BLI-12 Add the app shell" "BLI-12-app-shell"
+git -C "$repo" checkout -q master
+git -C "$repo" reset -q --hard HEAD~1
+base="$(git -C "$repo" rev-parse HEAD)"
+git -C "$repo" branch -q -D picked
+
 # A merge of the base branch into the pull request is exempt from the message rules.
 git -C "$repo" checkout -q -b topic
 commit -m "BLI-12 Add the app shell"
