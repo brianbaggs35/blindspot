@@ -38,6 +38,20 @@ export async function newPerson(
   return person;
 }
 
+/** The API is shared with every other spec, so a busy moment gets a few tries before it is a failure. */
+async function signInThroughTheApi(
+  own: APIRequestContext,
+  person: Person,
+  attempt = 0,
+): Promise<number> {
+  const answer = await own.post("/api/auth/login", {
+    data: { username: person.username, password: person.password },
+  });
+  if (answer.status() === 200 || attempt >= 3) return answer.status();
+  await new Promise((done) => setTimeout(done, 500 * (attempt + 1)));
+  return signInThroughTheApi(own, person, attempt + 1);
+}
+
 /** Sign the person in through the API and accept the terms of use, so the page opens at once. */
 async function acceptTermsAs(
   playwright: PlaywrightWorkerArgs["playwright"],
@@ -49,16 +63,7 @@ async function acceptTermsAs(
     ignoreHTTPSErrors: true,
     extraHTTPHeaders: { Origin: origin },
   });
-  // The API is shared with every other spec, so a busy moment gets a few tries before it is a failure.
-  let status = 0;
-  for (let attempt = 0; attempt < 4 && status !== 200; attempt++) {
-    if (attempt > 0) await new Promise((done) => setTimeout(done, 500 * attempt));
-    status = (
-      await own.post("/api/auth/login", {
-        data: { username: person.username, password: person.password },
-      })
-    ).status();
-  }
+  const status = await signInThroughTheApi(own, person);
   expect(status, "signing in through the API to accept the terms").toBe(200);
   const terms = (await (await own.get("/api/terms")).json()) as { version: string };
   const accepted = await own.post("/api/terms/accept", { data: { version: terms.version } });
