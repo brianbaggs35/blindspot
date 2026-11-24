@@ -1,11 +1,14 @@
 """Sessions that last one request, and the readiness check."""
 
-from collections.abc import Iterator
+from collections.abc import Iterator, MutableMapping
+from typing import Any
 
+import psycopg
 import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from sqlalchemy import select
+from starlette.types import Receive, Scope, Send
 
 from app.db.migrate import upgrade
 from app.db.models import AppSetting
@@ -40,6 +43,36 @@ def migrated_client(database_url: str) -> Iterator[TestClient]:
 def test_a_request_commits_when_it_succeeds(migrated_client: TestClient) -> None:
     assert migrated_client.put("/_test/settings/kept").status_code == 200
     assert migrated_client.get("/_test/settings").json() == ["kept"]
+
+
+def test_the_commit_happens_before_the_response_is_sent(database_url: str) -> None:
+    """Otherwise a client that asks again at once can read what was not yet written, or be told
+    "created" for a change whose commit then fails."""
+    upgrade(database_url)
+    app: FastAPI = create_app()
+
+    @app.put("/_test/early/{key}")
+    async def put_early(key: str, session: SessionDep) -> None:
+        session.add(AppSetting(key=key, value=True))
+
+    seen: list[int] = []
+
+    async def watching(scope: Scope, receive: Receive, send: Send) -> None:
+        async def checking(message: MutableMapping[str, Any]) -> None:
+            if message["type"] == "http.response.start" and scope["path"] == "/_test/early/now":
+                with psycopg.connect(database_url.replace("+psycopg", "")) as other:
+                    row = other.execute(
+                        "SELECT count(*) FROM app_setting WHERE key = 'now'"
+                    ).fetchone()
+                    assert row is not None
+                    seen.append(int(row[0]))
+            await send(message)
+
+        await app(scope, receive, checking)
+
+    with TestClient(watching, raise_server_exceptions=False) as client:
+        assert client.put("/_test/early/now").status_code == 200
+    assert seen == [1]
 
 
 def test_a_request_rolls_back_when_it_fails(migrated_client: TestClient) -> None:
