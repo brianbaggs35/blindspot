@@ -41,12 +41,15 @@ async def get_session(request: Request) -> AsyncIterator[AsyncSession]:
     """The request's session (a FastAPI dependency).
 
     The work of one request is one transaction: it is committed after the handler returns and
-    rolled back if it raises.
+    rolled back if it raises. The dependency has function scope so that the commit happens before
+    the response is sent. With the default (request) scope FastAPI sends the response first, and a
+    client that asks again straight away can read what the commit has not yet written, or be told
+    "created" for something whose commit then fails.
     """
     database = cast("Database", request.app.state.database)
     async with database.sessions.begin() as session:
         yield session
 
 
-SessionDep = Annotated[AsyncSession, Depends(get_session)]
+SessionDep = Annotated[AsyncSession, Depends(get_session, scope="function")]
 """How a route asks for its session: `session: SessionDep`."""
