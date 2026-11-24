@@ -1,8 +1,8 @@
-import AxeBuilder from "@axe-core/playwright";
 import baseline from "./axe-baseline.json" with { type: "json" };
 import { expect, test } from "./fixtures";
 import { openPage, stateFor } from "./open-page";
-import { pages, themes, THEME_KEY, widths } from "./pages";
+import { pages, themes, widths } from "./pages";
+import { axeResults, useTheme } from "./axe";
 
 interface KnownProblem {
   rule: string;
@@ -26,22 +26,11 @@ test.describe("accessibility (axe, WCAG 2.2 AA and best practice)", () => {
       for (const theme of themes) {
         for (const width of widths) {
           test(`${theme} theme, ${String(width)}px: nothing new`, async ({ page }) => {
-            await page.addInitScript(
-              ([key, value]) => {
-                localStorage.setItem(key as string, value as string);
-              },
-              [THEME_KEY, theme],
-            );
-            // No animation, so colours are measured in their final state, not mid-transition.
-            await page.emulateMedia({ reducedMotion: "reduce" });
+            await useTheme(page, theme);
             await page.setViewportSize({ width, height: 800 });
             await openPage(page, entry);
             await expect(page.locator(".v-application")).toBeVisible();
-            await page.evaluate(() => document.fonts.ready);
-
-            const results = await new AxeBuilder({ page })
-              .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa", "best-practice"])
-              .analyze();
+            const results = await axeResults(page);
 
             const isKnown = (rule: string) =>
               known.some((k) => k.rule === rule && k.page === name && k.theme === theme);
