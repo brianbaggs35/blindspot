@@ -1,36 +1,21 @@
-import AxeBuilder from "@axe-core/playwright";
 import { type Page } from "@playwright/test";
 import { ADMIN_STATE } from "./accounts";
 import { expect, test } from "./fixtures";
-import { THEME_KEY, themes } from "./pages";
+import { themes } from "./pages";
+import { useTheme, violationsOf } from "./axe";
 import { newProvider } from "./providers";
 import { uniqueName } from "./people";
 
 // Every dialog needs a name a screen reader can say, and nothing in it may break the rules axe
 // checks. Each one is opened here, in both themes, because a closed dialog is not on the page.
 async function clean(page: Page): Promise<void> {
-  await page.evaluate(() => document.fonts.ready);
-  const results = await new AxeBuilder({ page })
-    .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa", "best-practice"])
-    .analyze();
-  expect(
-    results.violations.map((one) => ({
-      rule: one.id,
-      targets: one.nodes.map((node) => node.target.join(" ")),
-    })),
-  ).toEqual([]);
+  expect(await violationsOf(page)).toEqual([]);
 }
 
 for (const theme of themes) {
   test.describe(`Dialogs (${theme} theme)`, () => {
     test.beforeEach(async ({ page }) => {
-      await page.addInitScript(
-        ([key, value]) => {
-          localStorage.setItem(key as string, value as string);
-        },
-        [THEME_KEY, theme],
-      );
-      await page.emulateMedia({ reducedMotion: "reduce" });
+      await useTheme(page, theme);
     });
 
     test("the methodology dialogs", async ({ page }) => {
