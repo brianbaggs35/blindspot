@@ -1,6 +1,6 @@
-import AxeBuilder from "@axe-core/playwright";
 import { type Page } from "@playwright/test";
-import { THEME_KEY, themes } from "./pages";
+import { themes } from "./pages";
+import { useTheme, violationsOf } from "./axe";
 import { ADMIN_STATE, SIGNED_OUT } from "./accounts";
 import { expect, test } from "./fixtures";
 import { pickOption } from "./vuetify";
@@ -155,27 +155,12 @@ test.describe("Pentest checklist (administrator)", () => {
       playwright,
       baseURL,
     }) => {
-      await page.addInitScript(
-        ([key, value]) => {
-          localStorage.setItem(key as string, value as string);
-        },
-        [THEME_KEY, theme],
-      );
-      await page.emulateMedia({ reducedMotion: "reduce" });
+      await useTheme(page, theme);
       const name = uniqueName("axe");
       const id = await makeThroughApi(playwright, baseURL, name);
       await open(page, id, name);
       await page.getByRole("button", { name: /Information Gathering/ }).click();
-      await page.evaluate(() => document.fonts.ready);
-      const results = await new AxeBuilder({ page })
-        .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa", "best-practice"])
-        .analyze();
-      expect(
-        results.violations.map((one) => ({
-          rule: one.id,
-          targets: one.nodes.map((node) => node.target.join(" ")),
-        })),
-      ).toEqual([]);
+      expect(await violationsOf(page)).toEqual([]);
     });
   }
 });
