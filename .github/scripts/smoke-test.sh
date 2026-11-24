@@ -45,8 +45,11 @@ if [[ -z "$revision" ]]; then
 fi
 echo "Database revision: $revision"
 # Only the app's own role may read the database, and pg_dump (the pre-upgrade backup) works as it.
-docker exec --user blindspot "$container" pg_dump --host /run/postgresql --dbname blindspot \
-  --schema-only --no-password | grep -q 'CREATE TABLE public.alembic_version'
+# The dump is read to the end before it is searched: `grep -q` stops at the first match, which can
+# close the pipe while pg_dump is still writing and fail the step with exit code 141.
+dump="$(docker exec --user blindspot "$container" pg_dump --host /run/postgresql \
+  --dbname blindspot --schema-only --no-password)"
+grep -q 'CREATE TABLE public.alembic_version' <<<"$dump"
 echo "pg_dump works"
 
 # Nothing may listen on TCP except nginx: the API and the database use unix sockets.
