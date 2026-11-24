@@ -3,6 +3,7 @@
 #   - the title starts with a Jira ticket key:        BLI-12 Add the app shell
 #   - the branch starts with the same key:            BLI-12-app-shell
 #   - every commit message is ONE line starting with a ticket key:  BLI-12 Add the app shell
+#   - a commit repeating a subject its base branch already has (a cherry-picked fix) is not re-checked
 #   - at least one commit uses the pull request's own key. Others may carry a lower pull request's
 #     key: a fix made there is cherry-picked up the stack, so the stack never needs a force-push.
 # Reads PR_TITLE, PR_BRANCH, PR_BODY, PR_ACTOR, BASE_SHA and HEAD_SHA from the environment.
@@ -48,6 +49,9 @@ if [[ -n "$title_key" && -n "$branch_key" && "$title_key" != "$branch_key" ]]; t
 fi
 
 # Merge commits (from merging the base branch into this one) are exempt: GitHub writes them.
+# So is a commit whose subject the base branch already has: it is a fix cherry-picked up from a
+# lower pull request, where it was checked, and a cherry-pick that conflicts leaves a body behind.
+base_subjects="$(git log --format=%s "$base")"
 checked=0
 own=0
 while read -r commit parents; do
@@ -55,8 +59,11 @@ while read -r commit parents; do
   if [[ "$parents" == *" "* ]]; then
     continue
   fi
-  checked=$((checked + 1))
   subject="$(git log -1 --format=%s "$commit")"
+  if grep -qxF -- "$subject" <<<"$base_subjects"; then
+    continue
+  fi
+  checked=$((checked + 1))
   rest="$(git log -1 --format=%b "$commit")"
   short="${commit:0:7}"
   if [[ ! "$subject" =~ ^$key_pattern\ [^[:space:]] ]]; then
