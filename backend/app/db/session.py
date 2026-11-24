@@ -4,7 +4,7 @@ and rolls back when it fails."""
 from collections.abc import AsyncIterator
 from typing import Annotated, cast
 
-from fastapi import Depends, Request
+from fastapi import Request, params
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
@@ -51,5 +51,5 @@ async def get_session(request: Request) -> AsyncIterator[AsyncSession]:
         yield session
 
 
-SessionDep = Annotated[AsyncSession, Depends(get_session, scope="function")]
+SessionDep = Annotated[AsyncSession, params.Depends(get_session, scope="function")]
 """How a route asks for its session: `session: SessionDep`."""
