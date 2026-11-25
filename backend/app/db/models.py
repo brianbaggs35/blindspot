@@ -52,6 +52,7 @@ __all__ = [
     "PentestLetter",
     "PlaybookOverride",
     "Role",
+    "ToolGrant",
     "UsageLedger",
     "User",
     "WebAuthnChallenge",
@@ -480,3 +481,26 @@ class CustomTool(UUIDPrimaryKey, Timestamps, CreatedBy, Base):
 
     tool_id: Mapped[str] = mapped_column(String(32), unique=True)
     manifest: Mapped[Any] = mapped_column(JSONB)
+
+
+class ToolGrant(UUIDPrimaryKey, Timestamps, CreatedBy, Base):
+    """What an agent role may do with a tool: up to a risk class, on its own, after asking or not
+    at all. `role` and `tool` are `*` for any. `pentest_id` limits it to one pentest and is empty
+    for every pentest. Only administrators write these, never a model."""
+
+    __tablename__ = "tool_grant"
+    __table_args__ = (
+        UniqueConstraint("role", "tool", "pentest_id", postgresql_nulls_not_distinct=True),
+        CheckConstraint(
+            "max_risk IN ('passive', 'active', 'intrusive', 'destructive')", name="max_risk"
+        ),
+        CheckConstraint("mode IN ('auto', 'ask', 'deny')", name="mode"),
+    )
+
+    role: Mapped[str] = mapped_column(String(24))
+    tool: Mapped[str] = mapped_column(String(32))
+    max_risk: Mapped[str] = mapped_column(String(12))
+    mode: Mapped[str] = mapped_column(String(8))
+    pentest_id: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid, ForeignKey(PENTEST_ID, ondelete="CASCADE"), default=None, index=True
+    )

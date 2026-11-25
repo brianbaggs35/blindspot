@@ -66,6 +66,18 @@ def never_reachable(address: Address) -> str | None:
     return _refuse_always(_plain(address))
 
 
+def never_reachable_in(network: ipaddress.IPv4Network | ipaddress.IPv6Network) -> Address | None:
+    """An address of a range that may never be connected to (loopback counts here), or None. The
+    blocks that are never reachable are aligned, so a range of /16 or narrower (IPv4) or /48 or
+    narrower (IPv6) is inside one or outside it, and its two ends show which. The metadata
+    addresses on their own are checked one by one."""
+    inside = (a for a in _METADATA if a.version == network.version and a in network)
+    for address in (network.network_address, network.broadcast_address, *inside):
+        if address.is_loopback or never_reachable(address) is not None:
+            return address
+    return None
+
+
 def _why_not(address: Address, *, allow_private: bool) -> str | None:
     address = _plain(address)
     if (reason := _refuse_always(address)) is not None:
