@@ -356,14 +356,16 @@ async def test_a_tool_run_is_stored_with_its_command_exit_code_and_time(
             title="Nmap run",
             result=ToolResult(tool="c.nmap", parser="nmap_xml"),
             raw="out",
-            tool_id="c.nmap",
-            agent_role="recon",
-            test_id="WSTG-INFO-02",
-            command=["nmap", "-p", "80", "10.0.0.5"],
-            exit_code=1,
-            duration_ms=1234,
+            run=results_service.Run(
+                tool_id="c.nmap",
+                agent_role="recon",
+                test_id="WSTG-INFO-02",
+                command=["nmap", "-p", "80", "10.0.0.5"],
+                exit_code=1,
+                duration_ms=1234,
+                ran_at=datetime(2026, 1, 2, tzinfo=UTC),
+            ),
             status="failed",
-            ran_at=datetime(2026, 1, 2, tzinfo=UTC),
         )
     await engine.dispose()
     (one,) = listing(admin, made)["items"]

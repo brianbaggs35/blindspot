@@ -33,6 +33,7 @@ from app.results.schemas import (
     RevealOut,
 )
 from app.results.service import (
+    Run,
     credentials_of,
     detail_of,
     ensure_room,
@@ -158,7 +159,7 @@ async def add_note(
         title=body.title,
         notes=body.notes,
         tags=body.tags,
-        test_id=body.test_id,
+        run=Run(test_id=body.test_id),
         severity=body.severity,
         created_by=who.user.id,
     )
@@ -195,8 +196,7 @@ async def import_output(
         title=body.title or f"Imported {body.parser.replace('_', ' ')} output",
         result=result,
         raw=body.content,
-        tool_id=tool_id,
-        test_id=body.test_id,
+        run=Run(tool_id=tool_id, test_id=body.test_id),
         notes=body.notes,
         tags=body.tags,
         created_by=who.user.id,

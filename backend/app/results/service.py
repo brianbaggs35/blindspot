@@ -2,6 +2,7 @@
 `record_result`; nothing else makes a result row."""
 
 import uuid
+from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any
 
@@ -50,6 +51,19 @@ async def ensure_room(session: AsyncSession, pentest_id: uuid.UUID) -> None:
         )
 
 
+@dataclass(frozen=True)
+class Run:
+    """How a result came about, when a tool ran: who asked, for which test, and what happened."""
+
+    tool_id: str | None = None
+    agent_role: str | None = None
+    test_id: str | None = None
+    command: list[str] = field(default_factory=list[str])
+    exit_code: int | None = None
+    duration_ms: int | None = None
+    ran_at: datetime | None = None
+
+
 def record_result(  # noqa: PLR0913  # one row, every field of it
     session: AsyncSession,
     pentest_id: uuid.UUID,
@@ -59,13 +73,7 @@ def record_result(  # noqa: PLR0913  # one row, every field of it
     status: str = "ok",
     result: ToolResult | None = None,
     raw: str | None = None,
-    tool_id: str | None = None,
-    agent_role: str | None = None,
-    test_id: str | None = None,
-    command: list[str] | None = None,
-    exit_code: int | None = None,
-    duration_ms: int | None = None,
-    ran_at: datetime | None = None,
+    run: Run = Run(),  # frozen, so one shared default is safe
     notes: str = "",
     tags: list[str] | None = None,
     severity: Severity | None = None,
@@ -92,13 +100,13 @@ def record_result(  # noqa: PLR0913  # one row, every field of it
         source=source,
         status=status,
         title=title[:200],
-        tool_id=tool_id,
-        agent_role=agent_role,
-        test_id=test_id,
+        tool_id=run.tool_id,
+        agent_role=run.agent_role,
+        test_id=run.test_id,
         parser=result.parser if result else None,
-        command=command or [],
-        exit_code=exit_code,
-        duration_ms=duration_ms,
+        command=list(run.command),
+        exit_code=run.exit_code,
+        duration_ms=run.duration_ms,
         normalized=result.model_dump(mode="json", exclude={"credentials"}) if result else None,
         top_severity=level.value if level else None,
         issue_count=len(result.issues) if result else 0,
@@ -108,8 +116,8 @@ def record_result(  # noqa: PLR0913  # one row, every field of it
         tags=sorted(set(tags or [])),
         created_by=created_by,
     )
-    if ran_at is not None:
-        row.ran_at = ran_at
+    if run.ran_at is not None:
+        row.ran_at = run.ran_at
     session.add(row)
     return row
 
