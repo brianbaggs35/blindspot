@@ -84,7 +84,7 @@ def base(made: dict[str, Any], tail: str = "") -> str:
 
 
 def start(admin: TestClient, made: dict[str, Any], **body: Any) -> dict[str, Any]:
-    answer = admin.post(base(made), json=body)
+    answer = admin.post(base(made), json={"confirmed": True, **body})
     assert answer.status_code == 201, answer.text
     return answer.json()
 
@@ -238,13 +238,14 @@ def test_anyone_signed_in_can_watch_but_only_an_administrator_steers(
 def test_pause_resume_and_cancel(admin: TestClient, held: Held, database_url: str) -> None:
     made = running(admin)
     mission = start(admin, made)
-    blocked = admin.post(base(made), json={})
+    blocked = admin.post(base(made), json={"confirmed": True})
     assert (blocked.status_code, blocked.json()["code"]) == (409, "mission_active")
     paused = admin.post(base(made, f"/{mission['id']}/pause"))
     assert (paused.status_code, paused.json()["status"]) == (200, "paused")
     assert paused.json()["stop_reason"] == "Paused by a person."
     assert admin.post(base(made, f"/{mission['id']}/pause")).json()["code"] == "not_running"
-    assert admin.post(base(made), json={}).json()["code"] == "mission_active"  # paused is not over
+    again = admin.post(base(made), json={"confirmed": True})
+    assert again.json()["code"] == "mission_active"  # paused is not over
     plain = admin.post(base(made, f"/{mission['id']}/resume"), json={})
     assert plain.json()["budget"]["steps"] == 300  # no new caps: the old ones stay
     assert admin.post(base(made, f"/{mission['id']}/pause")).status_code == 200
@@ -313,6 +314,7 @@ def test_resume_rejects_caps_that_make_no_sense(admin: TestClient, held: Held) -
     bad = admin.post(base(made, f"/{mission['id']}/resume"), json={"budget": {"steps": 0}})
     assert bad.status_code == 422
     assert admin.post(base(made), json={"budget": {"surprise": 1}}).status_code == 422
+    assert admin.post(base(made), json={}).json()["code"] == "confirm_required"
     held.brain.release.set()
 
 
