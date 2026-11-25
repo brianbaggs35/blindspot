@@ -11,7 +11,7 @@ from dataclasses import dataclass, field
 from html.parser import HTMLParser
 from urllib.parse import parse_qsl, urldefrag, urljoin, urlsplit
 
-from app.tools.analyzers.fetch import Fetcher, FetchError
+from app.tools.analyzers.fetch import Fetched, Fetcher, FetchError
 from app.tools.parsers.base import Collector, clip
 from app.tools.parsers.schema import Confidence, HttpResponse, Issue, Severity, ToolResult
 
@@ -153,6 +153,32 @@ def form_issues(page: str, form: Form) -> list[Issue]:
     return found
 
 
+def _response_of(url: str, response: Fetched) -> HttpResponse:
+    return HttpResponse(
+        url=url[:4000],
+        status=response.status if 100 <= response.status <= 599 else None,
+        content_type=clip(response.header("content-type")),
+    )
+
+
+def _follow(
+    response: Fetched, site: str, parameters: dict[str, set[str]], issues: list[Issue]
+) -> list[str]:
+    """Read one HTML page: note its forms and query parameters, and return the same-site links."""
+    links, forms = read_page(response.url, response.text())
+    for form in forms:
+        parameters.setdefault(form.action, set()).update(form.names)
+        issues += form_issues(response.url, form)
+    same_site: list[str] = []
+    for link in map(_web_address, links):
+        if link is None or urlsplit(link).netloc.lower() != site:
+            continue
+        for name, _ in parse_qsl(urlsplit(link).query, keep_blank_values=True):
+            parameters.setdefault(link.split("?", 1)[0], set()).add(name[:100])
+        same_site.append(link)
+    return same_site
+
+
 async def run(values: Mapping[str, object], fetcher: Fetcher) -> ToolResult:
     """Read up to `max_pages` pages of the site, starting at `url`."""
     start = str(values["url"])
@@ -172,24 +198,10 @@ async def run(values: Mapping[str, object], fetcher: Fetcher) -> ToolResult:
             found.warn(f"{url}: {error}")
             continue
         pages += 1
-        http.append(
-            HttpResponse(
-                url=url[:4000],
-                status=response.status if 100 <= response.status <= 599 else None,
-                content_type=clip(response.header("content-type")),
-            )
-        )
+        http.append(_response_of(url, response))
         if "html" not in (response.header("content-type") or "html").lower():
             continue
-        links, forms = read_page(response.url, response.text())
-        for form in forms:
-            parameters.setdefault(form.action, set()).update(form.names)
-            issues += form_issues(response.url, form)
-        for link in map(_web_address, links):
-            if link is None or urlsplit(link).netloc.lower() != site:
-                continue
-            for name, _ in parse_qsl(urlsplit(link).query, keep_blank_values=True):
-                parameters.setdefault(link.split("?", 1)[0], set()).add(name[:100])
+        for link in _follow(response, site, parameters, issues):
             if link not in seen:
                 seen.add(link)
                 queue.append(link)

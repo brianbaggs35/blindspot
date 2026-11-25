@@ -7,14 +7,13 @@ malformed, hostile or enormous.
 
 import json
 from collections.abc import Callable
-from typing import TypeVar, cast
+from typing import cast
 
 from app.tools.parsers.schema import MAX_ITEMS, MAX_WARNINGS, ToolResult
 
 MAX_INPUT_BYTES = 64 * 1024 * 1024
 MAX_JSON_DEPTH = 40
 
-T = TypeVar("T")
 JsonObject = dict[str, object]
 Parser = Callable[[bytes], ToolResult]
 
@@ -93,7 +92,7 @@ class Collector:
         self.truncated = False
         self.warnings: list[str] = []
 
-    def add(self, items: list[T], item: T) -> bool:
+    def add[T](self, items: list[T], item: T) -> bool:
         if len(items) >= MAX_ITEMS:
             self.truncated = True
             return False

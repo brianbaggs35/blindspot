@@ -6,17 +6,16 @@ than `MAX_TOKEN` is refused rather than decoded.
 """
 
 import base64
-import binascii
 import json
 import re
 from collections.abc import Mapping
 from datetime import UTC, datetime
 
-from app.tools.analyzers.fetch import Fetcher
 from app.tools.parsers.base import JsonObject, as_object, number
 from app.tools.parsers.schema import Confidence, Issue, Severity, ToolResult
 
 MAX_TOKEN = 4000
+TOOL = "b.jwt"
 LONG_LIVED_SECONDS = 365 * 24 * 3600
 _SEGMENT = re.compile(r"^[A-Za-z0-9_-]*$")
 _SENSITIVE = re.compile(r"pass(word)?|secret|token|api[_-]?key|ssn|card|private", re.IGNORECASE)
@@ -28,7 +27,7 @@ def _decode(segment: str) -> JsonObject | None:
     try:
         raw = base64.urlsafe_b64decode(segment + "=" * (-len(segment) % 4))
         return as_object(json.loads(raw.decode("utf-8")))
-    except binascii.Error, ValueError, RecursionError:
+    except ValueError, RecursionError:  # binascii.Error is a ValueError
         return None
 
 
@@ -152,14 +151,14 @@ def inspect_jwt(token: str, now: datetime | None = None) -> ToolResult:
     parts = token.strip().split(".")
     if len(token) > MAX_TOKEN or len(parts) != 3 or not all(_SEGMENT.match(p) for p in parts):
         return ToolResult(
-            tool="b.jwt",
+            tool=TOOL,
             parser="builtin",
             warnings=["The value is not a JSON Web Token (three dot-separated base64url parts)"],
         )
     header, claims = _decode(parts[0]), _decode(parts[1])
     if header is None or claims is None:
         return ToolResult(
-            tool="b.jwt",
+            tool=TOOL,
             parser="builtin",
             warnings=["The token's header or claims are not JSON"],
         )
@@ -169,9 +168,9 @@ def inspect_jwt(token: str, now: datetime | None = None) -> ToolResult:
         *_time_problems(claims, now or datetime.now(UTC)),
         *_claim_problems(claims),
     ]
-    return ToolResult(tool="b.jwt", parser="builtin", issues=issues)
+    return ToolResult(tool=TOOL, parser="builtin", issues=issues)
 
 
-async def run(values: Mapping[str, object], fetcher: Fetcher) -> ToolResult:  # noqa: ARG001
+def run(values: Mapping[str, object]) -> ToolResult:
     """Inspect the token the agent gives. Nothing is fetched."""
     return inspect_jwt(str(values["token"]))

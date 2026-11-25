@@ -18,7 +18,7 @@ from app.tools.parsers.schema import (
 HSTS_MIN_SECONDS = 15_552_000  # six months
 PROBE_ORIGIN = "https://blindspot-cors-probe.invalid"
 _MAX_AGE = re.compile(r"max-age\s*=\s*\"?(\d{1,12})", re.IGNORECASE)
-_VERSIONED = re.compile(r"[A-Za-z][\w.-]*/\d|\d+\.\d+")
+_VERSIONED = re.compile(r"[A-Za-z][\w.-]{0,60}/\d|\d{1,9}\.\d")
 _LEAKY = ("server", "x-powered-by", "x-aspnet-version", "x-aspnetmvc-version")
 _REFERRER_LEAKY = ("unsafe-url", "no-referrer-when-downgrade", "origin-when-cross-origin")
 
@@ -219,51 +219,48 @@ def analyze_cookies(response: Fetched) -> list[Issue]:
     return found
 
 
+def _cors_issue(response: Fetched, origin: str | None) -> Issue | None:
+    """What one answer's CORS headers give away, if anything."""
+    allow = (response.header("access-control-allow-origin") or "").strip()
+    credentials = (response.header("access-control-allow-credentials") or "").lower() == "true"
+    if allow == "*":
+        return _issue(
+            "CORS allows every site to read this page",
+            Severity.MEDIUM if credentials else Severity.LOW,
+            "Access-Control-Allow-Origin is *. Browsers refuse credentials with it, "
+            "but any site can read the page's public answers.",
+            response.url,
+            "cors-wildcard",
+            evidence="Access-Control-Allow-Origin: *",
+        )
+    if origin is not None and allow == origin:
+        return _issue(
+            "CORS repeats any Origin it is sent",
+            Severity.HIGH if credentials else Severity.MEDIUM,
+            "A made-up site was allowed to read this page"
+            + (" with the visitor's cookies." if credentials else "."),
+            response.url,
+            "cors-reflected",
+            evidence=f"Origin: {origin} -> Access-Control-Allow-Origin: {allow}",
+        )
+    if allow == "null":
+        return _issue(
+            "CORS allows the null origin",
+            Severity.MEDIUM if credentials else Severity.LOW,
+            "Pages in a sandboxed frame send Origin: null, so any site can read this page.",
+            response.url,
+            "cors-null",
+            evidence="Access-Control-Allow-Origin: null",
+        )
+    return None
+
+
 def analyze_cors(plain: Fetched, probed: Fetched | None) -> list[Issue]:
     """Whether another site may read the answers. `probed` is the same page asked for with a
     made-up `Origin`."""
-    found: list[Issue] = []
-    for response, origin in ((plain, None), (probed, PROBE_ORIGIN)):
-        if response is None:
-            continue
-        allow = (response.header("access-control-allow-origin") or "").strip()
-        credentials = (response.header("access-control-allow-credentials") or "").lower() == "true"
-        if allow == "*":
-            found.append(
-                _issue(
-                    "CORS allows every site to read this page",
-                    Severity.MEDIUM if credentials else Severity.LOW,
-                    "Access-Control-Allow-Origin is *. Browsers refuse credentials with it, "
-                    "but any site can read the page's public answers.",
-                    response.url,
-                    "cors-wildcard",
-                    evidence="Access-Control-Allow-Origin: *",
-                )
-            )
-        elif origin is not None and allow == origin:
-            found.append(
-                _issue(
-                    "CORS repeats any Origin it is sent",
-                    Severity.HIGH if credentials else Severity.MEDIUM,
-                    "A made-up site was allowed to read this page"
-                    + (" with the visitor's cookies." if credentials else "."),
-                    response.url,
-                    "cors-reflected",
-                    evidence=f"Origin: {origin} -> Access-Control-Allow-Origin: {allow}",
-                )
-            )
-        elif allow == "null":
-            found.append(
-                _issue(
-                    "CORS allows the null origin",
-                    Severity.MEDIUM if credentials else Severity.LOW,
-                    "Pages in a sandboxed frame send Origin: null, so any site can read this page.",
-                    response.url,
-                    "cors-null",
-                    evidence="Access-Control-Allow-Origin: null",
-                )
-            )
-    return found
+    answers = ((plain, None), (probed, PROBE_ORIGIN))
+    issues = (_cors_issue(response, origin) for response, origin in answers if response is not None)
+    return [issue for issue in issues if issue is not None]
 
 
 def analyze_response(plain: Fetched, probed: Fetched | None) -> ToolResult:

@@ -32,6 +32,16 @@ def _issue(row: list[str], host: str | None, port: str | None) -> Issue | None:
     )
 
 
+def _banner(text: str, host: str | None) -> Technology | None:
+    banner = clip(text, 100)
+    if not banner:
+        return None
+    name, _, version = banner.partition("/")
+    return Technology(
+        name=name, version=version.strip() or None, category="web server", target=host
+    )
+
+
 def parse_nikto_csv(data: bytes) -> ToolResult:
     """The server banner as a technology and every finding as an issue."""
     text = text_of(data)
@@ -46,22 +56,12 @@ def parse_nikto_csv(data: bytes) -> ToolResult:
         if len(row) < _MIN_COLUMNS:
             continue
         rows += 1
-        if (
-            len(row) == _BANNER_COLUMNS and not row[3] and not row[4]
-        ):  # the line that names the host and its banner
+        if len(row) == _BANNER_COLUMNS and not row[3] and not row[4]:
+            # The line that names the host and its banner.
             host, port = clip(row[0]), str(number(row[2]) or "") or None
-            banner = clip(row[6], 100)
-            if banner:
-                name, _, version = banner.partition("/")
-                found.add(
-                    technologies,
-                    Technology(
-                        name=name,
-                        version=version.strip() or None,
-                        category="web server",
-                        target=host,
-                    ),
-                )
+            technology = _banner(row[6], host)
+            if technology is not None:
+                found.add(technologies, technology)
             continue
         issue = _issue(row, host, port)
         if issue is not None and not found.add(issues, issue):

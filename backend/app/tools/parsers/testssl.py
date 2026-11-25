@@ -40,6 +40,26 @@ def _finding(item: JsonObject) -> TlsFinding | None:
     )
 
 
+def _unwrapped(items: list[object]) -> list[object]:
+    """Newer versions wrap the findings of each scanned address in a `scanResult` list."""
+    nested = [as_object(item) for item in items]
+    if nested and all(n is not None and "scanResult" in n for n in nested):
+        return [e for n in nested if n for e in (as_list(n.get("scanResult")) or [])]
+    return items
+
+
+def _issue(finding: TlsFinding) -> Issue:
+    return Issue(
+        title=f"TLS: {finding.id}",
+        severity=finding.severity,
+        confidence=Confidence.FIRM,
+        target=f"{finding.host}:{finding.port}" if finding.host else None,
+        detail=finding.finding,
+        reference=finding.cve[0] if finding.cve else None,
+        tags=["tls"],
+    )
+
+
 def parse_testssl_json(data: bytes) -> ToolResult:
     """Every TLS finding, and an issue for each one that is a weakness."""
     document = load_json(data)
@@ -47,10 +67,7 @@ def parse_testssl_json(data: bytes) -> ToolResult:
     items = as_list(wrapper.get("scanResult") if wrapper is not None else document)
     if items is None:
         raise ParseError("The output is not a testssl.sh report")
-    # Newer versions wrap the findings of each scanned address in a `scanResult` list.
-    nested = [as_object(item) for item in items]
-    if nested and all(n is not None and "scanResult" in n for n in nested):
-        items = [e for n in nested if n for e in (as_list(n.get("scanResult")) or [])]
+    items = _unwrapped(items)
     found = Collector()
     findings: list[TlsFinding] = []
     issues: list[Issue] = []
@@ -62,18 +79,7 @@ def parse_testssl_json(data: bytes) -> ToolResult:
         if not found.add(findings, finding):
             break
         if finding.severity is not Severity.INFO:
-            found.add(
-                issues,
-                Issue(
-                    title=f"TLS: {finding.id}",
-                    severity=finding.severity,
-                    confidence=Confidence.FIRM,
-                    target=f"{finding.host}:{finding.port}" if finding.host else None,
-                    detail=finding.finding,
-                    reference=finding.cve[0] if finding.cve else None,
-                    tags=["tls"],
-                ),
-            )
+            found.add(issues, _issue(finding))
     return ToolResult(
         tool="p.testssl",
         parser="testssl_json",

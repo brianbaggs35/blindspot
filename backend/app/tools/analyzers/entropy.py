@@ -26,7 +26,7 @@ def _alphabet(token: str) -> int:
         size += 26
     if re.search(r"[A-Z]", token):
         size += 26
-    if re.search(r"[0-9]", token):
+    if re.search(r"\d", token, re.ASCII):
         size += 10
     if re.search(r"[^A-Za-z0-9]", token):
         size += 30
