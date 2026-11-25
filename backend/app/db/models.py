@@ -29,7 +29,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 from app.db.base import Base, CreatedBy, SoftDelete, Timestamps, UUIDPrimaryKey, utc_now
 from app.terms.text import VERSION as TERMS_VERSION
 from app.vault.seal import Purpose
-from app.vault.types import SealedString
+from app.vault.types import SealedJSON, SealedString
 
 METHODOLOGY_ID = "methodology.id"
 PENTEST_ID = "pentest.id"
@@ -50,6 +50,7 @@ __all__ = [
     "PentestAttestation",
     "PentestCheck",
     "PentestLetter",
+    "PentestResult",
     "PlaybookOverride",
     "Role",
     "ToolGrant",
@@ -471,6 +472,49 @@ class PentestCheck(UUIDPrimaryKey, Timestamps, Base):
     name: Mapped[str | None] = mapped_column(String(200), default=None)
     category: Mapped[str | None] = mapped_column(String(80), default=None)
     updated_by: Mapped[uuid.UUID | None] = mapped_column(Uuid, default=None)
+
+
+class PentestResult(UUIDPrimaryKey, Timestamps, SoftDelete, CreatedBy, Base):
+    """What one tool run, one import or one note put on a pentest's record. `normalized` is the
+    tool's output in the one result shape (without any secret); `raw_output` is what the tool
+    printed and `credentials` what it found that must stay secret, both sealed. Facts a list needs
+    to filter on (the tool, the worst severity) are columns of their own."""
+
+    __tablename__ = "pentest_result"
+    __table_args__ = (
+        CheckConstraint("source IN ('tool', 'import', 'manual')", name="source"),
+        CheckConstraint("status IN ('ok', 'failed', 'manual')", name="status"),
+        CheckConstraint(
+            "top_severity IS NULL OR top_severity IN ('info', 'low', 'medium', 'high', 'critical')",
+            name="top_severity",
+        ),
+    )
+
+    pentest_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid, ForeignKey(PENTEST_ID, ondelete="CASCADE"), index=True
+    )
+    source: Mapped[str] = mapped_column(String(8))
+    status: Mapped[str] = mapped_column(String(8))
+    title: Mapped[str] = mapped_column(String(200))
+    tool_id: Mapped[str | None] = mapped_column(String(32), default=None)
+    agent_role: Mapped[str | None] = mapped_column(String(24), default=None)
+    test_id: Mapped[str | None] = mapped_column(String(64), default=None)
+    parser: Mapped[str | None] = mapped_column(String(32), default=None)
+    command: Mapped[Any] = mapped_column(JSONB, default=list, server_default=text("'[]'::jsonb"))
+    exit_code: Mapped[int | None] = mapped_column(Integer, default=None)
+    duration_ms: Mapped[int | None] = mapped_column(Integer, default=None)
+    ran_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utc_now, server_default=func.now(), index=True
+    )
+    normalized: Mapped[Any | None] = mapped_column(JSONB, default=None)
+    top_severity: Mapped[str | None] = mapped_column(String(8), default=None)
+    issue_count: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+    raw_output: Mapped[str | None] = mapped_column(SealedString(Purpose.EVIDENCE), default=None)
+    credentials: Mapped[Any | None] = mapped_column(
+        SealedJSON(Purpose.DISCOVERED_CREDENTIALS), default=None
+    )
+    notes: Mapped[str] = mapped_column(Text, default="", server_default="")
+    tags: Mapped[Any] = mapped_column(JSONB, default=list, server_default=text("'[]'::jsonb"))
 
 
 class CustomTool(UUIDPrimaryKey, Timestamps, CreatedBy, Base):
