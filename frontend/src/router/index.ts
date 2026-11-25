@@ -5,6 +5,7 @@ import {
   mdiClipboardListOutline,
   mdiHistory,
   mdiRadar,
+  mdiRobotOutline,
   mdiTargetAccount,
 } from "@mdi/js";
 import { createRouter, createWebHistory, type RouteRecordRaw } from "vue-router";
@@ -70,6 +71,21 @@ export const routes: RouteRecordRaw[] = [
     name: "pentest-result",
     component: () => import("../views/PentestResultView.vue"),
     meta: { title: "Result" },
+  },
+  {
+    path: "/pentests/:id/agents",
+    name: "pentest-agents",
+    component: () => import("../views/PentestAgentsView.vue"),
+    meta: { title: "Agents" },
+  },
+  {
+    path: "/agents",
+    name: "agents",
+    component: () => import("../views/AgentsView.vue"),
+    meta: {
+      title: "Agents",
+      nav: { label: "Agents", group: "work", order: 40, icon: mdiRobotOutline },
+    },
   },
   {
     path: "/methodologies",
