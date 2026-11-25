@@ -19,6 +19,7 @@ dependencies = [
   "pydantic-ai-slim[anthropic,openai]==2.71.0",
   "pyyaml==6.0.4",
   "lxml==6.1.3",
+  "cvss==3.6",
 ]
 
 [dependency-groups]
