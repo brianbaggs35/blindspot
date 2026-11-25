@@ -477,3 +477,156 @@ export interface RawOutput {
   truncated: boolean;
   size: number;
 }
+
+/** The caps of one mission. */
+export interface Budget {
+  steps: number;
+  steps_per_test: number;
+  tokens: number;
+  tokens_per_test: number;
+  cost_usd: number;
+  seconds: number;
+  seconds_per_test: number;
+  concurrency: number;
+  verify_from: Severity;
+}
+
+export interface AgentStats {
+  runs: number;
+  succeeded: number;
+  failed: number;
+  success_rate: number | null;
+  cost_per_run_usd: number | null;
+  last_run: string | null;
+  active: boolean;
+}
+
+export interface AgentNode {
+  id: string;
+  name: string;
+  kind: "commander" | "category" | "test";
+  risk_class: RiskClass | null;
+  tools: string[];
+  stats: AgentStats;
+  children: AgentNode[];
+}
+
+export interface AgentsOverview {
+  methodology_id: string | null;
+  methodologies: { id: string; name: string }[];
+  commander: AgentNode | null;
+  runner_ready: boolean;
+}
+
+export interface AgentPreset {
+  id: string;
+  name: string;
+  summary: string;
+  max_risk: RiskClass;
+  budget: Budget;
+}
+
+export interface PromptVersion {
+  version: number;
+  note: string;
+  created_at: string | null;
+  created_by: string | null;
+  active: boolean;
+}
+
+export interface PromptInfo {
+  agent: string;
+  label: string;
+  active: number;
+  versions: PromptVersion[];
+}
+
+export interface AgentSettings {
+  budget: Budget;
+  built_in_budget: Budget;
+  presets: AgentPreset[];
+  prompts: PromptInfo[];
+  max_prompt: number;
+}
+
+export interface PromptBody {
+  agent: string;
+  version: number;
+  note: string;
+  body: string;
+}
+
+export interface PlanSummary {
+  runs: number;
+  skipped: number;
+  risk: Record<RiskClass, number>;
+  tools: string[];
+  skips: { reason: string; tests: number }[];
+  categories: { id: string; name: string; phase: number; runs: number; skipped: number }[];
+}
+
+export interface MissionPreview {
+  summary: PlanSummary;
+  budget: Budget;
+  max_risk: RiskClass;
+  prompts: Record<string, number>;
+  in_scope: string[];
+  runner_ready: boolean;
+}
+
+export interface StartRequest {
+  preset?: string;
+  budget?: Budget;
+  max_risk?: RiskClass;
+  only?: string[];
+  confirmed?: boolean;
+}
+
+export interface Mission {
+  id: string;
+  pentest_id: string;
+  status: string;
+  budget: Budget;
+  spent: { steps?: number; tokens?: number; cost_usd?: number; seconds?: number };
+  plan: { runs?: number; skipped?: number; max_risk?: RiskClass };
+  prompts: Record<string, number>;
+  stop_reason: string;
+  started_at: string | null;
+  finished_at: string | null;
+  created_at: string;
+}
+
+export interface MissionTask {
+  id: string;
+  parent_id: string | null;
+  kind: "commander" | "category" | "test";
+  ref: string;
+  name: string;
+  phase: number;
+  position: number;
+  status: string;
+  summary: string;
+  outcome: Record<string, unknown> | null;
+  spent: { steps?: number; tokens?: number; cost_usd?: number; seconds?: number };
+}
+
+export interface MissionStep {
+  id: string;
+  task_id: string;
+  seq: number;
+  status: string;
+  tool: string;
+  request: Record<string, unknown>;
+  verdict: Record<string, unknown> | null;
+  result_id: string | null;
+  note: string;
+  created_at: string;
+}
+
+export interface MissionEvent {
+  id: number;
+  task_id: string | null;
+  type: string;
+  data: Record<string, unknown>;
+  created_at: string;
+}
