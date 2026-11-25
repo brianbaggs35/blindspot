@@ -45,6 +45,11 @@ __all__ = [
     "Base",
     "Methodology",
     "MethodologyVersion",
+    "Mission",
+    "MissionEvent",
+    "MissionFact",
+    "MissionStep",
+    "MissionTask",
     "Passkey",
     "Pentest",
     "PentestAccount",
@@ -548,4 +553,124 @@ class ToolGrant(UUIDPrimaryKey, Timestamps, CreatedBy, Base):
     mode: Mapped[str] = mapped_column(String(8))
     pentest_id: Mapped[uuid.UUID | None] = mapped_column(
         Uuid, ForeignKey(PENTEST_ID, ondelete="CASCADE"), default=None, index=True
+    )
+
+
+MISSION_ID = "mission.id"
+MISSION_STATUSES = (
+    "'pending', 'running', 'paused', 'cancelling', 'cancelled', 'completed', 'failed', 'stopped'"
+)
+TASK_STATUSES = "'pending', 'running', 'waiting', 'done', 'failed', 'skipped', 'cancelled'"
+STEP_STATUSES = (
+    "'planned', 'awaiting_approval', 'approved', 'running', 'done', 'failed', 'denied', "
+    "'interrupted'"
+)
+
+
+class Mission(UUIDPrimaryKey, Timestamps, CreatedBy, Base):
+    """One run of the agents over a pentest. The orchestrator is code that reads and writes these
+    rows, so a mission survives a restart; the models only ever do the work of one step."""
+
+    __tablename__ = "mission"
+    __table_args__ = (CheckConstraint(f"status IN ({MISSION_STATUSES})", name="status"),)
+
+    pentest_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid, ForeignKey(PENTEST_ID, ondelete="CASCADE"), index=True
+    )
+    status: Mapped[str] = mapped_column(String(12), default="pending", server_default="pending")
+    budget: Mapped[Any] = mapped_column(JSONB)
+    spent: Mapped[Any] = mapped_column(JSONB, default=dict, server_default=text("'{}'::jsonb"))
+    plan: Mapped[Any] = mapped_column(JSONB, default=dict, server_default=text("'{}'::jsonb"))
+    stop_reason: Mapped[str] = mapped_column(Text, default="", server_default="")
+    started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), default=None)
+    finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), default=None)
+
+
+class MissionTask(UUIDPrimaryKey, Timestamps, Base):
+    """A unit of work in the tree: the commander, a category, or one test. `phase` orders the
+    categories (safer ones first); tasks of one phase may run side by side."""
+
+    __tablename__ = "mission_task"
+    __table_args__ = (
+        CheckConstraint("kind IN ('commander', 'category', 'test')", name="kind"),
+        CheckConstraint(f"status IN ({TASK_STATUSES})", name="status"),
+    )
+
+    mission_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid, ForeignKey(MISSION_ID, ondelete="CASCADE"), index=True
+    )
+    parent_id: Mapped[uuid.UUID | None] = mapped_column(Uuid, default=None)
+    kind: Mapped[str] = mapped_column(String(10))
+    ref: Mapped[str] = mapped_column(String(64))
+    name: Mapped[str] = mapped_column(String(200))
+    phase: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+    position: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+    status: Mapped[str] = mapped_column(String(10), default="pending", server_default="pending")
+    outcome: Mapped[Any | None] = mapped_column(JSONB, default=None)
+    summary: Mapped[str] = mapped_column(Text, default="", server_default="")
+    spent: Mapped[Any] = mapped_column(JSONB, default=dict, server_default=text("'{}'::jsonb"))
+
+
+class MissionStep(UUIDPrimaryKey, Timestamps, Base):
+    """One thing a test agent asked to do. A row is written before anything runs and is never run
+    twice: `done` steps are read back, and a step that was running when the server stopped is
+    marked `interrupted` and left for the agent to ask for again, visibly."""
+
+    __tablename__ = "mission_step"
+    __table_args__ = (
+        UniqueConstraint("task_id", "seq"),
+        CheckConstraint(f"status IN ({STEP_STATUSES})", name="status"),
+    )
+
+    mission_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid, ForeignKey(MISSION_ID, ondelete="CASCADE"), index=True
+    )
+    task_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid, ForeignKey("mission_task.id", ondelete="CASCADE"), index=True
+    )
+    seq: Mapped[int] = mapped_column(Integer)
+    status: Mapped[str] = mapped_column(String(18), default="planned", server_default="planned")
+    tool: Mapped[str] = mapped_column(String(32))
+    request: Mapped[Any] = mapped_column(JSONB)
+    verdict: Mapped[Any | None] = mapped_column(JSONB, default=None)
+    result_id: Mapped[uuid.UUID | None] = mapped_column(Uuid, default=None)
+    note: Mapped[str] = mapped_column(Text, default="", server_default="")
+
+
+class MissionEvent(Base):
+    """The mission's event log: what happened, in order. The web app reads it with a cursor."""
+
+    __tablename__ = "mission_event"
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    mission_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid, ForeignKey(MISSION_ID, ondelete="CASCADE"), index=True
+    )
+    task_id: Mapped[uuid.UUID | None] = mapped_column(Uuid, default=None)
+    type: Mapped[str] = mapped_column(String(32))
+    data: Mapped[Any] = mapped_column(JSONB, default=dict, server_default=text("'{}'::jsonb"))
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utc_now, server_default=func.now()
+    )
+
+
+class MissionFact(UUIDPrimaryKey, Base):
+    """What the agents have learned about the target, with where it came from, so another agent
+    can reuse it instead of finding it again."""
+
+    __tablename__ = "mission_fact"
+    __table_args__ = (
+        CheckConstraint("confidence IN ('low', 'medium', 'high')", name="confidence"),
+    )
+
+    mission_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid, ForeignKey(MISSION_ID, ondelete="CASCADE"), index=True
+    )
+    task_id: Mapped[uuid.UUID | None] = mapped_column(Uuid, default=None)
+    subject: Mapped[str] = mapped_column(String(200))
+    fact: Mapped[str] = mapped_column(Text)
+    confidence: Mapped[str] = mapped_column(String(6))
+    source_result_id: Mapped[uuid.UUID | None] = mapped_column(Uuid, default=None)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utc_now, server_default=func.now()
     )
