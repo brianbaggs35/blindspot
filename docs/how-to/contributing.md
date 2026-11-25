@@ -28,6 +28,18 @@ The `PR hygiene` workflow checks the title, the branch and every commit message 
 
 Coverage rules: pytest and Vitest stay at 100% (the build fails below 95%); Playwright must stay above 80%, aiming for 90% and more.
 
+## Releases
+
+The version is in four files that must agree: `backend/pyproject.toml`, `backend/uv.lock` (the `blindspot` entry), `frontend/package.json` and `frontend/package-lock.json` (twice). `CHANGELOG.md` holds what changed, newest first, in the [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) style: add each user-visible change under `## [Unreleased]` in the pull request that makes it.
+
+To release version `x.y.z`:
+
+1. In one pull request, rename `Unreleased` to `## [x.y.z] - YYYY-MM-DD` (and add a new empty `Unreleased` above it), bump the four version files, and update the links at the bottom of the changelog.
+2. Merge it, then publish a GitHub release tagged `vx.y.z` from `master` (mark it as a pre-release when the version has a suffix such as `-rc.1`).
+3. The `Release` workflow checks the tag, the version files and the changelog agree, then builds, scans and smoke tests the image for amd64 and arm64 and publishes it to the GitHub Container Registry.
+
+`make check-versions` runs the same agreement check, and CI runs it on every pull request, so the files cannot drift apart.
+
 ## Before you push
 
 ```sh
