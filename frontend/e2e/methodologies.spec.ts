@@ -4,8 +4,9 @@ import { newPerson, signInThroughThePage, alertOn } from "./people";
 
 const WSTG = "OWASP Web Security Testing Guide";
 
-// The methodologies belong to the whole installation, so the specs that change one run one after
-// the other, and each puts back what it changed.
+// The methodologies belong to the whole installation, so the specs here only read them or change
+// one thing and put it back; the one that turns a methodology off runs alone (see
+// methodologies.exclusive.spec.ts).
 test.describe("Methodologies (administrator)", () => {
   test.describe.configure({ mode: "serial" });
 
@@ -101,18 +102,6 @@ test.describe("Methodologies (administrator)", () => {
     await page.goto("/methodologies");
     await page.getByRole("button", { name: "Read packs folder" }).click();
     await expect(page.getByText(/No new packs\./)).toBeVisible();
-  });
-
-  test("turns the methodology off and on again", async ({ page }) => {
-    await page.goto("/methodologies");
-    const toggle = page.getByLabel("Offer this methodology for new pentests");
-    await expect(toggle).toBeChecked();
-    await page.getByText("Offer this methodology for new pentests").click();
-    await expect(page.getByText(`${WSTG} is off.`)).toBeVisible();
-    await expect(toggle).not.toBeChecked();
-    await page.getByText("Offer this methodology for new pentests").click();
-    await expect(page.getByText(`${WSTG} is on.`)).toBeVisible();
-    await expect(toggle).toBeChecked();
   });
 
   test("is in the menu", async ({ page }) => {
