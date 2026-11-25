@@ -2,7 +2,7 @@ import { type Page, type PlaywrightWorkerArgs } from "@playwright/test";
 import { ADMIN_STATE, SIGNED_OUT } from "./accounts";
 import { axeResults, useTheme } from "./axe";
 import { expect, test } from "./fixtures";
-import { alertOn, newPerson, signInThroughThePage, uniqueName } from "./people";
+import { newPerson, signInThroughThePage, uniqueName } from "./people";
 import { themes } from "./pages";
 import { pickOption } from "./vuetify";
 
@@ -109,7 +109,7 @@ test.describe("Tools (administrator)", () => {
       const dialog = page.getByRole("dialog");
       await dialog.getByLabel("Timeout (seconds)").fill("0");
       await dialog.getByRole("button", { name: "Save" }).click();
-      await expect(alertOn(page)).toBeVisible();
+      await expect(dialog.locator(".v-alert[role=alert]")).toBeVisible();
     } finally {
       await tool.remove();
     }
