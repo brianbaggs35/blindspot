@@ -46,6 +46,9 @@ from app.agents.ports import (
 )
 from app.ai.netguard import Resolver
 from app.db.models import (
+    Finding,
+    FindingEvent,
+    FindingEvidence,
     Mission,
     MissionEvent,
     MissionFact,
@@ -57,6 +60,7 @@ from app.db.models import (
     ToolGrant,
 )
 from app.errors import AppError
+from app.findings.agent import record as record_findings
 from app.tools.control import set_kill_switch
 
 Sessions = async_sessionmaker[AsyncSession]
@@ -950,6 +954,102 @@ async def test_a_finding_is_replayed_and_counts_only_when_the_replay_agrees(
         )
         assert check is not None
         assert check.status == "finding"
+        row = await session.scalar(select(Finding))
+        assert row is not None
+        assert (row.number, row.source, row.severity, row.confidence) == (
+            1,
+            "agent",
+            "high",
+            "firm",
+        )
+        assert (row.status, row.verification, row.verified_by) == (
+            "confirmed",
+            "confirmed",
+            "agent",
+        )
+        assert (row.test_ids, row.description) == ([HEADERS_TEST], "The header is missing.")
+        assert row.result_id is not None
+        proof = (await session.scalars(select(FindingEvidence))).all()
+        assert [(e.kind, e.title, e.result_id) for e in proof] == [
+            ("result", "Step 1: b.headers", row.result_id)
+        ]
+
+
+async def test_a_finding_the_agent_makes_again_is_seen_again_not_made_twice(
+    admin: TestClient, sessions: Sessions
+) -> None:
+    engine, _brain, _runner, mission_id, _made = await setup(
+        admin,
+        sessions,
+        {HEADERS_TEST: [look(), done("finding", summary="No HSTS.", findings=[high()])]},
+    )
+    await engine.run(mission_id)
+    task = await task_of(sessions, mission_id, HEADERS_TEST)
+    again = [(high(), "confirmed"), (high(title="Something else"), "unverified")]
+    async with sessions.begin() as session:
+        before = await session.scalar(select(Finding))
+        assert before is not None
+        before.status = "fixed"
+        made = await record_findings(
+            session,
+            pentest_id=before.pentest_id,
+            task_id=task.id,
+            test_ref=HEADERS_TEST,
+            claims=again,  # pyright: ignore[reportArgumentType]
+        )
+    assert [one.title for one in made] == ["Something else"]
+    async with sessions() as session:
+        rows = (await session.scalars(select(Finding).order_by(Finding.number))).all()
+        assert [(r.number, r.status, r.verification, r.verified_by) for r in rows] == [
+            (1, "confirmed", "confirmed", "agent"),
+            (2, "new", "unverified", None),
+        ]
+        kinds = (
+            await session.scalars(
+                select(FindingEvent.kind).where(FindingEvent.finding_id == rows[0].id)
+            )
+        ).all()
+        assert sorted(kinds) == ["created", "evidence_added", "seen_again", "status"]
+    async with sessions.begin() as session:
+        await record_findings(
+            session,
+            pentest_id=rows[0].pentest_id,
+            task_id=task.id,
+            test_ref=HEADERS_TEST,
+            claims=[(high(), "unconfirmed")],
+        )
+    async with sessions() as session:
+        again_row = await session.scalar(select(Finding).where(Finding.number == 1))
+        assert again_row is not None
+        assert again_row.status == "confirmed"
+
+
+async def test_a_step_without_a_stored_result_is_not_evidence(
+    admin: TestClient, sessions: Sessions
+) -> None:
+    engine, _brain, _runner, mission_id, _made = await setup(
+        admin,
+        sessions,
+        {HEADERS_TEST: [look(), done("finding", summary="No HSTS.", findings=[high()])]},
+    )
+    await engine.run(mission_id)
+    task = await task_of(sessions, mission_id, HEADERS_TEST)
+    async with sessions.begin() as session:
+        for step in await session.scalars(
+            select(MissionStep).where(MissionStep.task_id == task.id)
+        ):
+            step.result_id = None
+        made = await record_findings(
+            session,
+            pentest_id=(await session.scalars(select(Finding.pentest_id))).one(),
+            task_id=task.id,
+            test_ref=HEADERS_TEST,
+            claims=[(high(title="Another"), "unverified")],
+        )
+    assert [one.result_id for one in made] == [None]
+    async with sessions() as session:
+        proof = (await session.scalars(select(FindingEvidence))).all()
+        assert len(proof) == 1  # only the first finding's
 
 
 async def test_a_finding_the_replay_does_not_confirm_is_not_counted(
@@ -968,6 +1068,10 @@ async def test_a_finding_the_replay_does_not_confirm_is_not_counted(
     assert task.outcome["findings"][0]["verification"] == "unconfirmed"
     mission = await mission_of(sessions, mission_id)
     assert mission.spent["tokens"] == 5
+    async with sessions() as session:
+        row = await session.scalar(select(Finding))
+        assert row is not None
+        assert (row.status, row.verification, row.verified_by) == ("new", "unconfirmed", "agent")
 
 
 async def test_a_model_may_raise_a_verdict_but_never_lower_one(
@@ -1011,6 +1115,10 @@ async def test_a_finding_that_is_not_replayed_is_marked_unverified(
     assert task.outcome is not None
     assert task.outcome["findings"][0]["verification"] == "unverified"
     assert task.outcome["status"] == "finding"
+    async with sessions() as session:
+        row = await session.scalar(select(Finding))
+        assert row is not None
+        assert (row.status, row.verification, row.verified_by) == ("new", "unverified", None)
 
 
 async def test_a_replay_that_fails_leaves_the_finding_unverified(

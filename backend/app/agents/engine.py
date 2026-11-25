@@ -62,6 +62,8 @@ from app.db.models import (
     PentestCheck,
 )
 from app.errors import AppError
+from app.findings.agent import record as record_findings
+from app.findings.schemas import Verification
 from app.methodology.spec import RISK_ORDER, RiskClass, Test
 from app.pentests.checklist import rows_of, snapshot
 from app.results.service import Run, record_result, summary_of
@@ -773,8 +775,10 @@ class MissionEngine:
         """Check the agent's answer against the evidence, replay what needs it, record the verdict
         on the checklist, and keep the facts."""
         findings: list[dict[str, object]] = []
+        verdicts: list[Verification] = []
         for finding in finish.findings[:MAX_OUTCOME_FINDINGS]:
             verification = await self._verify(run, finding)
+            verdicts.append(verification)
             findings.append({**finding.model_dump(mode="json"), "verification": verification})
         confirmed = [f for f in findings if f["verification"] != "unconfirmed"]
         # A model may raise a test's verdict, never lower one the evidence set.
@@ -788,6 +792,13 @@ class MissionEngine:
             task.summary = finish.summary
             task.outcome = {"status": status, "findings": findings}
             add_facts(session, run.mission_id, run.task_id, finish.facts)
+            await record_findings(
+                session,
+                pentest_id=mission.pentest_id,
+                task_id=run.task_id,
+                test_ref=task.ref,
+                claims=list(zip(finish.findings, verdicts, strict=False)),
+            )
             await self._write_check(session, mission.pentest_id, task.ref, status, finish.summary)
             emit(
                 session,
@@ -819,7 +830,7 @@ class MissionEngine:
             row.status = CheckStatus(status).value
             row.notes = note
 
-    async def _verify(self, run: Assignment, finding: FindingIn) -> str:
+    async def _verify(self, run: Assignment, finding: FindingIn) -> Verification:
         """`confirmed`, `unconfirmed` or `unverified` (below the severity that is replayed, or the
         evidence cannot be replayed). The replay is an ordinary step: it passes the same checks."""
         if SEVERITIES.index(finding.severity) < SEVERITIES.index(Severity(run.budget.verify_from)):
