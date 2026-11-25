@@ -58,7 +58,9 @@ export function duration(ms: number | null): string {
  * it reads the way a shell would take it, though no shell ever ran it. */
 export function commandLine(command: string[]): string {
   return command
-    .map((part) => (/^[\w@%+=:,./-]+$/.test(part) ? part : `'${part.replace(/'/g, "'\\''")}'`))
+    .map((part) =>
+      /^[\w@%+=:,./-]+$/.test(part) ? part : `'${part.replaceAll("'", String.raw`'\''`)}'`,
+    )
     .join(" ");
 }
 
@@ -168,7 +170,7 @@ export function sectionsOf(technical: Technical): Section[] {
       {
         key,
         title,
-        headers: used.map((column) => ({ title: column.replace(/_/g, " "), key: column })),
+        headers: used.map((column) => ({ title: column.replaceAll("_", " "), key: column })),
         items: rows.map((row) =>
           Object.fromEntries(used.map((column) => [column, cell(row.get(column))])),
         ),

@@ -23,7 +23,7 @@ const GRADE_COLORS: Record<string, string> = {
         <template v-for="(part, index) in withTerms(line, friendly.terms)" :key="index">
           <v-tooltip v-if="part.meaning" :text="part.meaning" location="top">
             <template #activator="{ props: tip }">
-              <span v-bind="tip" class="bs-term" tabindex="0">{{ part.text }}</span>
+              <button v-bind="tip" type="button" class="bs-term">{{ part.text }}</button>
             </template>
           </v-tooltip>
           <template v-else>{{ part.text }}</template>
@@ -103,7 +103,7 @@ const GRADE_COLORS: Record<string, string> = {
               <template v-for="(part, at) in withTerms(text, friendly.terms)" :key="at">
                 <v-tooltip v-if="part.meaning" :text="part.meaning" location="top">
                   <template #activator="{ props: tip }">
-                    <span v-bind="tip" class="bs-term" tabindex="0">{{ part.text }}</span>
+                    <button v-bind="tip" type="button" class="bs-term">{{ part.text }}</button>
                   </template>
                 </v-tooltip>
                 <template v-else>{{ part.text }}</template>
@@ -121,8 +121,13 @@ const GRADE_COLORS: Record<string, string> = {
 
 <style scoped>
 .bs-term {
+  background: none;
+  border: 0;
   border-bottom: 1px dotted currentColor;
+  color: inherit;
   cursor: help;
+  font: inherit;
+  padding: 0;
 }
 .bs-ports {
   list-style: none;
