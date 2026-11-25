@@ -14,7 +14,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth import audit
 from app.auth.deps import Admin, SignedIn
-from app.db.models import CustomTool
+from app.db.models import CustomTool, ToolSetting
 from app.db.session import SessionDep
 from app.errors import AppError
 from app.methodology.spec import ToolId
@@ -207,5 +207,7 @@ async def delete_custom(
     """Remove a custom tool."""
     row = await _custom_row(session, tool_id)
     await session.delete(row)
+    if (setting := await session.get(ToolSetting, tool_id)) is not None:
+        await session.delete(setting)
     audit.record(session, request, "tool.custom.delete", actor=who.user, target=("tool", tool_id))
     return Response(status_code=204)

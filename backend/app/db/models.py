@@ -8,6 +8,7 @@ from typing import Any
 
 from sqlalchemy import (
     BigInteger,
+    Boolean,
     CheckConstraint,
     DateTime,
     ForeignKey,
@@ -537,6 +538,37 @@ class CustomTool(UUIDPrimaryKey, Timestamps, CreatedBy, Base):
 
     tool_id: Mapped[str] = mapped_column(String(32), unique=True)
     manifest: Mapped[Any] = mapped_column(JSONB)
+
+
+class ToolSetting(Base):
+    """How one tool is run: whether it is on, where (Local or Docker, or whatever the global
+    default says), what to run there and the limits it runs under. A missing value means the
+    tool's manifest decides. The row of a tool that was never set up does not exist."""
+
+    __tablename__ = "tool_setting"
+    __table_args__ = (
+        CheckConstraint("mode IS NULL OR mode IN ('local', 'docker')", name="mode"),
+        CheckConstraint(
+            "max_risk IS NULL OR max_risk IN ('passive', 'active', 'intrusive', 'destructive')",
+            name="max_risk",
+        ),
+    )
+
+    tool_id: Mapped[str] = mapped_column(String(32), primary_key=True)
+    enabled: Mapped[bool] = mapped_column(Boolean, default=True, server_default=true())
+    mode: Mapped[str | None] = mapped_column(String(6), default=None)
+    binary_path: Mapped[str | None] = mapped_column(String(300), default=None)
+    image: Mapped[str | None] = mapped_column(String(300), default=None)
+    cpus: Mapped[Decimal | None] = mapped_column(Numeric(5, 2), default=None)
+    memory_mb: Mapped[int | None] = mapped_column(Integer, default=None)
+    timeout_s: Mapped[int | None] = mapped_column(Integer, default=None)
+    max_output_mb: Mapped[int | None] = mapped_column(Integer, default=None)
+    rate_per_s: Mapped[int | None] = mapped_column(Integer, default=None)
+    max_risk: Mapped[str | None] = mapped_column(String(12), default=None)
+    updated_by: Mapped[uuid.UUID | None] = mapped_column(Uuid, default=None)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utc_now, onupdate=utc_now, server_default=func.now()
+    )
 
 
 class ToolGrant(UUIDPrimaryKey, Timestamps, CreatedBy, Base):

@@ -13,7 +13,7 @@ from tests.pentest_helpers import SCOPE, make
 from tests.test_pentest_gate import authorized, move
 from tests.tools_helpers import CUSTOM, NMAP, manifest
 
-from app.db.models import Pentest, ToolGrant
+from app.db.models import Pentest, ToolGrant, ToolSetting
 from app.tools.argv import build_call
 from app.tools.authorize import authorize, compile_stored_scope
 from app.tools.control import load_grants, set_kill_switch
@@ -98,6 +98,34 @@ async def test_a_passive_call_on_an_in_scope_target_runs_on_its_own(
     assert answer.mode is AUTO
     assert answer.allowed
     assert answer.record() == {"decision": "auto", "reason": "Passive tools run on their own."}
+
+
+async def test_the_tools_settings_can_switch_a_tool_off_or_hold_it_to_a_lower_risk(
+    admin: TestClient, sessions: async_sessionmaker[AsyncSession]
+) -> None:
+    made = running(admin)
+    target = {"targets": ["10.0.0.5"]}
+    async with sessions.begin() as session:
+        session.add(ToolSetting(tool_id="c.nmap", enabled=False))
+    off = await verdict(sessions, made, SCANNER, target)
+    assert (off.mode, off.reason) == (DENY, "This tool is switched off in the Tools settings.")
+    async with sessions.begin() as session:
+        row = await session.get(ToolSetting, "c.nmap")
+        assert row is not None
+        row.enabled = True
+        row.max_risk = "passive"
+    held = await verdict(sessions, made, SCANNER, target)
+    assert held.mode is DENY
+    assert held.reason == "This tool is limited to passive actions in the Tools settings."
+    async with sessions.begin() as session:
+        row = await session.get(ToolSetting, "c.nmap")
+        assert row is not None
+        row.max_risk = "active"
+    assert (await verdict(sessions, made, SCANNER, target)).allowed
+    # Settings of another tool change nothing here.
+    async with sessions.begin() as session:
+        session.add(ToolSetting(tool_id="x.headers", enabled=False))
+    assert (await verdict(sessions, made, SCANNER, target)).allowed
 
 
 async def test_an_active_call_on_a_range_in_scope_asks_a_person(
