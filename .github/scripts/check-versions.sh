@@ -31,8 +31,9 @@ if [[ ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
 fi
 
 check() { # <where> <what it declares>
-  if [[ "$2" != "$version" ]]; then
-    fail "$1 says '${2:-nothing}', but backend/pyproject.toml says '$version'."
+  local where="$1" declared="$2"
+  if [[ "$declared" != "$version" ]]; then
+    fail "$where says '${declared:-nothing}', but backend/pyproject.toml says '$version'."
   fi
 }
 check "backend/uv.lock" "$uv_lock"
