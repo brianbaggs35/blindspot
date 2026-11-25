@@ -11,6 +11,7 @@ from app.auth.audit_routes import router as audit_router
 from app.auth.passkey_routes import router as passkey_router
 from app.auth.routes import router as auth_router
 from app.auth.users import router as users_router
+from app.findings.routes import router as findings_router
 from app.health import router as health_router
 from app.methodology.routes import router as methodology_router
 from app.pentests.checklist import router as checklist_router
@@ -34,6 +35,7 @@ ROUTERS: list[APIRouter] = [
     checklist_router,
     pentests_router,
     results_router,
+    findings_router,
     missions_router,
     agents_router,
     terms_router,
