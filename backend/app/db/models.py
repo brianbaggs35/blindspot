@@ -470,3 +470,13 @@ class PentestCheck(UUIDPrimaryKey, Timestamps, Base):
     name: Mapped[str | None] = mapped_column(String(200), default=None)
     category: Mapped[str | None] = mapped_column(String(80), default=None)
     updated_by: Mapped[uuid.UUID | None] = mapped_column(Uuid, default=None)
+
+
+class CustomTool(UUIDPrimaryKey, Timestamps, CreatedBy, Base):
+    """A tool an administrator defined. `manifest` is the validated manifest as JSON, and the id
+    always starts with `x.` so it can never replace a bundled tool."""
+
+    __tablename__ = "custom_tool"
+
+    tool_id: Mapped[str] = mapped_column(String(32), unique=True)
+    manifest: Mapped[Any] = mapped_column(JSONB)
