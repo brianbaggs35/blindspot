@@ -52,9 +52,11 @@ dump="$(docker exec --user blindspot "$container" pg_dump --host /run/postgresql
 grep -q 'CREATE TABLE public.alembic_version' <<<"$dump"
 echo "pg_dump works"
 
-# Nothing may listen on TCP except nginx: the API and the database use unix sockets.
+# Nothing may listen on TCP except nginx: the API and the database use unix sockets. Docker's own
+# DNS resolver listens on 127.0.0.11 (shown as 0B00007F) inside a container on a compose network;
+# it is not the container's, so it is left out.
 listening="$(docker exec "$container" cat /proc/net/tcp /proc/net/tcp6 | while read -r _ local _ state _; do
-  [[ "$state" == "0A" ]] && echo "$((16#${local##*:}))"
+  [[ "$state" == "0A" && "${local%%:*}" != "0B00007F" ]] && echo "$((16#${local##*:}))"
 done | sort -un | tr '\n' ' ')"
 if [[ "$listening" != "8080 8443 " ]]; then
   echo "::error::The container listens on TCP ports: ${listening:-none}. Only 8080 and 8443 may."
