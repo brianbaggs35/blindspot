@@ -4,6 +4,7 @@ router that is added to the app must be added here (it is the only place the app
 from fastapi import APIRouter
 
 from app.agents.routes import router as missions_router
+from app.agents.settings_routes import router as agents_router
 from app.ai.connect import router as connect_router
 from app.ai.routes import router as ai_router
 from app.auth.audit_routes import router as audit_router
@@ -34,6 +35,7 @@ ROUTERS: list[APIRouter] = [
     pentests_router,
     results_router,
     missions_router,
+    agents_router,
     terms_router,
     tool_policy_router,
     tools_router,
