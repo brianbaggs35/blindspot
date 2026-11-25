@@ -91,6 +91,15 @@ See [AI providers and spend](ai-providers.md#the-ai-providers-page) for the step
 
 See [Pentests](pentests.md#the-pentests-pages) for the steps.
 
+## Agents
+
+| Page   | Path                    | What it does                                                                                                              |
+| ------ | ----------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| Agents | `/agents`               | The commander, category agents and test agents with how they have done; the default caps and presets; the prompt versions |
+| Agents | `/pentests/{id}/agents` | Deploy agents on a running pentest, review before confirming, and follow, approve, pause, resume and cancel its missions  |
+
+See [Agents and missions](agents.md#the-agents-page-and-the-pentests-agents) for the steps.
+
 ## Methodologies
 
 | Page          | Path             | What it does                                                                                                                                            |
