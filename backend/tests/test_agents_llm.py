@@ -225,8 +225,9 @@ async def test_a_reply_that_does_not_fit_is_sent_back_then_refused(
     seen = Seen()
     nonsense = call("ToolRequest", {"tool": "b.headers", "values": {}, "allowed": True})
     asked = brain(sessions, seen, nonsense)
+    now = context()
     with pytest.raises(UnexpectedModelBehavior):
-        await asked.decide(context())
+        await asked.decide(now)
     assert seen.calls == llm.RETRIES + 1
 
 
@@ -311,8 +312,9 @@ async def test_no_model_for_test_agents_is_a_clear_error(
     admin: TestClient, sessions: Sessions
 ) -> None:
     configure(admin, role=False)
+    asked, now = brain(sessions, Seen()), context()
     with pytest.raises(AppError) as raised:
-        await brain(sessions, Seen()).decide(context())
+        await asked.decide(now)
     assert raised.value.code == "no_model"
     assert raised.value.status == 409
 
@@ -322,8 +324,9 @@ async def test_a_provider_that_is_switched_off_is_not_used(
 ) -> None:
     made = configure(admin)
     assert admin.patch(f"/api/providers/{made['id']}", json={"enabled": False}).status_code == 200
+    asked, now = brain(sessions, Seen()), context()
     with pytest.raises(AppError, match="No model is set"):
-        await brain(sessions, Seen()).decide(context())
+        await asked.decide(now)
 
 
 async def test_a_provider_over_its_hard_budget_stops_the_agents(
@@ -331,8 +334,9 @@ async def test_a_provider_over_its_hard_budget_stops_the_agents(
 ) -> None:
     configure(admin, monthly_budget_usd="0", hard_stop=True)
     seen = Seen()
+    asked, now = brain(sessions, seen), context()
     with pytest.raises(BudgetExceeded):
-        await brain(sessions, seen).decide(context())
+        await asked.decide(now)
     assert seen.calls == 0
 
 
@@ -342,8 +346,9 @@ async def test_an_address_that_now_resolves_somewhere_it_must_not_is_refused_bef
     configure(admin)
     seen, clients = Seen(), Clients()
     asked = brain(sessions, seen, clients=clients, resolver=resolve("169.254.169.254"))
+    now = context()
     with pytest.raises(AppError) as raised:
-        await asked.decide(context())
+        await asked.decide(now)
     assert raised.value.code == "base_url_rejected"
     assert seen.calls == 0
     assert clients.made == []
@@ -358,8 +363,9 @@ async def test_the_http_client_is_closed_when_the_model_fails(
     def broken(_info: AgentInfo) -> ModelResponse:
         raise RuntimeError("provider down")
 
+    asked, now = brain(sessions, Seen(), broken, clients=clients), context()
     with pytest.raises(RuntimeError, match="provider down"):
-        await brain(sessions, Seen(), broken, clients=clients).decide(context())
+        await asked.decide(now)
     assert clients.made[0].is_closed
     async with sessions() as session:
         assert (await session.scalars(select(UsageLedger))).all() == []  # nothing was used

@@ -20,6 +20,7 @@ from app.results.service import summary_of
 
 ACCOUNT_LIMIT = 700
 HISTORY_LIMIT = 16  # steps shown in full; older ones are folded into one line
+_ENGLISH = text("'english'")
 
 
 def emit(
@@ -75,12 +76,12 @@ async def facts_for(session: AsyncSession, mission_id: uuid.UUID, query: str) ->
     """What the agents learned that is about `query` (PostgreSQL full-text search), best first; the
     latest facts when nothing matches."""
     rank = func.ts_rank(
-        func.to_tsvector(text("'english'"), MissionFact.subject + " " + MissionFact.fact),
-        func.websearch_to_tsquery(text("'english'"), query),
+        func.to_tsvector(_ENGLISH, MissionFact.subject + " " + MissionFact.fact),
+        func.websearch_to_tsquery(_ENGLISH, query),
     )
-    match = func.to_tsvector(text("'english'"), MissionFact.subject + " " + MissionFact.fact).op(
-        "@@"
-    )(func.websearch_to_tsquery(text("'english'"), query))
+    match = func.to_tsvector(_ENGLISH, MissionFact.subject + " " + MissionFact.fact).op("@@")(
+        func.websearch_to_tsquery(_ENGLISH, query)
+    )
     found = (
         await session.scalars(
             select(MissionFact)

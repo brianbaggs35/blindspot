@@ -34,6 +34,7 @@ from app.vault.types import SealedJSON, SealedString
 METHODOLOGY_ID = "methodology.id"
 PENTEST_ID = "pentest.id"
 EMPTY_LIST = text("'[]'::jsonb")
+EMPTY_OBJECT = text("'{}'::jsonb")
 
 __all__ = [
     "AiModel",
@@ -579,8 +580,8 @@ class Mission(UUIDPrimaryKey, Timestamps, CreatedBy, Base):
     )
     status: Mapped[str] = mapped_column(String(12), default="pending", server_default="pending")
     budget: Mapped[Any] = mapped_column(JSONB)
-    spent: Mapped[Any] = mapped_column(JSONB, default=dict, server_default=text("'{}'::jsonb"))
-    plan: Mapped[Any] = mapped_column(JSONB, default=dict, server_default=text("'{}'::jsonb"))
+    spent: Mapped[Any] = mapped_column(JSONB, default=dict, server_default=EMPTY_OBJECT)
+    plan: Mapped[Any] = mapped_column(JSONB, default=dict, server_default=EMPTY_OBJECT)
     stop_reason: Mapped[str] = mapped_column(Text, default="", server_default="")
     started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), default=None)
     finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), default=None)
@@ -608,7 +609,7 @@ class MissionTask(UUIDPrimaryKey, Timestamps, Base):
     status: Mapped[str] = mapped_column(String(10), default="pending", server_default="pending")
     outcome: Mapped[Any | None] = mapped_column(JSONB, default=None)
     summary: Mapped[str] = mapped_column(Text, default="", server_default="")
-    spent: Mapped[Any] = mapped_column(JSONB, default=dict, server_default=text("'{}'::jsonb"))
+    spent: Mapped[Any] = mapped_column(JSONB, default=dict, server_default=EMPTY_OBJECT)
 
 
 class MissionStep(UUIDPrimaryKey, Timestamps, Base):
@@ -648,7 +649,7 @@ class MissionEvent(Base):
     )
     task_id: Mapped[uuid.UUID | None] = mapped_column(Uuid, default=None)
     type: Mapped[str] = mapped_column(String(32))
-    data: Mapped[Any] = mapped_column(JSONB, default=dict, server_default=text("'{}'::jsonb"))
+    data: Mapped[Any] = mapped_column(JSONB, default=dict, server_default=EMPTY_OBJECT)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=utc_now, server_default=func.now()
     )

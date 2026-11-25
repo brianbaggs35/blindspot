@@ -36,6 +36,7 @@ class MissionSupervisor:
         """`launch` for a background task of a request: those run plain functions in a thread, where
         there is no event loop, but a coroutine runs on the server's loop."""
         self.launch(mission_id)
+        await asyncio.sleep(0)  # the mission takes its first turn before the request's work ends
 
     def _finished(self, mission_id: uuid.UUID, done: asyncio.Task[None]) -> None:
         del self._tasks[mission_id]

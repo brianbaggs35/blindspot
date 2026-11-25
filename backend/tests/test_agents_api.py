@@ -168,7 +168,7 @@ def test_a_mission_runs_to_the_end_and_everything_can_be_read(
     assert finished["mission"]["finished_at"]
     kinds = [one["kind"] for one in finished["tasks"]]
     assert kinds[0] == "commander"
-    assert {"commander", "category", "test"} == set(kinds)
+    assert set(kinds) == {"commander", "category", "test"}
     scan = next(one for one in finished["tasks"] if one["ref"] == SCAN_TEST)
     assert (scan["status"], scan["summary"]) == ("done", "Nothing to see.")
     assert admin.get(base(made)).json()["missions"][0]["id"] == mission["id"]
