@@ -24,29 +24,29 @@ Blindspot is a self-hosted platform for **web application penetration testing wi
 
 ## Documentation
 
-|                                                                 |                                                                                                                         |
-| --------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
-| [Changelog](CHANGELOG.md)                                       | What changed in each version                                                                                            |
-| [Contributing](docs/how-to/contributing.md)                     | Tickets, branch names, one-line commits, stacked pull requests, what must pass and how to release                       |
-| [Continuous integration](docs/how-to/ci.md)                     | Every CI workflow and check, how to run them locally, branch protection setup                                           |
-| [Running the container](docs/how-to/container.md)               | Start it, ports, certificates, what is stored where, and how it is locked down                                          |
-| [The database](docs/how-to/database.md)                         | The socket, the shared columns, sessions, migrations and how to add a table                                             |
-| [Accounts and sign-in](docs/how-to/accounts.md)                 | First-run setup, passwords, sessions, roles, lockout, CSRF and the audit trail                                          |
-| [Secrets and the vault](docs/how-to/secrets.md)                 | How credentials are sealed, the app secret key, rotating it, and what logs never show                                   |
-| [AI providers and spend](docs/how-to/ai-providers.md)           | Provider kinds, sealed keys, the address guard, test and fetch models, prompt caching, prices and budgets               |
-| [Methodologies](docs/how-to/methodologies.md)                   | WSTG import, playbooks, adding a methodology as files, reviewed updates and the API                                     |
-| [Pentests](docs/how-to/pentests.md)                             | What a pentest holds, how scope is written and compiled, clone, trash, export and the API                               |
-| [The app shell](docs/how-to/app-shell.md)                       | The look, the menu, the command palette, effects, sign-in and account pages, users and the audit log                    |
-| [Tools](docs/how-to/tools.md)                                   | Tool manifests, safe command lines, the registry, the core tool pack, parsers, the scope guard, permissions and the API |
-| [Results](docs/how-to/results.md)                               | What a result holds, the friendly, technical and raw views, sealed credentials, import and the API                      |
-| [Agents and missions](docs/how-to/agents.md)                    | How a mission is planned and run, what no model can change, caps, approval, pause and cancel, and the API               |
-| [Findings](docs/how-to/findings.md)                             | What a finding holds, CVSS rating, statuses, evidence and sealing, merging, import and export, and the API              |
-| [Terms and warnings](docs/how-to/terms.md)                      | The terms of use screen, how acceptance is kept and enforced, and the legal files in the repository                     |
-| [Platform plan](docs/PLAN.md)                                   | Architecture, agents, tools, security, UI, CI, the PR stack and open questions                                          |
-| [Agent framework comparison](docs/research/agent-frameworks.md) | Why Pydantic AI, and what else was considered                                                                           |
-| [How pentest agents are built](docs/research/pentest-agents.md) | What open-source projects do, and what Blindspot borrows                                                                |
-| [WSTG tool map](docs/research/wstg-tool-map.md)                 | Every one of the 133 WSTG tests mapped to verified tools, plus the tools rejected as stale                              |
-| [Models and pricing](docs/research/models-and-pricing.md)       | Verified model IDs, prices and caching rules for Anthropic, OpenAI and Ollama                                           |
+|                                                                 |                                                                                                                                          |
+| --------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| [Changelog](CHANGELOG.md)                                       | What changed in each version                                                                                                             |
+| [Contributing](docs/how-to/contributing.md)                     | Tickets, branch names, one-line commits, stacked pull requests, what must pass and how to release                                        |
+| [Continuous integration](docs/how-to/ci.md)                     | Every CI workflow and check, how to run them locally, branch protection setup                                                            |
+| [Running the container](docs/how-to/container.md)               | Start it, ports, certificates, what is stored where, and how it is locked down                                                           |
+| [The database](docs/how-to/database.md)                         | The socket, the shared columns, sessions, migrations and how to add a table                                                              |
+| [Accounts and sign-in](docs/how-to/accounts.md)                 | First-run setup, passwords, sessions, roles, lockout, CSRF and the audit trail                                                           |
+| [Secrets and the vault](docs/how-to/secrets.md)                 | How credentials are sealed, the app secret key, rotating it, and what logs never show                                                    |
+| [AI providers and spend](docs/how-to/ai-providers.md)           | Provider kinds, sealed keys, the address guard, test and fetch models, prompt caching, prices and budgets                                |
+| [Methodologies](docs/how-to/methodologies.md)                   | WSTG import, playbooks, adding a methodology as files, reviewed updates and the API                                                      |
+| [Pentests](docs/how-to/pentests.md)                             | What a pentest holds, how scope is written and compiled, clone, trash, export and the API                                                |
+| [The app shell](docs/how-to/app-shell.md)                       | The look, the menu, the command palette, effects, sign-in and account pages, users and the audit log                                     |
+| [Tools](docs/how-to/tools.md)                                   | Tool manifests, safe command lines, the registry, the core tool pack, parsers, the scope guard, permissions, where tools run and the API |
+| [Results](docs/how-to/results.md)                               | What a result holds, the friendly, technical and raw views, sealed credentials, import and the API                                       |
+| [Agents and missions](docs/how-to/agents.md)                    | How a mission is planned and run, what no model can change, caps, approval, pause and cancel, and the API                                |
+| [Findings](docs/how-to/findings.md)                             | What a finding holds, CVSS rating, statuses, evidence and sealing, merging, import and export, and the API                               |
+| [Terms and warnings](docs/how-to/terms.md)                      | The terms of use screen, how acceptance is kept and enforced, and the legal files in the repository                                      |
+| [Platform plan](docs/PLAN.md)                                   | Architecture, agents, tools, security, UI, CI, the PR stack and open questions                                                           |
+| [Agent framework comparison](docs/research/agent-frameworks.md) | Why Pydantic AI, and what else was considered                                                                                            |
+| [How pentest agents are built](docs/research/pentest-agents.md) | What open-source projects do, and what Blindspot borrows                                                                                 |
+| [WSTG tool map](docs/research/wstg-tool-map.md)                 | Every one of the 133 WSTG tests mapped to verified tools, plus the tools rejected as stale                                               |
+| [Models and pricing](docs/research/models-and-pricing.md)       | Verified model IDs, prices and caching rules for Anthropic, OpenAI and Ollama                                                            |
 
 How-to guides (quick start, running your first pentest, providers, operations) are added to `docs/` with the features they describe.
 

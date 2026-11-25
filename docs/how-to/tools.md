@@ -1,6 +1,6 @@
 # Tools
 
-An agent never runs a command. It asks for a **tool** with some values; the app checks the values against the tool's **manifest** and builds the argument list. This page covers the manifest, how values become a command line, the registry and the API. Where a tool runs (the runner) and whether an agent may use it (the scope guard and permissions) are separate tickets and have their own pages as they land.
+An agent never runs a command. It asks for a **tool** with some values; the app checks the values against the tool's **manifest** and builds the argument list. This page covers the manifest, how values become a command line, the registry, where each tool runs and the limits it runs under (the Tools page), the scope guard, permissions and the API. The runner that executes a call is a separate ticket (BLI-55).
 
 ## The manifest
 
@@ -67,7 +67,7 @@ Checked when the manifest loads: every placeholder names a parameter that will h
 
 ## Custom tools
 
-An administrator can define a tool with the API (the Tools page arrives with BLI-25). A custom tool:
+An administrator can define a tool with the API (the Tools page shows custom tools and sets how they run, but it has no editor for their definition yet). A custom tool:
 
 - has an id that starts with `x.`, so it can never replace a bundled tool, and the tier is always `custom` whatever the request says;
 - runs a program that is not an interpreter (`python`, `perl`, `node`, `awk`, `sed` and the like are refused, because `-c` or `-e` would turn every value into code);
@@ -128,6 +128,43 @@ A built-in tool is Python inside the app (`app/tools/analyzers`). It never opens
 - **`b.entropy`** asks for a page several times with no cookie and checks the session ids it hands out: repeats, counters, a shared start and an estimate of the guessing work (at least 64 bits, 112 comfortable). It reports lengths and bit counts, never the ids.
 
 The runner (BLI-55) calls `HANDLERS[manifest.handler](values, fetcher)`.
+
+## The Tools page: where a tool runs, and its limits
+
+**Tools** in the menu (under System) lists every tool with its risk class, where it runs now, what is wrong if it cannot run, the program or image, and the limits it runs under. Everyone signed in can read it; only an administrator can change anything.
+
+### The default and each tool's own choice
+
+The default for every tool is one of four settings:
+
+| Setting           | What it does                                                                                      |
+| ----------------- | ------------------------------------------------------------------------------------------------- |
+| **Auto**          | Local for tools that come with Blindspot (built in, core, or with no image), Docker for the rest. |
+| **Prefer Local**  | Local, and Docker when Local cannot run.                                                          |
+| **Prefer Docker** | Docker, and Local when Docker cannot run.                                                         |
+| **Docker only**   | Docker, and nothing else.                                                                         |
+
+A tool can have its own choice (**Follow the default**, **Local** or **Docker**). **An own choice is never switched silently**: a tool set to Docker while Docker is not connected is stopped with the reason (`Docker not reachable`), not run Local. The page then says "It would run Local. Choose that in its settings if you want it." Only the two `Prefer` defaults fall back, and then the tool is shown as running "the other way, as the default allows". A built-in tool runs inside the app and has no mode.
+
+Per tool an administrator can also set: whether the tool may be used at all (a tool switched off is refused by the authorization check whatever else is true), a **program path** (Local; no shell, no interpreter, no `..`), an **image with its digest** (Docker; a reference ending in `@sha256:` and 64 hex characters), the **timeout**, the **output cap**, **requests per second** for each target, **CPUs** and **memory** (Docker), and the **most the tool may do**. That last one can lower a tool's risk class (a tool whose manifest says `intrusive` can be held to `passive`) and never raise it. Empty fields are what the manifest says; **Reset** removes everything set for the tool.
+
+### Test
+
+**Test** runs the tool's version check (the arguments of its manifest, as a list, never through a shell, 10 seconds, a fixed environment, output cut at 4,000 characters) and shows the command, how it ended, how long it took, the version found and what was printed. It is offered where the tool runs Local. Running a tool in Docker, pulling images and showing an image's status come with the runner (BLI-55); until then a Docker setting is stored and checked, not run.
+
+### The API for settings
+
+| Route                                | Who   | What it does                                                                                             |
+| ------------------------------------ | ----- | -------------------------------------------------------------------------------------------------------- |
+| `GET /api/tools/settings`            | any   | The default, whether Docker is reachable, and every tool with its settings, limits and where it runs now |
+| `PUT /api/tools/settings/default`    | admin | `{"mode": "auto" \| "prefer_local" \| "prefer_docker" \| "docker_only"}`                                 |
+| `PUT /api/tools/settings/{id}`       | admin | Replace the settings of one tool (an empty field is the manifest's)                                      |
+| `DELETE /api/tools/settings/{id}`    | admin | Back to the defaults                                                                                     |
+| `POST /api/tools/settings/{id}/test` | admin | Run the version check                                                                                    |
+
+Changes are audited (`tool.settings.default`, `tool.settings.update`, `tool.settings.reset`, `tool.settings.test`). Errors: `tool_not_found` (404), `builtin_tool` and `risk_above_manifest` (422), `cannot_test` (422, with what is wrong) and `no_version_check` (409). Removing a custom tool removes its settings.
+
+Not yet: running in Docker and pulling images, MCP servers, an editor for custom tools, default arguments and wordlists, installing and updating tools, and a network setting for tools.
 
 ## The scope guard and the permission policy
 

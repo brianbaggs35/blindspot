@@ -739,3 +739,76 @@ export interface FindingsReference {
   owasp: Record<string, string>;
   transitions: Record<FindingStatus, FindingStatus[]>;
 }
+
+export type RunMode = "auto" | "prefer_local" | "prefer_docker" | "docker_only";
+export type ToolWhere = "local" | "docker" | "builtin";
+export type ToolStatus =
+  "ready" | "disabled" | "binary_not_found" | "docker_unreachable" | "image_missing";
+export type ToolRisk = "passive" | "active" | "intrusive" | "destructive";
+
+export interface ToolResolution {
+  mode: ToolWhere | null;
+  status: ToolStatus;
+  problem: string;
+  fell_back: boolean;
+  offer: ToolWhere | null;
+  path: string | null;
+}
+
+export interface ToolLimits {
+  cpus: number | null;
+  memory_mb: number | null;
+  timeout_s: number;
+  max_output_mb: number;
+  rate_per_s: number | null;
+  max_risk: ToolRisk;
+}
+
+/** What an administrator set for a tool; null is "the manifest decides". */
+export interface ToolOverrides {
+  enabled: boolean;
+  mode: "local" | "docker" | null;
+  binary_path: string | null;
+  image: string | null;
+  cpus: string | null;
+  memory_mb: number | null;
+  timeout_s: number | null;
+  max_output_mb: number | null;
+  rate_per_s: number | null;
+  max_risk: ToolRisk | null;
+}
+
+export interface ToolSetting {
+  id: string;
+  name: string;
+  tier: string;
+  origin: string;
+  execution: string;
+  risk: ToolRisk;
+  explain: string;
+  enabled: boolean;
+  mode: "local" | "docker" | null;
+  binary_path: string | null;
+  image: string | null;
+  default_binary: string | null;
+  default_image: string | null;
+  limits: ToolLimits;
+  overrides: ToolOverrides;
+  effective: ToolResolution;
+}
+
+export interface ToolSettings {
+  run_mode: RunMode;
+  docker: { reachable: boolean; note: string };
+  tools: ToolSetting[];
+}
+
+export interface ToolTestResult {
+  mode: ToolWhere;
+  command: string[];
+  exit_code: number | null;
+  output: string;
+  duration_ms: number;
+  version: string | null;
+  timed_out: boolean;
+}

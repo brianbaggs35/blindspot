@@ -11,6 +11,7 @@ export interface PageEntry {
 
 export const pages: readonly PageEntry[] = [
   { name: "home", path: "/" },
+  { name: "tools", path: "/tools" },
   { name: "ai providers", path: "/ai-providers" },
   { name: "pentests", path: "/pentests" },
   { name: "agents", path: "/agents" },
