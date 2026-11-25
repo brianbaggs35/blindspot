@@ -630,3 +630,112 @@ export interface MissionEvent {
   data: Record<string, unknown>;
   created_at: string;
 }
+
+export type FindingStatus =
+  "new" | "confirmed" | "false_positive" | "accepted_risk" | "fixed" | "retest_needed";
+export type FindingConfidence = "tentative" | "firm" | "certain";
+export type FindingSource = "manual" | "agent" | "result" | "import";
+export type FindingVerification = "unverified" | "confirmed" | "unconfirmed";
+export type EvidenceKind = "result" | "request_response" | "note" | "screenshot";
+
+export interface FindingSummary {
+  id: string;
+  number: number;
+  title: string;
+  target: string;
+  category: string;
+  test_ids: string[];
+  severity: Severity;
+  confidence: FindingConfidence;
+  status: FindingStatus;
+  cvss31_score: string | null;
+  cvss4_score: string | null;
+  verification: FindingVerification;
+  source: FindingSource;
+  evidence_count: number;
+  updated_at: string;
+  deleted: boolean;
+  merged_into: string | null;
+}
+
+export interface FindingList {
+  items: FindingSummary[];
+  total: number;
+  statuses: Record<string, number>;
+  severities: Record<string, number>;
+  groups: { key: string; count: number }[];
+}
+
+export interface FindingEvidence {
+  id: string;
+  kind: EvidenceKind;
+  title: string;
+  body: string | null;
+  sealed: boolean;
+  mime: string | null;
+  result_id: string | null;
+  result_title: string | null;
+  created_at: string;
+}
+
+export interface FindingEvent {
+  id: string;
+  kind: string;
+  actor: string | null;
+  data: Record<string, unknown>;
+  created_at: string;
+}
+
+export interface FindingDuplicate {
+  id: string;
+  number: number;
+  title: string;
+  status: FindingStatus;
+  reason: string;
+}
+
+export interface Finding extends FindingSummary {
+  description: string;
+  cwe: string[];
+  owasp: string | null;
+  cvss31_vector: string | null;
+  cvss4_vector: string | null;
+  remediation: string;
+  references: string[];
+  result_id: string | null;
+  verified_by: string | null;
+  verified_at: string | null;
+  created_by: string | null;
+  created_at: string;
+  allowed_statuses: FindingStatus[];
+  evidence: FindingEvidence[];
+  timeline: FindingEvent[];
+  duplicates: FindingDuplicate[];
+}
+
+export interface FindingDraft {
+  title: string;
+  description: string;
+  target: string;
+  test_ids: string[];
+  cwe: string[];
+  owasp: string | null;
+  cvss31_vector: string | null;
+  cvss4_vector: string | null;
+  severity: Severity | null;
+  confidence: FindingConfidence;
+  remediation: string;
+  references: string[];
+}
+
+export interface CvssScore {
+  vector: string;
+  version: "3.1" | "4.0";
+  score: string;
+  severity: Severity;
+}
+
+export interface FindingsReference {
+  owasp: Record<string, string>;
+  transitions: Record<FindingStatus, FindingStatus[]>;
+}

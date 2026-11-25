@@ -311,6 +311,45 @@ async function pick(root: Pick<VueWrapper, "findAll">, label: string) {
 }
 
 describe("PentestResultView", () => {
+  it("makes findings from the issues, and goes to the one that was made", async () => {
+    const { wrapper, router, calls } = await resultPage(fullOf(), {
+      [`POST ${RESULT}/promote`]: { status: 201, json: [{ id: "f-1" }] },
+    });
+    await press(wrapper, "Make findings");
+    await flushPromises();
+    expect(calls.find((one) => one.key === `POST ${RESULT}/promote`)?.body).toEqual({});
+    await vi.waitFor(() => {
+      expect(router.currentRoute.value.fullPath).toBe("/pentests/p-1/findings/f-1");
+    });
+  });
+
+  it("goes to the list of findings when several were made, or none were new", async () => {
+    const { wrapper, router } = await resultPage(fullOf(), {
+      [`POST ${RESULT}/promote`]: { status: 201, json: [{ id: "f-1" }, { id: "f-2" }] },
+    });
+    await press(wrapper, "Make findings");
+    await flushPromises();
+    await vi.waitFor(() => {
+      expect(router.currentRoute.value.fullPath).toBe("/pentests/p-1/findings");
+    });
+  });
+
+  it("says why findings could not be made", async () => {
+    const { wrapper } = await resultPage(fullOf(), {
+      [`POST ${RESULT}/promote`]: { status: 422, json: { code: "no_issues", title: "No issues" } },
+    });
+    await press(wrapper, "Make findings");
+    await flushPromises();
+    expect(noticeText()).toContain("Could not make findings: No issues");
+  });
+
+  it("offers no findings from a result without issues, or one in the trash", async () => {
+    const none = await resultPage(fullOf({ issue_count: 0, top_severity: null }));
+    expect(none.wrapper.text()).not.toContain("Make findings");
+    const trashed = await resultPage(fullOf({ deleted: true }));
+    expect(trashed.wrapper.text()).not.toContain("Make findings");
+  });
+
   it("shows the friendly view first, with terms, cards and pictures", async () => {
     const { wrapper } = await resultPage();
     const text = wrapper.text();
