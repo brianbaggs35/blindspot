@@ -10,6 +10,16 @@ docker compose up -d
 
 Then open <https://localhost>. The first start makes a self-signed certificate, so the browser warns once.
 
+From a checkout of the repository, `make` does the same and more:
+
+| Command       | What it does                                                                                                                                                                                                                                         |
+| ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `make up`     | Builds the image from the checkout and starts Blindspot, then waits until it is healthy. Run it again after the code changes to rebuild and restart the new version; the data is kept                                                                |
+| `make down`   | Stops Blindspot and removes its container. Volumes and images are kept, so `make up` brings it back with **all** its data                                                                                                                            |
+| `make delete` | Stops Blindspot and deletes everything: the container, the data volume (accounts, pentests, the secret key), the images, the scan cache and the Docker build cache. It asks you to type `delete` first; `make delete CONFIRM=yes` skips the question |
+
+`make delete` also clears the build cache of the whole machine, not only this project's, and it cannot be undone.
+
 | Setting                     | Default | What it does                                                                                                                                                                                                         |
 | --------------------------- | ------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `BLINDSPOT_HTTPS_PORT`      | `443`   | The port https is published on. `http://` on `BLINDSPOT_HTTP_PORT` (`80`) redirects to it                                                                                                                            |

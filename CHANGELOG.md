@@ -6,6 +6,10 @@ How a release is made, and what to update with it, is in [Contributing](docs/how
 
 ## [Unreleased]
 
+### Added
+
+- `make up` builds the image and starts Blindspot, `make down` stops it and keeps all data, and `make delete` removes everything including the volumes and the build cache after asking for confirmation. CI tests that the data survives `make down` and `make up`.
+
 ## [0.0.1] - 2026-11-25
 
 The first version: the foundation of the platform. It has the container, sign-in and the secrets vault, the AI provider settings, the methodology engine with the OWASP WSTG checklist, and pentests with their authorization gate, scope and checklist. The agents and the security tools come in the next versions, so this version cannot run a test yet.

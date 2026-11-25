@@ -22,12 +22,13 @@ In development, set `BLINDSPOT_ENVIRONMENT=development` to enable the API's inte
 
 From the repository root:
 
-| Command       | What it does                                                                          |
-| ------------- | ------------------------------------------------------------------------------------- |
-| `make lint`   | ruff, pyright, bandit, ESLint, Prettier, vue-tsc, and the workflow and script linters |
-| `make test`   | pytest and Vitest with coverage, and the tests of the CI scripts                      |
-| `make audit`  | pip-audit and npm audit                                                               |
-| `make format` | Fix formatting everywhere                                                             |
+| Command                               | What it does                                                                                                           |
+| ------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| `make lint`                           | ruff, pyright, bandit, ESLint, Prettier, vue-tsc, and the workflow and script linters                                  |
+| `make test`                           | pytest and Vitest with coverage, and the tests of the CI scripts                                                       |
+| `make audit`                          | pip-audit and npm audit                                                                                                |
+| `make format`                         | Fix formatting everywhere                                                                                              |
+| `make up`, `make down`, `make delete` | Build and start the container; stop it keeping the data; delete everything (see [Running the container](container.md)) |
 
 | `make e2e-host` | Playwright against the API and the built web app on your machine, with browser coverage |
 | `make e2e` | Playwright against the real image, started the way people run it (needs Docker) |
