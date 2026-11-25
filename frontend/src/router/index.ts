@@ -73,6 +73,18 @@ export const routes: RouteRecordRaw[] = [
     meta: { title: "Result" },
   },
   {
+    path: "/pentests/:id/findings",
+    name: "pentest-findings",
+    component: () => import("../views/PentestFindingsView.vue"),
+    meta: { title: "Findings" },
+  },
+  {
+    path: "/pentests/:id/findings/:fid",
+    name: "pentest-finding",
+    component: () => import("../views/PentestFindingView.vue"),
+    meta: { title: "Finding" },
+  },
+  {
     path: "/pentests/:id/agents",
     name: "pentest-agents",
     component: () => import("../views/PentestAgentsView.vue"),

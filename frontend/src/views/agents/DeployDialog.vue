@@ -12,7 +12,10 @@ import type {
   StartRequest,
 } from "../../api/types";
 
-const props = defineProps<{ pentest: Pentest; runnerReady: boolean }>();
+const props = withDefaults(
+  defineProps<{ pentest: Pentest; runnerReady: boolean; only?: string[] }>(),
+  { only: () => [] },
+);
 const emit = defineEmits<{ started: [mission: Mission] }>();
 const open = defineModel<boolean>({ required: true });
 
@@ -20,7 +23,7 @@ const step = ref<"choose" | "caps" | "review">("choose");
 const settings = ref<AgentSettings | null>(null);
 const picks = ref<{ title: string; value: string }[]>([]);
 const preset = ref("safe-full");
-const only = ref<string[]>([]);
+const picked = ref<string[]>([]);
 const budget = ref<Budget | null>(null);
 const preview = ref<MissionPreview | null>(null);
 const confirmed = ref(false);
@@ -31,7 +34,7 @@ const problem = computed(() => (budget.value ? budgetProblem(budget.value) : "")
 
 function request(): StartRequest {
   const body: StartRequest = { preset: preset.value };
-  if (only.value.length > 0) body.only = only.value;
+  if (picked.value.length > 0) body.only = picked.value;
   if (budget.value) body.budget = budget.value;
   return body;
 }
@@ -41,7 +44,7 @@ async function begin() {
   confirmed.value = false;
   failure.value = "";
   preview.value = null;
-  only.value = [];
+  picked.value = [...props.only];
   busy.value = true;
   try {
     const [current, tree] = await Promise.all([
@@ -64,9 +67,14 @@ async function begin() {
   }
 }
 
-watch(open, (now) => {
-  if (now) void begin();
-});
+// Immediate: a page that opens the dialog as it loads mounts it already open.
+watch(
+  open,
+  (now) => {
+    if (now) void begin();
+  },
+  { immediate: true },
+);
 
 const chosen = computed(() => settings.value?.presets.find((one) => one.id === preset.value));
 
@@ -137,7 +145,7 @@ async function start() {
           </v-radio-group>
           <h3 class="text-subtitle-1 mt-4 mb-2">What should they test?</h3>
           <v-autocomplete
-            v-model="only"
+            v-model="picked"
             :items="picks"
             label="Categories or tests (leave empty for the whole methodology)"
             multiple
