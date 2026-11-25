@@ -23,6 +23,7 @@ describe("commands", () => {
     expect(commands.map((entry) => entry.id)).toEqual([
       "go:/",
       "go:/pentests",
+      "go:/agents",
       "go:/methodologies",
       "go:/ai-providers",
       "go:/users",
@@ -34,6 +35,7 @@ describe("commands", () => {
     expect(commands.map((entry) => entry.title)).toEqual([
       "Overview",
       "Pentests",
+      "Agents",
       "Methodologies",
       "AI providers",
       "Users",
@@ -49,12 +51,12 @@ describe("commands", () => {
     const first = buildCommands(router);
     await first[0]?.run();
     expect(router.currentRoute.value.path).toBe("/");
-    first[7]?.run();
     first[8]?.run();
+    first[9]?.run();
     expect(useThemeStore().name).toBe("daylight");
     expect(useUiStore().effects).toBe(false);
     const second = buildCommands(router);
-    expect(second.map((entry) => entry.title).slice(7)).toEqual([
+    expect(second.map((entry) => entry.title).slice(8)).toEqual([
       "Switch to the dark theme",
       "Turn visual effects on",
     ]);

@@ -13,6 +13,7 @@ export const pages: readonly PageEntry[] = [
   { name: "home", path: "/" },
   { name: "ai providers", path: "/ai-providers" },
   { name: "pentests", path: "/pentests" },
+  { name: "agents", path: "/agents" },
   { name: "methodologies", path: "/methodologies" },
   { name: "users", path: "/users" },
   { name: "audit log", path: "/audit" },
