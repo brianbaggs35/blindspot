@@ -61,14 +61,16 @@ jobs:
           node-version: 24
           package-manager-cache: false
 
-      # The version is pinned here and in the Makefile; Dependabot raises it through the frontend's
-      # own dependency once that exists. Installed with --ignore-scripts, not run through npx,
-      # which would fetch it and run its lifecycle scripts in one step (SonarQube githubactions:S6505).
-      - name: Install Prettier
-        run: npm install --global --ignore-scripts --no-audit --no-fund prettier@3.10.1
+      # Prettier comes from the web app's lockfile, so its version is pinned there (and in the
+      # Makefile) and Dependabot raises it. Neither npx, which fetches a package and runs its
+      # lifecycle scripts in one step (SonarQube githubactions:S6505), nor a global install, which
+      # sits outside a lockfile (zizmor), is used.
+      - name: Install the web app's packages
+        working-directory: frontend
+        run: npm ci --ignore-scripts --no-audit --no-fund
 
       - name: Prettier
-        run: prettier --check .
+        run: frontend/node_modules/.bin/prettier --check .
 
   # Linters for the repository's own plumbing: workflows, shell scripts, Dockerfiles. The
   # linters run from images pinned by digest (see the Makefile), as `make lint-infra` does.
