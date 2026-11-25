@@ -153,21 +153,10 @@ def _same_site(base: str, other: str) -> bool:
     return urlsplit(base).netloc.lower() == urlsplit(other).netloc.lower()
 
 
-async def run(
-    values: Mapping[str, object], fetcher: Fetcher, now: datetime | None = None
-) -> ToolResult:
-    """Fetch the three files from the site's root and report what they say."""
-    parts = urlsplit(str(values["url"]))
-    origin = f"{parts.scheme}://{parts.netloc}"
-    clock = now or datetime.now(UTC)
-    notes = Collector()
-    issues: list[Issue] = []
-    http: list[HttpResponse] = []
-    robots = await _get(fetcher, f"{origin}/robots.txt", notes)
-    declared: list[str] = []
-    if robots is not None:
-        issues += robots_issues(robots.url, robots.text())
-        declared = parse_robots(robots.text())[1]
+async def _sitemap_pages(
+    fetcher: Fetcher, origin: str, declared: list[str], notes: Collector, http: list[HttpResponse]
+) -> None:
+    """The pages the sitemaps list, as responses, from the ones robots.txt names or the default."""
     queue = [u for u in declared if _same_site(origin, u)] or [f"{origin}/sitemap.xml"]
     for location in queue[:MAX_SITEMAPS]:
         sitemap = await _get(fetcher, urljoin(origin, location), notes)
@@ -181,21 +170,43 @@ async def run(
         for page in pages:
             if not notes.add(http, HttpResponse(url=page[:4000])):
                 break
+
+
+async def _security_txt(
+    fetcher: Fetcher, origin: str, notes: Collector, clock: datetime
+) -> list[Issue]:
+    """What security.txt says, from the first place it is found, or that it is missing."""
     for path in ("/.well-known/security.txt", "/security.txt"):
         found = await _get(fetcher, f"{origin}{path}", notes)
         if found is not None:
-            issues += security_txt_issues(found.url, found.text(), clock)
-            break
-    else:
-        issues.append(
-            _issue(
-                "No security.txt",
-                Severity.INFO,
-                "There is no published way to report a vulnerability (RFC 9116).",
-                origin,
-                "txt-missing",
-            )
+            return security_txt_issues(found.url, found.text(), clock)
+    return [
+        _issue(
+            "No security.txt",
+            Severity.INFO,
+            "There is no published way to report a vulnerability (RFC 9116).",
+            origin,
+            "txt-missing",
         )
+    ]
+
+
+async def run(
+    values: Mapping[str, object], fetcher: Fetcher, now: datetime | None = None
+) -> ToolResult:
+    """Fetch the three files from the site's root and report what they say."""
+    parts = urlsplit(str(values["url"]))
+    origin = f"{parts.scheme}://{parts.netloc}"
+    notes = Collector()
+    issues: list[Issue] = []
+    http: list[HttpResponse] = []
+    robots = await _get(fetcher, f"{origin}/robots.txt", notes)
+    declared: list[str] = []
+    if robots is not None:
+        issues += robots_issues(robots.url, robots.text())
+        declared = parse_robots(robots.text())[1]
+    await _sitemap_pages(fetcher, origin, declared, notes, http)
+    issues += await _security_txt(fetcher, origin, notes, now or datetime.now(UTC))
     return ToolResult(
         tool="b.wellknown",
         parser="builtin",

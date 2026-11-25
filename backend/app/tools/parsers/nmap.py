@@ -29,16 +29,23 @@ def _service(port: Element) -> Service | None:
     )
 
 
+def _state(value: str | None) -> Literal["up", "down", "unknown"]:
+    if value == "up":
+        return "up"
+    return "down" if value == "down" else "unknown"
+
+
 def _host(element: Element, found: Collector) -> Host | None:
     addresses = [a for a in element.findall("address") if a.get("addrtype") in ("ipv4", "ipv6")]
     if not addresses:
         return None
     status = element.find("status")
     state = status.get("state") if status is not None else None
+    names = (clip(h.get("name")) for h in element.iter("hostname"))
     host = Host(
         address=clip(addresses[0].get("addr")) or "",
-        hostnames=[n for h in element.iter("hostname") if (n := clip(h.get("name")))],
-        state="up" if state == "up" else "down" if state == "down" else "unknown",
+        hostnames=[name for name in names if name],
+        state=_state(state),
     )
     for port in element.iter("port"):
         service = _service(port)

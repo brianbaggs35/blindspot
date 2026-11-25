@@ -11,7 +11,6 @@ import pytest
 from app.tools.analyzers import HANDLERS, Fetched, FetchError
 from app.tools.analyzers import entropy as entropy_tool
 from app.tools.analyzers import headers as headers_tool
-from app.tools.analyzers import jwt as jwt_tool
 from app.tools.analyzers import spider as spider_tool
 from app.tools.analyzers import wellknown as wellknown_tool
 from app.tools.analyzers.csp import evaluate_csp, parse_csp
@@ -359,7 +358,7 @@ def test_a_token_whose_parts_are_not_json_objects_is_a_warning() -> None:
 
 async def test_the_jwt_tool_reads_the_token_it_is_given_and_fetches_nothing() -> None:
     fetcher = Canned({})
-    result = await jwt_tool.run({"token": token({"alg": "none"}, {})}, fetcher)
+    result = await HANDLERS["jwt"]({"token": token({"alg": "none"}, {})}, fetcher)
     assert "jwt:alg-none" in tags(result.issues)
     assert fetcher.requests == []
 
