@@ -86,8 +86,9 @@ def test_a_good_value_is_accepted_as_it_is(fields: dict[str, Any], value: object
 def test_a_bad_value_is_refused_with_a_reason(
     fields: dict[str, Any], value: object, message: str
 ) -> None:
+    declared = param(**fields)
     with pytest.raises(ToolInputError, match=message):
-        check_param(param(**fields), value, "value")
+        check_param(declared, value, "value")
 
 
 def test_a_list_checks_every_item_and_its_length() -> None:

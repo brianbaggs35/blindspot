@@ -203,19 +203,27 @@ def _use_problem(manifest: Manifest, owner: str | None, piece: Piece) -> str | N
     return None
 
 
-def _reference_problem(manifest: Manifest) -> str | None:
-    """Every placeholder names a parameter that will have a value, and every parameter is used."""
+def _placeholder_problem(manifest: Manifest) -> tuple[set[str], str | None]:
+    """The parameters the templates use, and the first problem with a placeholder."""
     used: set[str] = set()
     try:
         for kind, owner, pieces in _templates(manifest):
             for piece in (p for p in pieces if p.name is not None):
                 used.add(piece.name or "")
                 if kind == "version":
-                    return "the version check cannot use parameters"
+                    return used, "the version check cannot use parameters"
                 if problem := _use_problem(manifest, owner, piece):
-                    return problem
+                    return used, problem
     except ValueError as error:
-        return str(error)
+        return used, str(error)
+    return used, None
+
+
+def _reference_problem(manifest: Manifest) -> str | None:
+    """Every placeholder names a parameter that will have a value, and every parameter is used."""
+    used, problem = _placeholder_problem(manifest)
+    if problem:
+        return problem
     for item in manifest.argv:
         if isinstance(item, When):
             used.add(item.when)
@@ -223,7 +231,7 @@ def _reference_problem(manifest: Manifest) -> str | None:
             if problem:
                 return problem
     if manifest.execution == "process" and (unused := set(manifest.params) - used):
-        return f"'{sorted(unused)[0]}' is not used in any argument"
+        return f"'{min(unused)}' is not used in any argument"
     return None
 
 
