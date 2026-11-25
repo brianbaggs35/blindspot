@@ -7,6 +7,7 @@ import {
   mdiRadar,
   mdiRobotOutline,
   mdiTargetAccount,
+  mdiToolboxOutline,
 } from "@mdi/js";
 import { createRouter, createWebHistory, type RouteRecordRaw } from "vue-router";
 import { setSessionEndedHandler } from "../api/client";
@@ -115,6 +116,15 @@ export const routes: RouteRecordRaw[] = [
     meta: {
       title: "AI providers",
       nav: { label: "AI providers", group: "system", order: 30, icon: mdiBrain },
+    },
+  },
+  {
+    path: "/tools",
+    name: "tools",
+    component: () => import("../views/ToolsView.vue"),
+    meta: {
+      title: "Tools",
+      nav: { label: "Tools", group: "system", order: 20, icon: mdiToolboxOutline },
     },
   },
   {

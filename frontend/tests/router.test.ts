@@ -43,6 +43,7 @@ describe("router", () => {
       "/agents",
       "/methodologies",
       "/ai-providers",
+      "/tools",
       "/users",
       "/audit",
       "/account",

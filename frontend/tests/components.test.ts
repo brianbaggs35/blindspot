@@ -42,7 +42,7 @@ describe("NavMenu", () => {
     });
     expect(wrapper.find(".v-divider").exists()).toBe(true);
     expect(wrapper.text()).not.toContain("System");
-    expect(wrapper.findAll("a")).toHaveLength(7);
+    expect(wrapper.findAll("a")).toHaveLength(8);
   });
 
   it("says when a link is used", async () => {
@@ -236,6 +236,7 @@ describe("CommandPalette", () => {
       expect.stringContaining("Pentests"),
       expect.stringContaining("Agents"),
       expect.stringContaining("Methodologies"),
+      expect.stringContaining("Tools"),
       expect.stringContaining("AI providers"),
       expect.stringContaining("Users"),
       expect.stringContaining("Audit log"),
@@ -272,7 +273,7 @@ describe("CommandPalette", () => {
 
   it("runs a command that is clicked, and starts empty the next time", async () => {
     const { ui } = await open();
-    items()[9]?.click();
+    items()[10]?.click();
     await flushPromises();
     expect(ui.effects).toBe(false);
     expect(ui.paletteOpen).toBe(false);
