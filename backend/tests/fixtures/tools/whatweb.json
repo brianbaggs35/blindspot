@@ -1,0 +1,3 @@
+[
+{"target":"http://127.0.0.1:8081","http_status":200,"request_config":{"headers":{"User-Agent":"WhatWeb/0.5.5"}},"plugins":{"Apache":{"version":["2.4.41"]},"Cookies":{"string":["PHPSESSID"]},"Country":{"string":["RESERVED"],"module":["ZZ"]},"HTTPServer":{"string":["Apache/2.4.41"]},"IP":{"string":["127.0.0.1"]},"PHP":{"version":["7.4.3"]},"Title":{"string":["Demo Shop"]},"X-Powered-By":{"string":["PHP/7.4.3"]}}}
+]

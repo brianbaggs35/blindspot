@@ -1,0 +1,56 @@
+{
+  "artifacts": [],
+  "credentials": [],
+  "hosts": [],
+  "http": [],
+  "issues": [
+    {
+      "confidence": "firm",
+      "detail": "Checks for missing HTTP security headers.",
+      "evidence": "Strict-Transport-Security, Content-Security-Policy",
+      "reference": "http-missing-security-headers",
+      "severity": "info",
+      "tags": [
+        "misconfig",
+        "headers",
+        "generic"
+      ],
+      "target": "http://127.0.0.1:8081",
+      "title": "HTTP Missing Security Headers"
+    },
+    {
+      "confidence": "firm",
+      "detail": "Path traversal in Apache HTTP Server 2.4.49.",
+      "evidence": null,
+      "reference": "cve-2021-41773",
+      "severity": "critical",
+      "tags": [
+        "cve",
+        "cve2021",
+        "apache",
+        "lfi"
+      ],
+      "target": "http://127.0.0.1:8081/cgi-bin/.%2e/.%2e/etc/passwd",
+      "title": "Apache 2.4.49 - Path Traversal"
+    },
+    {
+      "confidence": "firm",
+      "detail": null,
+      "evidence": null,
+      "reference": "tech-detect",
+      "severity": "info",
+      "tags": [],
+      "target": "http://127.0.0.1:8081",
+      "title": "Wappalyzer Technology Detection"
+    }
+  ],
+  "parser": "nuclei_jsonl",
+  "raw_ref": null,
+  "technologies": [],
+  "tls": [],
+  "tool": "t.test",
+  "truncated": false,
+  "warnings": [
+    "2 lines were not matches and were left out"
+  ]
+}

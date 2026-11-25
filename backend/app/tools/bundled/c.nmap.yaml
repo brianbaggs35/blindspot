@@ -1,0 +1,40 @@
+id: c.nmap
+name: Nmap
+tier: core
+binary: nmap
+risk: active
+capabilities: [NET_RAW]
+params:
+  targets:
+    { type: target, required: true, many: true, description: "Hosts, addresses or ranges to scan" }
+  ports:
+    {
+      type: string,
+      pattern: "[0-9,-]{1,200}",
+      default: "1-1024,3000,3306,5432,6379,8000-8100,8443,9200",
+      description: "Ports to check",
+    }
+  scan:
+    type: enum
+    values: [connect, syn, version]
+    default: connect
+    description: connect is gentle, syn is faster and quieter, version also asks each service what it is
+  rate: { type: integer, minimum: 1, maximum: 1000, description: "Most packets a second" }
+argv:
+  - -oX
+  - "-"
+  - --open
+  - -n
+  - { when: scan, equals: syn, args: [-sS] }
+  - { when: scan, equals: version, args: [-sV] }
+  - { when: rate, args: ["--max-rate={rate}"] }
+  - -p
+  - "{ports}"
+  - "{targets...}"
+version: { args: [--version], pattern: "Nmap version ([0-9.]+)" }
+timeout_s: 900
+max_output_mb: 20
+parsers: [nmap_xml]
+homepage: https://nmap.org
+explain: "Looks for open network doors (ports) on a server and, with the version scan, what listens behind each one."
+could_go_wrong: "Active scanning can trigger alerts and, rarely, upset fragile devices. A fast rate on a small server can slow it down."

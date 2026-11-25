@@ -1,0 +1,12 @@
+id: b.spider
+name: Site spider
+tier: builtin
+execution: builtin
+handler: spider
+risk: active
+params:
+  url: { type: target, required: true, description: "Where to start" }
+  max_pages:
+    { type: integer, minimum: 1, maximum: 20, default: 5, description: "Most pages to read" }
+explain: "Reads a few pages, follows links on the same site and lists every form and parameter it finds, with the risky ones marked (a password sent without HTTPS, a form without an anti-forgery token, file uploads)."
+could_go_wrong: "Sends up to 20 requests. It never submits a form and never runs script."

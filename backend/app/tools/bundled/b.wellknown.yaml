@@ -1,0 +1,10 @@
+id: b.wellknown
+name: robots, sitemap and security.txt
+tier: builtin
+execution: builtin
+handler: wellknown
+risk: passive
+params:
+  url: { type: target, required: true, description: "Any address on the site" }
+explain: "Reads the files a site publishes about itself (robots.txt, the sitemap and security.txt) and lists the paths and contacts they give away."
+could_go_wrong: "Sends three to five ordinary requests."

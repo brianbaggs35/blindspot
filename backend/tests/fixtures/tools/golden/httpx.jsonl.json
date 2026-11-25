@@ -1,0 +1,54 @@
+{
+  "artifacts": [],
+  "credentials": [],
+  "hosts": [],
+  "http": [
+    {
+      "content_type": "text/html",
+      "input": null,
+      "length": 100,
+      "lines": 1,
+      "redirect": null,
+      "server": "Apache/2.4.41",
+      "status": 200,
+      "title": "Demo Shop",
+      "url": "http://127.0.0.1:8081",
+      "words": 9
+    },
+    {
+      "content_type": null,
+      "input": null,
+      "length": 0,
+      "lines": null,
+      "redirect": "https://127.0.0.1:8443/login",
+      "server": "Apache/2.4.41",
+      "status": 302,
+      "title": "Demo Shop",
+      "url": "https://127.0.0.1:8443",
+      "words": null
+    }
+  ],
+  "issues": [],
+  "parser": "httpx_jsonl",
+  "raw_ref": null,
+  "technologies": [
+    {
+      "category": null,
+      "name": "Apache HTTP Server:2.4.41",
+      "target": "http://127.0.0.1:8081",
+      "version": null
+    },
+    {
+      "category": null,
+      "name": "PHP:7.4.3",
+      "target": "http://127.0.0.1:8081",
+      "version": null
+    }
+  ],
+  "tls": [],
+  "tool": "t.test",
+  "truncated": false,
+  "warnings": [
+    "2 lines were not results and were left out"
+  ]
+}

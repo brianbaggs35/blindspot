@@ -1,0 +1,63 @@
+{
+  "artifacts": [],
+  "credentials": [],
+  "hosts": [],
+  "http": [
+    {
+      "content_type": "text/html",
+      "input": "login",
+      "length": 100,
+      "lines": 1,
+      "redirect": null,
+      "server": null,
+      "status": 200,
+      "title": null,
+      "url": "http://127.0.0.1:8081/login",
+      "words": 5
+    },
+    {
+      "content_type": "text/html",
+      "input": "robots.txt",
+      "length": 74,
+      "lines": 4,
+      "redirect": null,
+      "server": null,
+      "status": 200,
+      "title": null,
+      "url": "http://127.0.0.1:8081/robots.txt",
+      "words": 4
+    },
+    {
+      "content_type": "text/html",
+      "input": "admin",
+      "length": 9,
+      "lines": 1,
+      "redirect": null,
+      "server": null,
+      "status": 403,
+      "title": null,
+      "url": "http://127.0.0.1:8081/admin",
+      "words": 1
+    },
+    {
+      "content_type": "text/html",
+      "input": "backup",
+      "length": 1,
+      "lines": 1,
+      "redirect": null,
+      "server": null,
+      "status": 200,
+      "title": null,
+      "url": "http://127.0.0.1:8081/backup",
+      "words": 1
+    }
+  ],
+  "issues": [],
+  "parser": "ffuf_json",
+  "raw_ref": null,
+  "technologies": [],
+  "tls": [],
+  "tool": "t.test",
+  "truncated": false,
+  "warnings": []
+}

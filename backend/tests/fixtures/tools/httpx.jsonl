@@ -1,0 +1,4 @@
+{"timestamp":"2026-11-25T09:00:00.000000000Z","url":"http://127.0.0.1:8081","input":"127.0.0.1:8081","title":"Demo Shop","scheme":"http","webserver":"Apache/2.4.41","content_type":"text/html","method":"GET","host":"127.0.0.1","port":"8081","status_code":200,"content_length":100,"words":9,"lines":1,"tech":["Apache HTTP Server:2.4.41","PHP:7.4.3"]}
+{"url":"https://127.0.0.1:8443","title":"Demo Shop","webserver":"Apache/2.4.41","status_code":302,"location":"https://127.0.0.1:8443/login","content_length":0}
+not json at all
+{"no_url":true}

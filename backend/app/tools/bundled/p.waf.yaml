@@ -1,0 +1,20 @@
+id: p.waf
+name: wafw00f
+tier: pack
+binary: wafw00f
+risk: active
+params:
+  url: { type: target, required: true, description: "The address to check" }
+argv:
+  - -f
+  - json
+  - -o
+  - "-"
+  - "{url}"
+version: { args: [--version], pattern: "([0-9]+\\.[0-9]+\\.[0-9]+)" }
+timeout_s: 300
+max_output_mb: 5
+parsers: [wafw00f_json]
+homepage: https://github.com/EnableSecurity/wafw00f
+explain: "Finds out whether a web application firewall sits in front of a site, and which one, so the rest of the test knows what may be blocked."
+could_go_wrong: "Sends a few requests that look like attacks, so a firewall may block this machine afterwards."

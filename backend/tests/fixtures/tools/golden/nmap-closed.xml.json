@@ -1,0 +1,34 @@
+{
+  "artifacts": [],
+  "credentials": [],
+  "hosts": [
+    {
+      "address": "127.0.0.1",
+      "hostnames": [
+        "localhost"
+      ],
+      "services": [
+        {
+          "cpe": [],
+          "name": "ssh",
+          "port": 22,
+          "product": null,
+          "protocol": "tcp",
+          "state": "closed",
+          "tunnel": null,
+          "version": null
+        }
+      ],
+      "state": "up"
+    }
+  ],
+  "http": [],
+  "issues": [],
+  "parser": "nmap_xml",
+  "raw_ref": null,
+  "technologies": [],
+  "tls": [],
+  "tool": "t.test",
+  "truncated": false,
+  "warnings": []
+}

@@ -1,0 +1,29 @@
+id: p.pd
+name: httpx
+tier: pack
+binary: httpx
+risk: passive
+params:
+  url: { type: target, required: true, description: "The address to probe" }
+  rate:
+    { type: integer, minimum: 1, maximum: 100, default: 10, description: "Most requests a second" }
+argv:
+  - -u
+  - "{url}"
+  - -json
+  - -silent
+  - -no-color
+  - -title
+  - -status-code
+  - -web-server
+  - -tech-detect
+  - -content-length
+  - -rate-limit
+  - "{rate}"
+version: { args: [-version], pattern: "([0-9]+\\.[0-9]+\\.[0-9]+)" }
+timeout_s: 120
+max_output_mb: 5
+parsers: [httpx_jsonl]
+homepage: https://github.com/projectdiscovery/httpx
+explain: "Asks a web address one plain question and notes what comes back: status, title, server and the technologies it can recognise."
+could_go_wrong: "Sends one ordinary request, so it is as visible as a person opening the page. Redirects are never followed."
