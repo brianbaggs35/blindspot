@@ -30,7 +30,10 @@ INT_LIMIT = 2**31 - 1
 _UNSAFE = re.compile(r"[\x00-\x20\x7f\\]")
 _CONTROL = re.compile(r"[\x00-\x1f\x7f]")
 _LABEL = re.compile(r"^[A-Za-z0-9]([A-Za-z0-9-]{0,61}[A-Za-z0-9])?$")
-_PORTS = re.compile(r"^(top-[0-9]{1,5}|[0-9]{1,5}(-[0-9]{1,5})?(,[0-9]{1,5}(-[0-9]{1,5})?)*)$")
+_PORT_OR_RANGE = r"\d{1,5}(?:-\d{1,5})?"
+_PORTS = re.compile(rf"^(?:top-\d{{1,5}}|{_PORT_OR_RANGE}(?:,{_PORT_OR_RANGE})*)$", re.ASCII)
+_PORT_SUFFIX = re.compile(r"(?::\d{1,5})?", re.ASCII)
+_PORT_ONLY = re.compile(r"\d{1,5}", re.ASCII)
 _FILE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._/-]*$")
 
 
@@ -82,25 +85,38 @@ class Param(Strict):
         return self
 
 
-def _shape_problem(param: Param) -> str | None:  # noqa: PLR0911  # one message for each mistake
+def _values_problem(param: Param) -> str | None:
     if param.type is ParamType.ENUM:
         if not param.values or len(set(param.values)) != len(param.values):
             return "an enum needs a list of values, each once"
     elif param.values is not None:
         return "only an enum has values"
+    return None
+
+
+def _range_problem(param: Param) -> str | None:
     if param.type is not ParamType.INTEGER and (
         param.minimum is not None or param.maximum is not None
     ):
         return "only an integer has a minimum or a maximum"
     if param.minimum is not None and param.maximum is not None and param.minimum > param.maximum:
         return "the minimum is above the maximum"
-    if param.pattern is not None:
-        if param.type is not ParamType.STRING:
-            return "only a string has a pattern"
-        try:
-            re.compile(param.pattern)
-        except re.error:
-            return "the pattern is not a valid regular expression"
+    return None
+
+
+def _pattern_problem(param: Param) -> str | None:
+    if param.pattern is None:
+        return None
+    if param.type is not ParamType.STRING:
+        return "only a string has a pattern"
+    try:
+        re.compile(param.pattern)
+    except re.error:
+        return "the pattern is not a valid regular expression"
+    return None
+
+
+def _limits_problem(param: Param) -> str | None:
     if not 1 <= param.max_length <= MAX_TEXT:
         return f"max_length must be between 1 and {MAX_TEXT}"
     if not 1 <= param.max_items <= 1000:
@@ -109,6 +125,14 @@ def _shape_problem(param: Param) -> str | None:  # noqa: PLR0911  # one message 
         return "a list must be a string, enum, target or file, and has no default"
     if param.required and param.default is not None:
         return "a value that is required has no default"
+    return None
+
+
+def _shape_problem(param: Param) -> str | None:
+    """The first thing wrong with how a parameter is declared, as one message, or None."""
+    for check in (_values_problem, _range_problem, _pattern_problem, _limits_problem):
+        if problem := check(param):
+            return problem
     return None
 
 
@@ -182,11 +206,11 @@ def _address_with_port(text: str) -> str:
     """`host`, `host:port`, `[v6]`, `[v6]:port` or a bare IPv6 address: the host part."""
     if text.startswith("["):
         host, closed, rest = text[1:].partition("]")
-        return host if closed and re.fullmatch(r"(:[0-9]{1,5})?", rest) else ""
+        return host if closed and _PORT_SUFFIX.fullmatch(rest) else ""
     if text.count(":") > 1:
         return text
     host, _, port = text.partition(":")
-    return host if port == "" or re.fullmatch(r"[0-9]{1,5}", port) else ""
+    return host if port == "" or _PORT_ONLY.fullmatch(port) else ""
 
 
 def _check_url(text: str, name: str) -> None:

@@ -64,27 +64,31 @@ def test_a_when_without_equals_and_a_false_flag() -> None:
     ],
 )
 def test_shell_syntax_and_options_never_reach_the_argument_list(hostile: str) -> None:
+    tool = nmap()
     with pytest.raises(ToolInputError):
-        build_call(nmap(), {"targets": [hostile]})
+        build_call(tool, {"targets": [hostile]})
 
 
 def test_an_unknown_parameter_is_an_error_not_something_ignored() -> None:
+    tool = nmap()
     with pytest.raises(ToolInputError, match=r"script is not a parameter of c\.nmap"):
-        build_call(nmap(), {"targets": ["a.example.com"], "script": "evil"})
+        build_call(tool, {"targets": ["a.example.com"], "script": "evil"})
 
 
 def test_a_required_value_must_be_given() -> None:
+    tool = nmap()
     with pytest.raises(ToolInputError, match="targets is required"):
-        build_call(nmap(), {})
+        build_call(tool, {})
     with pytest.raises(ToolInputError, match="targets is required"):
-        build_call(nmap(), {"targets": None})
+        build_call(tool, {"targets": None})
 
 
 def test_a_value_is_checked_by_its_type() -> None:
+    tool = nmap()
     with pytest.raises(ToolInputError, match="rate must be between 1 and 1000"):
-        build_call(nmap(), {"targets": ["a.example.com"], "rate": 5000})
+        build_call(tool, {"targets": ["a.example.com"], "rate": 5000})
     with pytest.raises(ToolInputError, match="scan must be one of"):
-        build_call(nmap(), {"targets": ["a.example.com"], "scan": "xmas"})
+        build_call(tool, {"targets": ["a.example.com"], "scan": "xmas"})
 
 
 def test_a_value_that_would_pose_as_an_option_is_refused() -> None:
@@ -124,8 +128,9 @@ def test_a_command_line_that_is_too_long_is_refused() -> None:
         )
     )
     assert len(build_call(many, {"files": ["a.txt"] * 1000}).argv) == 1001
+    long_names = ["x" * 190 + str(n).zfill(4) for n in range(1000)]
     with pytest.raises(ToolInputError, match="too long"):
-        build_call(many, {"files": ["x" * 190 + str(n).zfill(4) for n in range(1000)]})
+        build_call(many, {"files": long_names})
     one_long = Manifest.model_validate(
         manifest(
             NMAP,
@@ -140,8 +145,9 @@ def test_a_command_line_that_is_too_long_is_refused() -> None:
 
 def test_too_many_arguments_are_refused(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr("app.tools.argv.MAX_ARGUMENTS", 3)
+    tool = nmap()
     with pytest.raises(ToolInputError, match="too long"):
-        build_call(nmap(), {"targets": ["a.example.com"]})
+        build_call(tool, {"targets": ["a.example.com"]})
 
 
 def test_a_built_in_tool_has_values_and_targets_but_no_command() -> None:

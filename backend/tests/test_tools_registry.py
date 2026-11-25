@@ -69,8 +69,9 @@ def test_a_bad_file_is_an_error_that_names_it(tmp_path: Path, content: str, mess
 
 def test_a_bundled_manifest_cannot_be_custom(tmp_path: Path) -> None:
     custom = manifest(NMAP, id="x.nmap", tier="custom", binary="nmap", capabilities=[])
+    path = write(tmp_path, "c.yaml", custom)
     with pytest.raises(ToolPackError, match="cannot be custom"):
-        read_manifest(write(tmp_path, "c.yaml", custom))
+        read_manifest(path)
 
 
 def test_an_id_used_twice_is_refused(tmp_path: Path) -> None:
