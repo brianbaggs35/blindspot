@@ -2,7 +2,7 @@
 SHELL := /bin/bash
 .DEFAULT_GOAL := help
 .PHONY: secret-key rotate-secret-key terms help lint lint-backend lint-frontend lint-infra audit-workflows format format-check test test-ci-scripts \
-	test-backend test-frontend e2e e2e-host audit scan-source check-versions up down delete clean
+	test-backend test-frontend e2e e2e-host audit scan-source check-versions check-runtime-versions up down delete clean
 
 # Linters run from images pinned by digest, not from third-party GitHub Actions, so the same
 # versions run here and in CI. Dependabot raises these (docker ecosystem) in its own PRs.
@@ -55,6 +55,9 @@ lint-infra: ## actionlint, ShellCheck and hadolint (workflows, scripts, Dockerfi
 
 check-versions: ## Every file that holds the version agrees, and the changelog has it
 	./.github/scripts/check-versions.sh
+
+check-runtime-versions: ## CI uses the Python and PostgreSQL versions the Dockerfile asks for
+	./.github/scripts/check-runtime-versions.sh
 
 audit-workflows: ## zizmor: audit the GitHub workflows for security mistakes
 	$(ZIZMOR) .github/workflows

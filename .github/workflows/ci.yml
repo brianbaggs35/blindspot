@@ -92,6 +92,9 @@ jobs:
       - name: The version is the same everywhere and the changelog has it
         run: make check-versions
 
+      - name: CI uses the Python and PostgreSQL versions the Dockerfile asks for
+        run: make check-runtime-versions
+
   # Trivy over the source: vulnerable dependencies, leaked secrets and Dockerfile or compose
   # mistakes. High and critical findings with a fix fail the job; they are listed in the log
   # and uploaded to code scanning.
@@ -164,7 +167,7 @@ jobs:
         working-directory: backend
     services:
       postgres:
-        image: postgres:18
+        image: postgres:18.7
         env:
           POSTGRES_USER: blindspot
           POSTGRES_DB: blindspot
@@ -186,7 +189,7 @@ jobs:
       - uses: astral-sh/setup-uv@1db35dd8eee11c5894872e0b383ae6c406cf738d # v10.4.0
         with:
           # Same Python as the container image.
-          python-version: "3.14"
+          python-version: "3.14.10"
           working-directory: backend
 
       # Exactly the locked versions, as prebuilt wheels only, so installing runs none of the
@@ -312,7 +315,7 @@ jobs:
         working-directory: frontend
     services:
       postgres:
-        image: postgres:18
+        image: postgres:18.7
         env:
           POSTGRES_USER: blindspot
           POSTGRES_DB: blindspot
@@ -332,7 +335,7 @@ jobs:
 
       - uses: astral-sh/setup-uv@1db35dd8eee11c5894872e0b383ae6c406cf738d # v10.4.0
         with:
-          python-version: "3.14"
+          python-version: "3.14.10"
           working-directory: backend
 
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0

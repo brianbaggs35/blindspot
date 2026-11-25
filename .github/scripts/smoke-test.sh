@@ -52,6 +52,9 @@ dump="$(docker exec --user blindspot "$container" pg_dump --host /run/postgresql
 grep -q 'CREATE TABLE public.alembic_version' <<<"$dump"
 echo "pg_dump works"
 
+# Python, nginx and PostgreSQL are at least the versions the Dockerfile asks for.
+"$(dirname "${BASH_SOURCE[0]}")/check-runtime-versions.sh" "$container"
+
 # Nothing may listen on TCP except nginx: the API and the database use unix sockets. Docker's own
 # DNS resolver listens on 127.0.0.11 (shown as 0B00007F) inside a container on a compose network;
 # it is not the container's, so it is left out.
