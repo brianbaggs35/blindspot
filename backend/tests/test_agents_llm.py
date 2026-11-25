@@ -17,6 +17,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from tests.agents_helpers import SHOP
 from tests.conftest import app_of
+from tests.pentest_helpers import make
 
 from app.agents import llm
 from app.agents.llm import PydanticBrain, render, render_verification
@@ -28,10 +29,11 @@ from app.agents.ports import (
     HistoryItem,
     ToolRequest,
 )
+from app.agents.prompts import BUILTIN
 from app.ai.engine import build_model
 from app.ai.netguard import Resolver
 from app.ai.routes import get_resolver
-from app.db.models import AiProvider, UsageLedger
+from app.db.models import AiProvider, Mission, UsageLedger
 from app.errors import AppError, BudgetExceeded
 from app.tools.parsers.schema import Severity
 
@@ -286,6 +288,7 @@ async def test_a_finding_is_checked_by_the_model_against_the_replay(
         sessions, seen, call("final_result", {"confirmed": True, "reason": "Same header."})
     )
     verdict = await asked.verify(
+        MISSION,
         FindingIn(title="No HSTS", severity=Severity.HIGH, detail="Missing", evidence=[1]),
         [HistoryItem(1, "b.headers", "done", "no hsts")],
         [HistoryItem(2, "b.headers", "done", "no hsts again")],
@@ -296,6 +299,50 @@ async def test_a_finding_is_checked_by_the_model_against_the_replay(
     assert "skeptical" in seen.instructions
     assert "[high] No HSTS" in seen.prompt
     assert "no hsts again" in seen.prompt
+
+
+async def a_mission_with(admin: TestClient, sessions: Sessions, prompts: dict[str, int]) -> str:
+    made = make(admin)
+    async with sessions.begin() as session:
+        row = Mission(
+            pentest_id=uuid.UUID(made["id"]), status="running", budget={}, prompts=prompts
+        )
+        session.add(row)
+    return str(row.id)
+
+
+async def test_the_prompt_is_the_version_the_mission_started_with(
+    admin: TestClient, sessions: Sessions
+) -> None:
+    configure(admin)
+    text = "You are a careful tester. Work one test at a time and cite every step you rely on."
+    assert admin.post("/api/agents/prompts/test-agent", json={"body": text}).status_code == 201
+    assert (
+        admin.post("/api/agents/prompts/verifier", json={"body": text + " Verify."}).status_code
+        == 201
+    )
+    mission = await a_mission_with(admin, sessions, {"test-agent": 1, "verifier": 1})
+    seen = Seen()
+    request = call("ToolRequest", {"tool": "b.headers", "values": {}})
+    await brain(sessions, seen, request).decide(context(mission_id=mission))
+    assert (seen.instructions or "").strip() == text
+    asked = brain(
+        sessions, seen, call("final_result", {"confirmed": True, "reason": "Same header."})
+    )
+    await asked.verify(
+        mission,
+        FindingIn(title="No HSTS", severity=Severity.HIGH, detail="Missing", evidence=[1]),
+        [],
+        [],
+    )
+    assert (seen.instructions or "").strip() == text + " Verify."
+    # A version that is gone reads as the built-in text, and a mission that never chose one too.
+    gone = await a_mission_with(admin, sessions, {"test-agent": 9})
+    await brain(sessions, seen, request).decide(context(mission_id=gone))
+    assert (seen.instructions or "").strip() == BUILTIN["test-agent"].strip()
+    plain = await a_mission_with(admin, sessions, {})
+    await brain(sessions, seen, request).decide(context(mission_id=plain))
+    assert (seen.instructions or "").strip() == BUILTIN["test-agent"].strip()
 
 
 def test_the_verifier_prompt_escapes_the_evidence_too() -> None:

@@ -90,7 +90,11 @@ class ScriptedBrain:
         return step if isinstance(step, Turn) else Turn(step, self.spend)
 
     async def verify(
-        self, finding: FindingIn, original: list[HistoryItem], replay: list[HistoryItem]
+        self,
+        mission_id: str,
+        finding: FindingIn,
+        original: list[HistoryItem],
+        replay: list[HistoryItem],
     ) -> Verification:
         self.verified.append((finding, original, replay))
         answer = self.verdicts.pop(0) if self.verdicts else Verification(True, "Same again.")
