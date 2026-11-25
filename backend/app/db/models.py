@@ -37,6 +37,7 @@ EMPTY_LIST = text("'[]'::jsonb")
 EMPTY_OBJECT = text("'{}'::jsonb")
 
 __all__ = [
+    "AgentPrompt",
     "AiModel",
     "AiProvider",
     "AiRoleDefault",
@@ -583,6 +584,9 @@ class Mission(UUIDPrimaryKey, Timestamps, CreatedBy, Base):
     spent: Mapped[Any] = mapped_column(JSONB, default=dict, server_default=EMPTY_OBJECT)
     plan: Mapped[Any] = mapped_column(JSONB, default=dict, server_default=EMPTY_OBJECT)
     stop_reason: Mapped[str] = mapped_column(Text, default="", server_default="")
+    # The version of each agent prompt this mission started with, so a later change to a prompt
+    # never changes a mission that is already running.
+    prompts: Mapped[Any] = mapped_column(JSONB, default=dict, server_default=text("'{}'::jsonb"))
     started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), default=None)
     finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), default=None)
 
@@ -672,6 +676,23 @@ class MissionFact(UUIDPrimaryKey, Base):
     fact: Mapped[str] = mapped_column(Text)
     confidence: Mapped[str] = mapped_column(String(6))
     source_result_id: Mapped[uuid.UUID | None] = mapped_column(Uuid, default=None)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utc_now, server_default=func.now()
+    )
+
+
+class AgentPrompt(UUIDPrimaryKey, CreatedBy, Base):
+    """One version of an agent's instructions. Versions are only ever added: a mission points at
+    the version it used, so what an agent was told stays readable after the prompt changes.
+    Version 0 is the built-in text and is not stored."""
+
+    __tablename__ = "agent_prompt"
+    __table_args__ = (UniqueConstraint("agent", "version"),)
+
+    agent: Mapped[str] = mapped_column(String(24))
+    version: Mapped[int] = mapped_column(Integer)
+    body: Mapped[str] = mapped_column(Text)
+    note: Mapped[str] = mapped_column(String(200), default="", server_default="")
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=utc_now, server_default=func.now()
     )
