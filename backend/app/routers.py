@@ -21,6 +21,7 @@ from app.results.routes import router as results_router
 from app.terms.routes import router as terms_router
 from app.tools.policy_routes import router as tool_policy_router
 from app.tools.routes import router as tools_router
+from app.tools.settings_routes import router as tool_settings_router
 
 ROUTERS: list[APIRouter] = [
     health_router,
@@ -40,5 +41,6 @@ ROUTERS: list[APIRouter] = [
     agents_router,
     terms_router,
     tool_policy_router,
+    tool_settings_router,
     tools_router,
 ]

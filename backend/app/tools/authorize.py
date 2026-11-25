@@ -3,7 +3,8 @@ have to say yes first?
 
 Three things must all be true, and each is decided by code that no model can talk to:
 
-1. the call is for the tool it says (the manifest decides the risk class, never the call);
+1. the call is for the tool it says (the manifest decides the risk class, never the call), and the
+   Tools settings have not switched that tool off or limited it below its risk class;
 2. the permission policy lets this agent role use it, on this pentest, now (`policy.py`);
 3. every target is inside the pentest's scope, looked up and checked address by address
    (`guard.py`).
@@ -18,7 +19,7 @@ from typing import Any
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.ai.netguard import Resolver, system_resolver
-from app.db.models import Pentest
+from app.db.models import Pentest, ToolSetting
 from app.pentests.scope import DEFAULT_METHODS, CompiledScope, ScopeError
 from app.tools.argv import Call
 from app.tools.control import kill_switch_on, load_grants
@@ -26,6 +27,7 @@ from app.tools.guard import check_targets
 from app.tools.manifest import RISK_ORDER, ToolRisk
 from app.tools.policy import ApprovalMode, Standing, decide
 from app.tools.registry import Tool
+from app.tools.settings import refusal
 
 
 @dataclass(frozen=True)
@@ -61,6 +63,14 @@ def compile_stored_scope(stored: dict[str, Any]) -> CompiledScope | None:
         return None
 
 
+async def _precheck(session: AsyncSession, tool: Tool, call: Call) -> str | None:
+    """Why the call must not run whatever the policy says: it is for another tool, or the Tools
+    settings have switched the tool off or limited it below its risk class."""
+    if call.tool != tool.manifest.id:
+        return "The call is for a different tool than the one it was checked against."
+    return refusal(tool.manifest, await session.get(ToolSetting, tool.manifest.id))
+
+
 async def authorize(
     session: AsyncSession,
     pentest: Pentest,
@@ -72,8 +82,8 @@ async def authorize(
 ) -> Verdict:
     """May `role` run `call` of `tool` on `pentest`?"""
     manifest = tool.manifest
-    if call.tool != manifest.id:
-        return _denied("The call is for a different tool than the one it was checked against.")
+    if reason := await _precheck(session, tool, call):
+        return _denied(reason)
     standing = Standing(await kill_switch_on(session), pentest.id, pentest.status)
     policy = decide(
         role, manifest.id, manifest.risk, standing, await load_grants(session, pentest.id)
