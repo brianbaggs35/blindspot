@@ -1,6 +1,6 @@
 # Development
 
-You need [uv](https://docs.astral.sh/uv/) (it installs Python 3.14 for you) and Node.js 24 or newer (22 works for most tasks).
+You need [uv](https://docs.astral.sh/uv/) (it installs Python 3.14 for you; the image and CI use 3.14.10, see [Running the container](container.md#versions)) and Node.js 24 or newer (22 works for most tasks).
 
 ## Run it
 

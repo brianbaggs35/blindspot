@@ -6,6 +6,10 @@ How a release is made, and what to update with it, is in [Contributing](docs/how
 
 ## [Unreleased]
 
+### Changed
+
+- The image now runs Python 3.14.10, nginx 1.31.10 and PostgreSQL 18.7, the latest patch releases. The build fails if a lower version would be installed, the smoke test checks the running container, and CI uses the same Python and PostgreSQL.
+
 ### Added
 
 - `make up` builds the image and starts Blindspot, `make down` stops it and keeps all data, and `make delete` removes everything including the volumes and the build cache after asking for confirmation. CI tests that the data survives `make down` and `make up`.

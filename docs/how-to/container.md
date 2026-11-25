@@ -31,6 +31,10 @@ From a checkout of the repository, `make` does the same and more:
 
 Set them in the shell or in a `.env` file next to `compose.yaml`.
 
+## Versions
+
+The image runs **Python 3.14.10**, **nginx 1.31.10** (mainline) and **PostgreSQL 18.7**, the latest patch releases when they were chosen. The Dockerfile asks for them as minimums (`ARG PYTHON_VERSION`, `NGINX_VERSION` and `POSTGRES_VERSION`), and `apk` refuses to install anything older, so a base image that falls behind fails the build instead of shipping an old version. The smoke test then asks the running container for its versions, and CI uses the same Python and PostgreSQL (`.github/scripts/check-runtime-versions.sh` fails when they differ). To move to newer versions, change the three ARGs, the `python-version` and `postgres` image in the workflows, and the numbers in this guide, in one pull request.
+
 ## Certificates
 
 - **Self-signed (default):** made at the first start, valid for a year, made again when it has less than 30 days left. It lives in the `data` volume.
