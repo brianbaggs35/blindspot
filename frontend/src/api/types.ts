@@ -387,3 +387,93 @@ export interface Checklist {
   counts: Record<CheckStatus, number>;
   categories: CheckCategory[];
 }
+
+export type Severity = "info" | "low" | "medium" | "high" | "critical";
+export type ResultSource = "tool" | "import" | "manual";
+export type ResultStatus = "ok" | "failed" | "manual";
+
+export interface ResultSummary {
+  id: string;
+  title: string;
+  source: ResultSource;
+  status: ResultStatus;
+  tool_id: string | null;
+  agent_role: string | null;
+  test_id: string | null;
+  top_severity: Severity | null;
+  issue_count: number;
+  ran_at: string;
+  tags: string[];
+  deleted: boolean;
+  summary: string[];
+}
+
+export interface ResultList {
+  items: ResultSummary[];
+  total: number;
+  tools: string[];
+  agents: string[];
+}
+
+export interface FriendlyCard {
+  title: string;
+  severity: Severity;
+  target: string | null;
+  what: string;
+  why: string;
+  todo: string;
+}
+
+export interface PortRow {
+  port: number;
+  protocol: string;
+  state: string;
+  service: string | null;
+  software: string | null;
+}
+
+export interface Friendly {
+  headline: string;
+  summary: string[];
+  cards: FriendlyCard[];
+  hidden_cards: number;
+  visuals: {
+    port_map: { address: string; state: string; ports: PortRow[] }[];
+    tls_grade: string | null;
+    scorecard: { name: string; passed: boolean }[];
+  };
+  terms: { term: string; meaning: string }[];
+}
+
+export interface ResultCredential {
+  index: number;
+  target: string;
+  kind: string;
+  username: string | null;
+  secret: string;
+}
+
+/** The normalized result: every list is there, and each item is a plain object. */
+export type Technical = Record<string, unknown>;
+
+export interface PentestResultFull extends ResultSummary {
+  parser: string | null;
+  command: string[];
+  exit_code: number | null;
+  duration_ms: number | null;
+  notes: string;
+  friendly: Friendly | null;
+  technical: Technical | null;
+  credentials: ResultCredential[];
+  has_raw: boolean;
+  created_by: string | null;
+}
+
+export interface RawOutput {
+  command: string[];
+  exit_code: number | null;
+  duration_ms: number | null;
+  output: string;
+  truncated: boolean;
+  size: number;
+}
