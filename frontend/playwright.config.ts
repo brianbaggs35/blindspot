@@ -12,11 +12,17 @@ const baseURL =
 // CI installs the browser Playwright expects; elsewhere point this at any Chromium.
 const chromium = process.env["E2E_CHROMIUM"];
 
+// Passkeys need a certificate the browser trusts, which the container's own one is not.
+const skippedInContainer = container ? ["**/*.host.spec.ts"] : [];
+
+const browser = {
+  ...devices["Desktop Chrome"],
+  ...(chromium === undefined ? {} : { launchOptions: { executablePath: chromium } }),
+};
+
 export default defineConfig({
   testDir: "e2e",
   testMatch: "**/*.spec.ts",
-  // Passkeys need a certificate the browser trusts, which the container's own one is not.
-  ...(container ? { testIgnore: "**/*.host.spec.ts" } : {}),
   outputDir: "e2e-results/artifacts",
   fullyParallel: true,
   forbidOnly: ci,
@@ -54,10 +60,18 @@ export default defineConfig({
   projects: [
     {
       name: "chromium",
-      use: {
-        ...devices["Desktop Chrome"],
-        ...(chromium === undefined ? {} : { launchOptions: { executablePath: chromium } }),
-      },
+      testIgnore: [...skippedInContainer, "**/*.exclusive.spec.ts"],
+      use: browser,
+    },
+    {
+      // Specs that change something the whole installation shares (a methodology switched off):
+      // they start once everything else has finished, so nothing else is running beside them.
+      name: "exclusive",
+      testMatch: "**/*.exclusive.spec.ts",
+      testIgnore: skippedInContainer,
+      dependencies: ["chromium"],
+      fullyParallel: false,
+      use: browser,
     },
   ],
   // Host mode starts the API and the built web app itself; container mode finds them running.

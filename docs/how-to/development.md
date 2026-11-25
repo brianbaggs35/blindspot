@@ -50,6 +50,8 @@ What the specs cover:
 
 Most specs run **signed in as an administrator**. `e2e/global-setup.ts` creates that account through the API (or signs in when it exists) and saves the session; the API the tests start gets its settings from `e2e/accounts.ts` (a fixed setup code, relaxed throttles, the `BLINDSPOT_DATABASE_URL` you export). Specs that need a signed-out browser use `SIGNED_OUT`; specs that change accounts make their own with `e2e/people.ts` so they never lock the shared one. Passkey specs use a virtual authenticator and run in host mode only. The database must be PostgreSQL: CI starts a Postgres 18 service, and locally export `BLINDSPOT_DATABASE_URL`.
 
+A spec that changes something the whole installation shares (such as switching a methodology off) is named `*.exclusive.spec.ts`: it runs in its own Playwright project, after every other spec has finished, so no other spec is running beside it.
+
 **When you add a page**, add it to `e2e/pages.ts`; the layout and accessibility specs then cover it. On a machine where Playwright's own browser is not installed, point `E2E_CHROMIUM` at a Chromium binary.
 
 Reports (HTML, traces and screenshots of failures, coverage) are uploaded as artifacts on every CI run.

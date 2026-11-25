@@ -107,7 +107,7 @@ test.describe("Pentest results (administrator)", () => {
 
     await page.getByRole("button", { name: "Raw" }).click();
     await expect(page.getByRole("region", { name: "Raw view" })).toBeVisible();
-    await page.getByLabel("Search the output").fill("portid");
+    await page.getByRole("textbox", { name: "Search the output" }).fill("portid");
     await expect(page.getByLabel("Matches")).toHaveText("2 matches");
 
     // The way of reading is remembered for this person.
