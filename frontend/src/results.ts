@@ -54,14 +54,17 @@ export function duration(ms: number | null): string {
   return `${String(minutes)} min ${String(Math.round((ms % 60_000) / 1000))} s`;
 }
 
+const SHELL_SAFE = /^[\w@%+=:,./-]+$/;
+const QUOTE_INSIDE = String.raw`'\''`;
+
+function shellWord(part: string): string {
+  return SHELL_SAFE.test(part) ? part : "'" + part.replaceAll("'", QUOTE_INSIDE) + "'";
+}
+
 /** The command exactly as it ran, one argument at a time: an argument with a space is quoted so
  * it reads the way a shell would take it, though no shell ever ran it. */
 export function commandLine(command: string[]): string {
-  return command
-    .map((part) =>
-      /^[\w@%+=:,./-]+$/.test(part) ? part : `'${part.replaceAll("'", String.raw`'\''`)}'`,
-    )
-    .join(" ");
+  return command.map(shellWord).join(" ");
 }
 
 export interface Segment {
