@@ -33,6 +33,7 @@ from app.vault.types import SealedJSON, SealedString
 
 METHODOLOGY_ID = "methodology.id"
 PENTEST_ID = "pentest.id"
+EMPTY_LIST = text("'[]'::jsonb")
 
 __all__ = [
     "AiModel",
@@ -381,7 +382,7 @@ class Pentest(UUIDPrimaryKey, Timestamps, SoftDelete, CreatedBy, Base):
     archived_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), default=None)
     # What the target shows (such as "saml" or "upload"), so the checklist can tell which tests
     # apply. It does not change what may be touched, so it is not part of the attestation.
-    features: Mapped[Any] = mapped_column(JSONB, default=list, server_default=text("'[]'::jsonb"))
+    features: Mapped[Any] = mapped_column(JSONB, default=list, server_default=EMPTY_LIST)
 
 
 class PentestAccount(UUIDPrimaryKey, Timestamps, Base):
@@ -466,7 +467,7 @@ class PentestCheck(UUIDPrimaryKey, Timestamps, Base):
     test_id: Mapped[str] = mapped_column(String(64))
     status: Mapped[str] = mapped_column(String(16), default=CheckStatus.TODO.value)
     notes: Mapped[str] = mapped_column(Text, default="", server_default="")
-    evidence: Mapped[Any] = mapped_column(JSONB, default=list, server_default=text("'[]'::jsonb"))
+    evidence: Mapped[Any] = mapped_column(JSONB, default=list, server_default=EMPTY_LIST)
     # A custom test belongs to this pentest alone: it has a name and a category of its own.
     custom: Mapped[bool] = mapped_column(default=False, server_default=false())
     name: Mapped[str | None] = mapped_column(String(200), default=None)
@@ -500,7 +501,7 @@ class PentestResult(UUIDPrimaryKey, Timestamps, SoftDelete, CreatedBy, Base):
     agent_role: Mapped[str | None] = mapped_column(String(24), default=None)
     test_id: Mapped[str | None] = mapped_column(String(64), default=None)
     parser: Mapped[str | None] = mapped_column(String(32), default=None)
-    command: Mapped[Any] = mapped_column(JSONB, default=list, server_default=text("'[]'::jsonb"))
+    command: Mapped[Any] = mapped_column(JSONB, default=list, server_default=EMPTY_LIST)
     exit_code: Mapped[int | None] = mapped_column(Integer, default=None)
     duration_ms: Mapped[int | None] = mapped_column(Integer, default=None)
     ran_at: Mapped[datetime] = mapped_column(
@@ -514,7 +515,7 @@ class PentestResult(UUIDPrimaryKey, Timestamps, SoftDelete, CreatedBy, Base):
         SealedJSON(Purpose.DISCOVERED_CREDENTIALS), default=None
     )
     notes: Mapped[str] = mapped_column(Text, default="", server_default="")
-    tags: Mapped[Any] = mapped_column(JSONB, default=list, server_default=text("'[]'::jsonb"))
+    tags: Mapped[Any] = mapped_column(JSONB, default=list, server_default=EMPTY_LIST)
 
 
 class CustomTool(UUIDPrimaryKey, Timestamps, CreatedBy, Base):
