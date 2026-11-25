@@ -54,14 +54,14 @@ export const friendly: Friendly = {
   visuals: {
     port_map: [
       {
-        address: "10.0.0.1",
+        address: "web.test",
         state: "up",
         ports: [
           { port: 80, protocol: "tcp", state: "open", service: "http", software: "nginx 1.31" },
           { port: 22, protocol: "tcp", state: "closed", service: null, software: null },
         ],
       },
-      { address: "10.0.0.2", state: "down", ports: [] },
+      { address: "db.test", state: "down", ports: [] },
     ],
     tls_grade: "B",
     scorecard: [
@@ -74,7 +74,7 @@ export const friendly: Friendly = {
 
 export const technical: Technical = {
   issues: [{ severity: "medium", title: "Old TLS version", target: "shop:443" }],
-  hosts: [{ address: "10.0.0.1", state: "up", services: [{ port: 80, protocol: "tcp" }] }],
+  hosts: [{ address: "web.test", state: "up", services: [{ port: 80, protocol: "tcp" }] }],
   warnings: ["Two lines were left out"],
   truncated: true,
 };

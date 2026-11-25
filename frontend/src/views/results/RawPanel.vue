@@ -96,7 +96,14 @@ onMounted(load);
       <v-alert v-if="raw.truncated" type="warning" variant="tonal" class="mb-2">
         The output is {{ raw.size }} characters long. Only the first part is kept here.
       </v-alert>
-      <pre class="bs-raw" tabindex="0" aria-label="Raw output"><template
+      <pre
+        class="bs-raw"
+        role="textbox"
+        aria-readonly="true"
+        aria-multiline="true"
+        tabindex="0"
+        aria-label="Raw output"
+      ><template
         v-for="(line, row) in shown.lines"
         :key="row"
       ><template v-for="(token, at) in line" :key="at"><mark v-if="token.kind === 'match'">{{ token.text }}</mark><span v-else :class="`bs-${token.kind}`">{{ token.text }}</span></template>
