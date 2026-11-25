@@ -32,6 +32,11 @@ def _issue(row: list[str], host: str | None, port: str | None) -> Issue | None:
     )
 
 
+def _names_the_host(row: list[str]) -> bool:
+    """The line that gives the host, the port and the server banner, ahead of the findings."""
+    return len(row) == _BANNER_COLUMNS and not row[3] and not row[4]
+
+
 def _banner(text: str, host: str | None) -> Technology | None:
     banner = clip(text, 100)
     if not banner:
@@ -56,8 +61,7 @@ def parse_nikto_csv(data: bytes) -> ToolResult:
         if len(row) < _MIN_COLUMNS:
             continue
         rows += 1
-        if len(row) == _BANNER_COLUMNS and not row[3] and not row[4]:
-            # The line that names the host and its banner.
+        if _names_the_host(row):
             host, port = clip(row[0]), str(number(row[2]) or "") or None
             technology = _banner(row[6], host)
             if technology is not None:

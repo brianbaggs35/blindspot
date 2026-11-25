@@ -168,7 +168,7 @@ def _follow(
     links, forms = read_page(response.url, response.text())
     for form in forms:
         parameters.setdefault(form.action, set()).update(form.names)
-        issues += form_issues(response.url, form)
+        issues.extend(form_issues(response.url, form))
     same_site: list[str] = []
     for link in map(_web_address, links):
         if link is None or urlsplit(link).netloc.lower() != site:
