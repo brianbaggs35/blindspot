@@ -89,6 +89,9 @@ jobs:
       - name: Tests of the CI scripts
         run: make test-ci-scripts
 
+      - name: The version is the same everywhere and the changelog has it
+        run: make check-versions
+
   # Trivy over the source: vulnerable dependencies, leaked secrets and Dockerfile or compose
   # mistakes. High and critical findings with a fix fail the job; they are listed in the log
   # and uploaded to code scanning.

@@ -7,9 +7,9 @@
 # attached to the release too.
 #
 # It runs only when a release is published (a saved draft doesn't start it), and nothing else
-# triggers it. It needs the Dockerfile (target `runtime`) from the container ticket, BLI-6; until
-# that exists, a release fails at the build step, which is the right outcome for a project with
-# nothing to publish yet.
+# triggers it. Before anything is built, the tag has to be a version, made from a commit on
+# master, and the same version as the files and the changelog (see docs/how-to/contributing.md,
+# Releases), so a release can't be published with the wrong version inside it.
 name: Release
 
 on:
@@ -48,6 +48,12 @@ jobs:
           TAG: ${{ github.event.release.tag_name }}
           PRERELEASE: ${{ github.event.release.prerelease }}
         run: ./.github/scripts/release-version.sh
+
+      # The image reports the tag's version, so the files and the changelog must say the same.
+      - name: Check the version files and the changelog
+        env:
+          EXPECTED: ${{ steps.version.outputs.version }}
+        run: ./.github/scripts/check-versions.sh
 
       # Fixes land on master through reviewed pull requests, so a release has to be made from there.
       - name: Check the release is made from master

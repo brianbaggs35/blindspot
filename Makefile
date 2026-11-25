@@ -2,7 +2,7 @@
 SHELL := /bin/bash
 .DEFAULT_GOAL := help
 .PHONY: secret-key rotate-secret-key terms help lint lint-backend lint-frontend lint-infra audit-workflows format format-check test test-ci-scripts \
-	test-backend test-frontend e2e e2e-host audit scan-source clean
+	test-backend test-frontend e2e e2e-host audit scan-source check-versions clean
 
 # Linters run from images pinned by digest, not from third-party GitHub Actions, so the same
 # versions run here and in CI. Dependabot raises these (docker ecosystem) in its own PRs.
@@ -45,6 +45,9 @@ lint-infra: ## actionlint, ShellCheck and hadolint (workflows, scripts, Dockerfi
 		echo "hadolint $$file"; \
 		docker run --rm -i $(HADOLINT_IMAGE) hadolint - < "$$file" || exit 1; \
 	done
+
+check-versions: ## Every file that holds the version agrees, and the changelog has it
+	./.github/scripts/check-versions.sh
 
 audit-workflows: ## zizmor: audit the GitHub workflows for security mistakes
 	$(ZIZMOR) .github/workflows

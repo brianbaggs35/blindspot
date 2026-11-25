@@ -10,7 +10,7 @@ Blindspot is a self-hosted platform for **web application penetration testing wi
 
 ## Status
 
-**Planning.** Nothing is built yet. [The plan](docs/PLAN.md) is waiting for approval; work is tracked on the BLI board in Jira, one ticket per pull request, as a stack of pull requests that can be merged in order.
+**Version 0.0.1, the foundation.** The container, sign-in, the secrets vault, the AI provider settings, the methodology engine with the WSTG checklist, and pentests with their authorization gate and checklist are built. The agents and the security tools are next, so Blindspot cannot run a test yet. See the [changelog](CHANGELOG.md) and [the plan](docs/PLAN.md); work is tracked on the BLI board in Jira, one ticket per pull request, as a stack of pull requests that can be merged in order.
 
 ## What it will do
 
@@ -26,7 +26,8 @@ Blindspot is a self-hosted platform for **web application penetration testing wi
 
 |                                                                 |                                                                                                           |
 | --------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
-| [Contributing](docs/how-to/contributing.md)                     | Tickets, branch names, one-line commits, stacked pull requests and what must pass                         |
+| [Changelog](CHANGELOG.md)                                       | What changed in each version                                                                              |
+| [Contributing](docs/how-to/contributing.md)                     | Tickets, branch names, one-line commits, stacked pull requests, what must pass and how to release         |
 | [Continuous integration](docs/how-to/ci.md)                     | Every CI workflow and check, how to run them locally, branch protection setup                             |
 | [Running the container](docs/how-to/container.md)               | Start it, ports, certificates, what is stored where, and how it is locked down                            |
 | [The database](docs/how-to/database.md)                         | The socket, the shared columns, sessions, migrations and how to add a table                               |
