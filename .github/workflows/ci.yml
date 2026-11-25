@@ -631,9 +631,18 @@ jobs:
           echo "exit code: $code"
           [[ "$code" == "0" ]]
 
+      # `make up`, `make down` and `make delete` the way people run them: the data survives a down
+      # and an up, and delete leaves no container, volume or image behind.
+      - name: make up, down and delete
+        run: ./.github/scripts/compose-lifecycle-test.sh blindspot:ci
+
       - name: Container logs
         if: ${{ failure() }}
         run: docker logs blindspot-ci || true
+
+      - name: Compose logs
+        if: ${{ failure() }}
+        run: docker compose logs || true
 
       - name: Remove the container
         if: ${{ always() }}

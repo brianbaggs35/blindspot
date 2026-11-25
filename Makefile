@@ -2,7 +2,7 @@
 SHELL := /bin/bash
 .DEFAULT_GOAL := help
 .PHONY: secret-key rotate-secret-key terms help lint lint-backend lint-frontend lint-infra audit-workflows format format-check test test-ci-scripts \
-	test-backend test-frontend e2e e2e-host audit scan-source check-versions clean
+	test-backend test-frontend e2e e2e-host audit scan-source check-versions up down delete clean
 
 # Linters run from images pinned by digest, not from third-party GitHub Actions, so the same
 # versions run here and in CI. Dependabot raises these (docker ecosystem) in its own PRs.
@@ -15,6 +15,13 @@ ZIZMOR := uvx --no-build zizmor@1.33.1
 BACKEND := cd backend &&
 FRONTEND := cd frontend &&
 TRIVY_FLAGS := --severity HIGH,CRITICAL --ignore-unfixed --exit-code 1
+
+# `make up` builds the image from this checkout; `make up COMPOSE_UP_FLAGS=` starts the image that
+# is already there (CI does this to test the lifecycle on the image it has just scanned).
+COMPOSE := docker compose
+COMPOSE_UP_FLAGS ?= --build
+# Containers that other commands start; `make delete` removes them too.
+SCRATCH_CONTAINERS := blindspot-e2e blindspot-local
 
 # Dockerfiles and shell scripts anywhere in the repository (not dependencies or build output).
 DOCKERFILES := $(shell git ls-files '*Dockerfile' '*Dockerfile.*' 2>/dev/null)
@@ -98,6 +105,27 @@ rotate-secret-key: ## Seal every stored secret again with BLINDSPOT_SECRET_KEY (
 
 terms: ## Write DISCLAIMER.md from the terms of use in backend/app/terms/text.py
 	@$(BACKEND) uv run --no-sync python -m app.terms
+
+## ---- Run it (docs/how-to/container.md) ---------------------------------------------------
+up: ## Build the image and start Blindspot; run it again after the code changes (the data is kept)
+	$(COMPOSE) up --detach --wait --wait-timeout 180 $(COMPOSE_UP_FLAGS)
+	@echo "Blindspot is running on https://localhost:$${BLINDSPOT_HTTPS_PORT:-443}"
+	@echo "First start: read the setup code with 'docker compose logs blindspot'."
+
+down: ## Stop Blindspot and remove its container, keeping every volume and image so 'make up' brings it back with its data
+	$(COMPOSE) down --remove-orphans
+
+delete: ## Stop Blindspot and delete everything: container, data volumes, images, the Trivy cache and the Docker build cache
+	@if [ "$(CONFIRM)" != "yes" ]; then \
+		echo "This deletes ALL Blindspot data (accounts, pentests, findings, the secret key), its images,"; \
+		echo "and the Docker build cache of this machine. It cannot be undone."; \
+		read -r -p "Type 'delete' to continue: " answer; \
+		[ "$$answer" = "delete" ] || { echo "Nothing was deleted."; exit 1; }; \
+	fi
+	$(COMPOSE) down --volumes --rmi all --remove-orphans
+	-docker rm --force --volumes $(SCRATCH_CONTAINERS) >/dev/null 2>&1
+	-docker volume rm --force blindspot-trivy-cache >/dev/null 2>&1
+	docker builder prune --all --force
 
 clean: ## Remove local build and test artifacts
 	rm -rf backend/.pytest_cache backend/.ruff_cache backend/.coverage backend/coverage.xml \
