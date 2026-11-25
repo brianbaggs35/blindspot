@@ -3,10 +3,12 @@
 import uuid
 from collections.abc import AsyncGenerator, Awaitable, Callable
 from contextlib import asynccontextmanager
+from typing import cast
 
 import structlog
 from fastapi import FastAPI, Request, Response
 
+from app.agents.supervisor import MissionSupervisor
 from app.auth.csrf import csrf_guard
 from app.auth.ratelimit import FailureLimiter
 from app.auth.setup_code import SetupGate
@@ -42,10 +44,16 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
     database is lazy, so the server starts while the database is still coming up (/api/ready)."""
     app.state.vault = open_vault(get_settings())
     app.state.database = Database(get_settings().database_url)
+    # Agents run only once a tool runner is connected: whatever connects one sets this to a
+    # MissionSupervisor (and starts it). Until then the missions API answers "no_runner".
+    app.state.missions = None
     await app.state.setup_gate.prepare(app.state.database)
     try:
         yield
     finally:
+        missions = cast("MissionSupervisor | None", app.state.missions)
+        if missions is not None:
+            await missions.stop()
         await app.state.database.close()
 
 
