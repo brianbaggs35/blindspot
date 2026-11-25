@@ -65,18 +65,18 @@ def problem(
     return JSONResponse(body, status_code=status, media_type=PROBLEM_JSON)
 
 
-async def _app_error(request: Request, exc: Exception) -> JSONResponse:
+def _app_error(request: Request, exc: Exception) -> JSONResponse:
     error = cast("AppError", exc)  # registered for AppError only
     return problem(request, error.status, error.code, error.title, detail=error.detail)
 
 
-async def _http_error(request: Request, exc: Exception) -> JSONResponse:
+def _http_error(request: Request, exc: Exception) -> JSONResponse:
     error = cast("StarletteHTTPException", exc)  # registered for it only
     phrase = HTTPStatus(error.status_code).phrase
     return problem(request, error.status_code, f"http_{error.status_code}", phrase)
 
 
-async def _validation_error(request: Request, exc: Exception) -> JSONResponse:
+def _validation_error(request: Request, exc: Exception) -> JSONResponse:
     error = cast("RequestValidationError", exc)  # registered for it only
     fields = [
         {"field": ".".join(str(part) for part in item["loc"]), "message": item["msg"]}
@@ -87,7 +87,7 @@ async def _validation_error(request: Request, exc: Exception) -> JSONResponse:
     )
 
 
-async def _unexpected_error(request: Request, exc: Exception) -> JSONResponse:
+def _unexpected_error(request: Request, exc: Exception) -> JSONResponse:
     log.error("unhandled_error", exc_info=exc, path=request.url.path)
     return problem(request, 500, "internal_error", "Something went wrong on the server")
 

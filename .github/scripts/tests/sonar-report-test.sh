@@ -16,8 +16,9 @@ url="${*: -1}"
 case "$url" in
   *qualitygates/project_status*) file=gate ;;
   *hotspots/search*) file=hotspots ;;
-  *branch=main*) file=base ;;
-  *issues/search*) file=issues ;;
+  *pullRequest=*issues/search*|*issues/search*pullRequest=*) file=issues ;;
+  *branch=*issues/search*|*issues/search*branch=*) file=issues ;;
+  *issues/search*) file=base ;;
   *) exit 22 ;;
 esac
 cat "$SONAR_FAKE/$file.json" || exit 22
@@ -34,7 +35,7 @@ fake() { # fake <gate> <issues> <hotspots> <base issues>
 }
 run() { # run <pull request number or empty>
   PATH="$tmp/bin:$PATH" SONAR_FAKE="$tmp/fake" SONAR_TOKEN=token SONAR_PROPERTIES="$tmp/sonar.properties" \
-    PULL_REQUEST="$1" BASE_BRANCH=main BRANCH=feature "$script"
+    PULL_REQUEST="$1" BRANCH=master "$script"
 }
 
 ok_gate='{"projectStatus":{"status":"OK","conditions":[]}}'
@@ -50,7 +51,8 @@ fake "$ok_gate" "$issue" "$none" "$none"
 expect_fail "an open issue fails a pull request" run 12
 assert_contains "names the file, line and rule" "backend/app/x.py:7  python:S1192  Define a constant."
 assert_contains "counts them" "1 open issues"
-expect_pass "an open issue on a branch is only listed" run ""
+expect_pass "an open issue on master is only listed" run ""
+assert_contains "lists every open issue on master" "Open issues on master:"
 
 fake '{"projectStatus":{"status":"ERROR","conditions":[{"status":"ERROR","metricKey":"new_coverage","comparator":"LT","errorThreshold":"80","actualValue":"61.5"},{"status":"ERROR","metricKey":"new_security_rating","errorThreshold":"1","actualValue":"3"}]}}' "$none" "$none" "$none"
 expect_pass "the gate itself is the scan step's job" run 12
@@ -60,11 +62,15 @@ assert_contains "explains a rating condition" "new_security_rating is C, needs A
 fake "$ok_gate" "$none" '{"hotspots":[{"component":"org_project:frontend/src/a.ts","line":3,"ruleKey":"typescript:S5332","message":"Use https."}]}' "$issue"
 expect_pass "hotspots are listed" run 12
 assert_contains "names the hotspot" "frontend/src/a.ts:3  typescript:S5332  Use https."
-assert_contains "lists the base branch's issues" "Open issues on main:"
+assert_contains "lists what is already open on master" "Open issues already on master:"
+assert_contains "names those issues" "backend/app/x.py:7  python:S1192  Define a constant."
+
+fake "$ok_gate" "$none" "$none" "$issue"
+expect_pass "master's issues don't fail a pull request without its own" run 12
+assert_contains "still lists master's issues" "Open issues already on master:"
 
 rm "$tmp/fake/base.json"
-expect_pass "a base branch SonarQube will not list is not a failure" run 12
-assert_contains "says why nothing is listed" "does not list issues on main"
+expect_fail "master's issues failing to load fails loudly" run 12
 
 rm "$tmp/fake/gate.json"
 expect_fail "an API failure fails loudly" run 12

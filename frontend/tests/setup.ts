@@ -4,9 +4,9 @@ import "vuetify/styles";
 
 // Vuetify measures elements with these, which jsdom doesn't have.
 class ResizeObserverStub {
-  observe() {}
-  unobserve() {}
-  disconnect() {}
+  observe = vi.fn();
+  unobserve = vi.fn();
+  disconnect = vi.fn();
 }
 globalThis.ResizeObserver = ResizeObserverStub;
 

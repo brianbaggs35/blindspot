@@ -1,25 +1,28 @@
 #!/usr/bin/env bash
 # Prints what SonarQube Cloud found, so it can be fixed without opening SonarQube, and fails a
-# pull request that has any open issue. Reads SONAR_TOKEN, PULL_REQUEST (empty on a branch),
-# BASE_BRANCH and BRANCH, and the project key from sonar-project.properties.
+# pull request that has any open issue. Reads SONAR_TOKEN, PULL_REQUEST (empty on a push to
+# master) and BRANCH, and the project key from sonar-project.properties. On a pull request it lists
+# the pull request's own issues, then every issue still open on master; on master it lists them all.
 # SONAR_API (default https://sonarcloud.io/api) can point at a test server.
 set -euo pipefail
 
 api="${SONAR_API:-https://sonarcloud.io/api}"
 token="${SONAR_TOKEN:?SONAR_TOKEN is not set}"
 pull_request="${PULL_REQUEST:-}"
-base_branch="${BASE_BRANCH:-}"
 branch="${BRANCH:-}"
 properties="${SONAR_PROPERTIES:-sonar-project.properties}"
 
 project="$(sed -n 's/^sonar\.projectKey=//p' "$properties")"
-# All of a pull request is new code; on master, only what changed lately is.
+# All of a pull request is new code. On master, every open issue is listed, old ones included,
+# so that none is forgotten.
 if [[ -n "$pull_request" ]]; then
   scope="pullRequest=$pull_request"
-  new_code=""
+  issues_heading="Open issues in new code:"
+  hotspots_heading="Security hotspots to review:"
 else
   scope="branch=$branch"
-  new_code="&inNewCodePeriod=true"
+  issues_heading="Open issues on $branch:"
+  hotspots_heading="Security hotspots to review on $branch:"
 fi
 
 sonar() {
@@ -52,25 +55,22 @@ sonar "qualitygates/project_status?projectKey=$project" | jq -r '
     else "  \(.metricKey) is \(.actualValue), needs \(if .comparator == "GT" then "at most" else "at least" end) \(.errorThreshold)"
     end)' | section "Quality gate conditions not met:"
 
-issues="$(sonar "issues/search?componentKeys=$project&issueStatuses=OPEN,CONFIRMED$new_code&ps=500")"
-list_issues <<<"$issues" | section "Open issues in new code:"
+issues="$(sonar "issues/search?componentKeys=$project&issueStatuses=OPEN,CONFIRMED&ps=500")"
+list_issues <<<"$issues" | section "$issues_heading"
 
-sonar "hotspots/search?projectKey=$project&status=TO_REVIEW$new_code&ps=500" | jq -r '
+sonar "hotspots/search?projectKey=$project&status=TO_REVIEW&ps=500" | jq -r '
   (.errors[]? | "  \(.msg)"),
   (.hotspots[]? | "  \(.component | sub("^[^:]*:"; "")):\(.line // "-")  \(.ruleKey)  \(.message)")' |
-  section "Security hotspots to review:"
+  section "$hotspots_heading"
 
-# A pull request's analysis only has issues in its own changes, so the ones already on the
-# branch it merges into are listed too, for fixing along the way. SonarQube Cloud only serves
-# the main branch to this organization, so a pull request stacked on another pull request's
-# branch has nothing to list, and that is not a failure.
-if [[ -n "$pull_request" && -n "$base_branch" ]]; then
-  if base_issues="$(curl --silent --show-error --fail-with-body -H "Authorization: Bearer $token" \
-    "$api/issues/search?componentKeys=$project&issueStatuses=OPEN,CONFIRMED&ps=500&branch=$base_branch" 2>/dev/null)"; then
-    list_issues <<<"$base_issues" | section "Open issues on $base_branch:"
-  else
-    echo "SonarQube does not list issues on $base_branch (only the main branch is available), so only this pull request's own issues are checked."
-  fi
+# A pull request's analysis only has issues in its own changes, so the ones already open on
+# master are listed too, for fixing along the way. Asking without a branch gives the main branch,
+# the only one SonarQube Cloud lists issues for, so this works for a pull request stacked on
+# another pull request's branch as well.
+if [[ -n "$pull_request" ]]; then
+  curl --silent --show-error --fail-with-body -H "Authorization: Bearer $token" \
+    "$api/issues/search?componentKeys=$project&issueStatuses=OPEN,CONFIRMED&ps=500" |
+    list_issues | section "Open issues already on master:"
 fi
 
 # Marking an issue accepted or a false positive in SonarQube Cloud takes it off the list.
