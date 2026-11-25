@@ -62,9 +62,13 @@ jobs:
           package-manager-cache: false
 
       # The version is pinned here and in the Makefile; Dependabot raises it through the frontend's
-      # own dependency once that exists.
+      # own dependency once that exists. Installed with --ignore-scripts, not run through npx,
+      # which would fetch it and run its lifecycle scripts in one step (SonarQube githubactions:S6505).
+      - name: Install Prettier
+        run: npm install --global --ignore-scripts --no-audit --no-fund prettier@3.10.1
+
       - name: Prettier
-        run: npx --yes prettier@3.10.1 --check .
+        run: prettier --check .
 
   # Linters for the repository's own plumbing: workflows, shell scripts, Dockerfiles. The
   # linters run from images pinned by digest (see the Makefile), as `make lint-infra` does.
@@ -694,15 +698,14 @@ jobs:
         with:
           args: -Dsonar.qualitygate.wait=true
 
-      # Whenever the analysis ran: why the quality gate failed, if it did, and the new code's open
-      # issues and security hotspots, so they can be fixed without opening SonarQube Cloud. Empty
-      # lists aren't shown. The quality gate lets code smells through, so a pull request with any
+      # Whenever the analysis ran: why the quality gate failed, if it did, and the open issues and
+      # security hotspots (a pull request's own, then those still open on master), so they can be
+      # fixed without opening SonarQube Cloud. Empty lists aren't shown. The quality gate lets code smells through, so a pull request with any
       # open issue fails here instead, and none reach master.
       - name: What SonarQube found
         if: ${{ !cancelled() && (steps.scan.outcome == 'success' || steps.scan.outcome == 'failure') }}
         env:
           PULL_REQUEST: ${{ github.event.pull_request.number }}
-          BASE_BRANCH: ${{ github.base_ref }}
           BRANCH: ${{ github.ref_name }}
         run: ./.github/scripts/sonar-report.sh
 
