@@ -6,7 +6,9 @@ Categories whose tests only observe go first (reconnaissance feeds what comes af
 active ones, then the intrusive ones; inside a phase the methodology's own order is kept.
 """
 
+from collections import Counter
 from dataclasses import dataclass, field
+from typing import Any
 
 from app.db.models import CheckStatus, PentestCheck
 from app.methodology.spec import RISK_ORDER, MethodologySpec, RiskClass, Test
@@ -35,6 +37,9 @@ def _rank(risk: RiskClass) -> int:
     return RISK_ORDER.index(risk)
 
 
+NOT_PICKED = "This test was not picked for this mission."
+
+
 def _skip_reason(
     test: Test, check: PentestCheck | None, features: list[str], max_risk: RiskClass
 ) -> str | None:
@@ -56,15 +61,48 @@ def plan_mission(
     checks: dict[str, PentestCheck],
     features: list[str],
     max_risk: RiskClass,
+    only: frozenset[str] | None = None,
 ) -> list[PlannedCategory]:
-    """The categories in the order they run, each with every test and whether it runs."""
+    """The categories in the order they run, each with every test and whether it runs. When `only`
+    is given, just the tests and categories it names run (the rest are shown as not picked)."""
     categories: list[PlannedCategory] = []
     for category in spec.categories:
+        picked = only is None or category.id in only
         planned = [
-            PlannedTest(test, _skip_reason(test, checks.get(test.id), features, max_risk))
+            PlannedTest(
+                test,
+                NOT_PICKED
+                if not picked and test.id not in (only or ())
+                else _skip_reason(test, checks.get(test.id), features, max_risk),
+            )
             for test in category.tests
         ]
         running = [p.test.risk_class for p in planned if p.skip is None]
         phase = max((_rank(risk) for risk in running), default=0)
         categories.append(PlannedCategory(category.id, category.name, phase, planned))
     return sorted(categories, key=lambda one: one.phase)  # stable: the methodology's order stays
+
+
+def summarize(plan: list[PlannedCategory]) -> dict[str, Any]:
+    """What a plan comes to, for a person to read before a mission starts."""
+    running = [p.test for one in plan for p in one.tests if p.skip is None]
+    reasons = Counter(p.skip for one in plan for p in one.tests if p.skip is not None)
+    return {
+        "runs": len(running),
+        "skipped": sum(reasons.values()),
+        "risk": {
+            risk.value: sum(1 for t in running if t.risk_class is risk) for risk in RISK_ORDER
+        },
+        "tools": sorted({tool for t in running for tool in t.playbook.tools}),
+        "skips": [{"reason": reason, "tests": count} for reason, count in reasons.most_common()],
+        "categories": [
+            {
+                "id": one.id,
+                "name": one.name,
+                "phase": one.phase,
+                "runs": sum(1 for p in one.tests if p.skip is None),
+                "skipped": sum(1 for p in one.tests if p.skip is not None),
+            }
+            for one in plan
+        ],
+    }
