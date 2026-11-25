@@ -62,20 +62,30 @@ Every task (commander, categories, tests), step (request, verdict, result, note)
 
 Routes are under `/api/pentests/{id}/missions`. Everyone signed in may read; steering needs an administrator.
 
-| Route                                                   | What it does                                                                                              |
-| ------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
-| `POST /missions`                                        | Plan and start a mission (the pentest must be running; one live mission at a time) with optional `budget` |
-| `GET /missions`                                         | The pentest's missions, newest first                                                                      |
-| `GET /missions/{mid}`                                   | One mission with its tree of tasks                                                                        |
-| `GET /missions/{mid}/steps`                             | Steps, filtered by `task` or `status` (`awaiting_approval` lists what waits for a person)                 |
-| `GET /missions/{mid}/events`                            | The log after a cursor (`after`, `limit`); ask again with `next_after` to follow it live                  |
-| `POST /missions/{mid}/pause`                            | Pause                                                                                                     |
-| `POST /missions/{mid}/resume`                           | Resume, with optional new `budget`                                                                        |
-| `POST /missions/{mid}/cancel`                           | Cancel                                                                                                    |
-| `POST /missions/{mid}/steps/{sid}/approve` and `…/deny` | Answer a step that waits                                                                                  |
+| Route                                                   | What it does                                                                                                |
+| ------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| `POST /missions/preview`                                | What a start would run and skip, its caps and its limit, before anyone confirms                             |
+| `POST /missions`                                        | Plan and start a mission (the pentest must be running; one live mission at a time); needs `confirmed: true` |
+| `GET /missions`                                         | The pentest's missions, newest first                                                                        |
+| `GET /missions/{mid}`                                   | One mission with its tree of tasks                                                                          |
+| `GET /missions/{mid}/steps`                             | Steps, filtered by `task` or `status` (`awaiting_approval` lists what waits for a person)                   |
+| `GET /missions/{mid}/events`                            | The log after a cursor (`after`, `limit`); ask again with `next_after` to follow it live                    |
+| `POST /missions/{mid}/pause`                            | Pause                                                                                                       |
+| `POST /missions/{mid}/resume`                           | Resume, with optional new `budget`                                                                          |
+| `POST /missions/{mid}/cancel`                           | Cancel                                                                                                      |
+| `POST /missions/{mid}/steps/{sid}/approve` and `…/deny` | Answer a step that waits                                                                                    |
 
 Starting, pausing, resuming, cancelling and every approval are written to the audit log (`mission.*`).
 
+## The Agents page and the pentest's agents
+
+**Agents** (`/agents`, in the menu) shows the hierarchy for a methodology: the commander, a category agent for each category and a test agent for each test, as a tree or a grid, with search and a filter by risk. Each agent shows how many times it ran, its success rate, its cost per run and when it last ran, and whether it is working now. Everyone signed in can read it; its two other tabs are changed by administrators only.
+
+- **Defaults and presets.** The caps a mission starts with when nobody picks others (steps, tokens, cost, time, tests at once, and the severity from which a finding is replayed). Three presets build on them: _Passive recon only_ (only tests that observe), _Safe full assessment_ (nothing intrusive) and _Deep dive (asks before intrusive steps)_ (longer runs; intrusive steps always wait for an administrator). A preset never goes past the pentest's own limit. A change is saved only when the server accepts it and is written to the audit log (`agents.budget`) with what changed.
+- **Prompts.** The test agent and the verifier each start from a prompt. Version 0 is the text built into the app. An administrator adds a version; a version is never edited, so what an agent was told stays readable. One version is in use for new missions, and _Put back the built-in prompt_ returns to version 0. Two versions can be compared line by line. A mission records the versions it started with and keeps using them, so a change never reaches a mission that is running. Adding and choosing a version are audited (`agents.prompt_add`, `agents.prompt_activate`). A prompt is not what keeps a run safe: the scope guard, the permission policy and the caps are code and do not read it.
+
+On a pentest, **Agents** (`/pentests/{id}/agents`, linked from the pentest page) deploys and follows missions. _Deploy agents_ asks for a preset and, if wanted, categories or single tests; then the caps (they start from the preset); then shows a review of what would happen (how many tests run and are skipped and why, how many are safe, active and intrusive, the tools, the most it may spend, and every target in scope) and asks for a confirmation that the scope is authorized. The server refuses a start that is not confirmed. A mission shows its tests, the steps waiting for approval (approve or deny), its log, its spend against its caps, and pause, resume and cancel.
+
 ## Not yet
 
-Live streaming of the event log (the cursor API above serves the page), the agents page and settings (BLI-21), and a vector index of facts and evaluation of agent quality on a set of known targets are later work.
+Live streaming of the event log (the cursor API serves the page, which looks again every few seconds), a vector index of facts, evaluation of agent quality on a set of known targets, and the tool runner (BLI-55: until one is connected the review works and the start is refused). Settings that are different for one category or one test, a temperature or thinking setting for a model, custom agents, and a launch estimate of cost beyond the caps are later work. The model and provider of each role are chosen in the AI providers settings.
