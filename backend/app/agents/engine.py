@@ -64,7 +64,7 @@ from app.db.models import (
 from app.errors import AppError
 from app.methodology.spec import RiskClass, Test
 from app.pentests.checklist import rows_of, snapshot
-from app.results.service import record_result, summary_of
+from app.results.service import Run, record_result, summary_of
 from app.tools.argv import Call, build_call
 from app.tools.authorize import Verdict, authorize
 from app.tools.control import kill_switch_on
@@ -694,12 +694,14 @@ class MissionEngine:
                 status="failed" if failed else "ok",
                 result=execution.result,
                 raw=execution.raw if execution.raw is not None else execution.error,
-                tool_id=tool.manifest.id,
-                agent_role=ROLE,
-                test_id=task.ref,
-                command=list(call.argv),
-                exit_code=execution.exit_code,
-                duration_ms=execution.duration_ms or int((self.clock() - started) * 1000),
+                run=Run(
+                    tool_id=tool.manifest.id,
+                    agent_role=ROLE,
+                    test_id=task.ref,
+                    command=list(call.argv),
+                    exit_code=execution.exit_code,
+                    duration_ms=execution.duration_ms or int((self.clock() - started) * 1000),
+                ),
             )
             await session.flush()
             step.result_id = row.id
