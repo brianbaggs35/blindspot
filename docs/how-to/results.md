@@ -50,4 +50,4 @@ A pentest holds at most 5,000 results.
 
 ## Not yet
 
-Turning a result into a finding comes with the findings ticket, a button to have an agent explain a result comes with the agent runtime, and the runner (which records the results of runs) is a separate ticket.
+A result with issues can be made into findings with the **Make findings** button (see [Findings](findings.md)). A button to have an agent explain a result comes with the agent runtime, and the runner (which records the results of runs) is a separate ticket.

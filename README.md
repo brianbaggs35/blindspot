@@ -40,6 +40,7 @@ Blindspot is a self-hosted platform for **web application penetration testing wi
 | [Tools](docs/how-to/tools.md)                                   | Tool manifests, safe command lines, the registry, the core tool pack, parsers, the scope guard, permissions and the API |
 | [Results](docs/how-to/results.md)                               | What a result holds, the friendly, technical and raw views, sealed credentials, import and the API                      |
 | [Agents and missions](docs/how-to/agents.md)                    | How a mission is planned and run, what no model can change, caps, approval, pause and cancel, and the API               |
+| [Findings](docs/how-to/findings.md)                             | What a finding holds, CVSS rating, statuses, evidence and sealing, merging, import and export, and the API              |
 | [Terms and warnings](docs/how-to/terms.md)                      | The terms of use screen, how acceptance is kept and enforced, and the legal files in the repository                     |
 | [Platform plan](docs/PLAN.md)                                   | Architecture, agents, tools, security, UI, CI, the PR stack and open questions                                          |
 | [Agent framework comparison](docs/research/agent-frameworks.md) | Why Pydantic AI, and what else was considered                                                                           |
