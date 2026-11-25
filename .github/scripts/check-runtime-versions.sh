@@ -16,7 +16,10 @@ fail() {
   failed=1
 }
 
-wanted() { sed -n "s/^ARG $1=\(.*\)\$/\1/p" "$root/Dockerfile" | head -n 1; }
+wanted() {
+  local name="$1"
+  sed -n "s/^ARG ${name}=\(.*\)\$/\1/p" "$root/Dockerfile" | head -n 1
+}
 python_wanted="$(wanted PYTHON_VERSION)"
 nginx_wanted="$(wanted NGINX_VERSION)"
 postgres_wanted="$(wanted POSTGRES_VERSION)"
@@ -29,7 +32,10 @@ for name in python nginx postgres; do
 done
 
 # at_least <found> <wanted>: true when found is the same version or newer.
-at_least() { [[ "$(printf '%s\n%s\n' "$2" "$1" | sort -V | head -n 1)" == "$2" ]]; }
+at_least() {
+  local found="$1" wanted_version="$2"
+  [[ "$(printf '%s\n%s\n' "$wanted_version" "$found" | sort -V | head -n 1)" == "$wanted_version" ]]
+}
 
 for workflow in "$root"/.github/workflows/*.yml; do
   name="$(basename "$workflow")"

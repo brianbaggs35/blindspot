@@ -64,9 +64,10 @@ ARG POSTGRES_VERSION
 # hadolint ignore=DL3018
 RUN echo "$APK_REFRESH $IMAGE_REFRESH" > /dev/null \
     && apk upgrade --no-cache \
-    && apk add --no-cache ca-certificates-bundle curl "nginx-mainline>=${NGINX_VERSION}" \
-        "nginx-mainline-mime-types>=${NGINX_VERSION}" openssl "postgresql-18>=${POSTGRES_VERSION}" \
-        "postgresql-18-client>=${POSTGRES_VERSION}" "python-3.14>=${PYTHON_VERSION}" s6 setpriv tini \
+    && apk add --no-cache "nginx-mainline>=${NGINX_VERSION}" "postgresql-18>=${POSTGRES_VERSION}" \
+        "python-3.14>=${PYTHON_VERSION}" \
+    && apk add --no-cache ca-certificates-bundle curl nginx-mainline-mime-types openssl \
+        postgresql-18-client s6 setpriv tini \
     # One user per service. nginx reaches the API's socket through the blindspot group; the
     # API and the database share the pgsock group, which owns the database socket.
     && addgroup -S -g 10001 blindspot \
