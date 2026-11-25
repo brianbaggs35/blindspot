@@ -59,18 +59,19 @@ export default defineConfig({
   },
   projects: [
     {
-      name: "chromium",
-      testIgnore: [...skippedInContainer, "**/*.exclusive.spec.ts"],
-      use: browser,
-    },
-    {
       // Specs that change something the whole installation shares (a methodology switched off):
-      // they start once everything else has finished, so nothing else is running beside them.
+      // they run first and alone, so nothing else is running beside them. A shard splits only the
+      // projects nothing depends on, so this one is the dependency and every shard runs it.
       name: "exclusive",
       testMatch: "**/*.exclusive.spec.ts",
       testIgnore: skippedInContainer,
-      dependencies: ["chromium"],
       fullyParallel: false,
+      use: browser,
+    },
+    {
+      name: "chromium",
+      testIgnore: [...skippedInContainer, "**/*.exclusive.spec.ts"],
+      dependencies: ["exclusive"],
       use: browser,
     },
   ],
