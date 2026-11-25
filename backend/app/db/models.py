@@ -45,6 +45,9 @@ __all__ = [
     "AuditEvent",
     "AuthSession",
     "Base",
+    "Finding",
+    "FindingEvent",
+    "FindingEvidence",
     "Methodology",
     "MethodologyVersion",
     "Mission",
@@ -693,6 +696,104 @@ class AgentPrompt(UUIDPrimaryKey, CreatedBy, Base):
     version: Mapped[int] = mapped_column(Integer)
     body: Mapped[str] = mapped_column(Text)
     note: Mapped[str] = mapped_column(String(200), default="", server_default="")
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utc_now, server_default=func.now()
+    )
+
+
+FINDING_STATUSES = "'new', 'confirmed', 'false_positive', 'accepted_risk', 'fixed', 'retest_needed'"
+SEVERITY_LEVELS = "'info', 'low', 'medium', 'high', 'critical'"
+FINDING_ID = "finding.id"
+
+
+class Finding(UUIDPrimaryKey, Timestamps, SoftDelete, CreatedBy, Base):
+    """A weakness found in a pentest, scored, evidenced and followed until it is fixed. `number`
+    counts the pentest's findings from 1 (it is what a person says: F-12). A finding that was
+    merged into another is in the trash and says which one. The CVSS scores are worked out from
+    the vectors by the server, never taken from a request."""
+
+    __tablename__ = "finding"
+    __table_args__ = (
+        UniqueConstraint("pentest_id", "number"),
+        CheckConstraint(f"status IN ({FINDING_STATUSES})", name="status"),
+        CheckConstraint(f"severity IN ({SEVERITY_LEVELS})", name="severity"),
+        CheckConstraint("confidence IN ('tentative', 'firm', 'certain')", name="confidence"),
+        CheckConstraint("source IN ('manual', 'agent', 'result', 'import')", name="source"),
+        CheckConstraint(
+            "verification IN ('unverified', 'confirmed', 'unconfirmed')", name="verification"
+        ),
+    )
+
+    pentest_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid, ForeignKey(PENTEST_ID, ondelete="CASCADE"), index=True
+    )
+    number: Mapped[int] = mapped_column(Integer)
+    title: Mapped[str] = mapped_column(String(200))
+    description: Mapped[str] = mapped_column(Text, default="", server_default="")
+    target: Mapped[str] = mapped_column(String(300), default="", server_default="")
+    test_ids: Mapped[Any] = mapped_column(JSONB, default=list, server_default=EMPTY_LIST)
+    cwe: Mapped[Any] = mapped_column(JSONB, default=list, server_default=EMPTY_LIST)
+    owasp: Mapped[str | None] = mapped_column(String(12), default=None)
+    cvss31_vector: Mapped[str | None] = mapped_column(String(200), default=None)
+    cvss31_score: Mapped[Decimal | None] = mapped_column(Numeric(3, 1), default=None)
+    cvss4_vector: Mapped[str | None] = mapped_column(String(200), default=None)
+    cvss4_score: Mapped[Decimal | None] = mapped_column(Numeric(3, 1), default=None)
+    severity: Mapped[str] = mapped_column(String(8), index=True)
+    confidence: Mapped[str] = mapped_column(String(9), default="firm", server_default="firm")
+    status: Mapped[str] = mapped_column(String(14), default="new", server_default="new")
+    remediation: Mapped[str] = mapped_column(Text, default="", server_default="")
+    references: Mapped[Any] = mapped_column(JSONB, default=list, server_default=EMPTY_LIST)
+    source: Mapped[str] = mapped_column(String(8), default="manual", server_default="manual")
+    result_id: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid, ForeignKey("pentest_result.id", ondelete="SET NULL"), default=None
+    )
+    verification: Mapped[str] = mapped_column(
+        String(12), default="unverified", server_default="unverified"
+    )
+    verified_by: Mapped[str | None] = mapped_column(String(8), default=None)
+    verified_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), default=None)
+    merged_into: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid, ForeignKey(FINDING_ID, ondelete="SET NULL"), default=None
+    )
+
+
+class FindingEvidence(UUIDPrimaryKey, Timestamps, CreatedBy, Base):
+    """What shows a finding is real: a tool result, a request and its response, a note or a
+    screenshot. The text is sealed in the database, and what is `sealed` is hidden in lists and
+    exports and shown only by a reveal that is written to the audit trail."""
+
+    __tablename__ = "finding_evidence"
+    __table_args__ = (
+        CheckConstraint(
+            "kind IN ('result', 'request_response', 'note', 'screenshot')", name="kind"
+        ),
+    )
+
+    finding_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid, ForeignKey(FINDING_ID, ondelete="CASCADE"), index=True
+    )
+    kind: Mapped[str] = mapped_column(String(16))
+    title: Mapped[str] = mapped_column(String(200))
+    body: Mapped[str | None] = mapped_column(SealedString(Purpose.EVIDENCE), default=None)
+    mime: Mapped[str | None] = mapped_column(String(32), default=None)
+    sealed: Mapped[bool] = mapped_column(default=False, server_default=false())
+    result_id: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid, ForeignKey("pentest_result.id", ondelete="SET NULL"), default=None
+    )
+
+
+class FindingEvent(UUIDPrimaryKey, Base):
+    """One line of a finding's timeline: it was created, changed, moved to a status, verified,
+    merged, or someone wrote a comment."""
+
+    __tablename__ = "finding_event"
+
+    finding_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid, ForeignKey(FINDING_ID, ondelete="CASCADE"), index=True
+    )
+    kind: Mapped[str] = mapped_column(String(24))
+    actor_id: Mapped[uuid.UUID | None] = mapped_column(Uuid, default=None)
+    data: Mapped[Any] = mapped_column(JSONB, default=dict, server_default=EMPTY_OBJECT)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=utc_now, server_default=func.now()
     )
