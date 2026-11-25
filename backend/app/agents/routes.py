@@ -14,24 +14,27 @@ from fastapi import APIRouter, BackgroundTasks, Query, Request
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.agents.engine import WAITING
+from app.agents.engine import WAITING, plan_for
+from app.agents.plan import summarize
 from app.agents.schemas import (
     EventOut,
     EventPage,
     MissionDetail,
     MissionList,
     MissionOut,
+    PreviewOut,
     ResumeIn,
     StartIn,
     StepList,
     StepOut,
     TaskOut,
 )
+from app.agents.settings import active_versions, default_budget, preset_named, with_changes
 from app.agents.store import emit, required
 from app.agents.supervisor import MissionSupervisor
 from app.auth import audit
 from app.auth.deps import Admin, SignedIn
-from app.db.models import Mission, MissionEvent, MissionStep, MissionTask, PentestStatus
+from app.db.models import Mission, MissionEvent, MissionStep, MissionTask, Pentest, PentestStatus
 from app.db.session import SessionDep
 from app.errors import AppError
 from app.pentests.service import ensure_editable, find
@@ -72,6 +75,57 @@ async def _step(session: AsyncSession, mission: Mission, step_id: uuid.UUID) -> 
     return row
 
 
+async def _preview_of(
+    session: AsyncSession, pentest: Pentest, body: StartIn, *, runner_ready: bool
+) -> PreviewOut:
+    """Resolve the caps and the limit a start asks for, and plan against them."""
+    chosen = preset_named(body.preset) if body.preset else None
+    if body.preset and chosen is None:
+        raise AppError(422, "unknown_preset", "There is no such preset")
+    budget = body.budget
+    if budget is None:
+        base = await default_budget(session)
+        budget = with_changes(base, chosen.changes) if chosen else base
+    plan, limit = await plan_for(
+        session,
+        pentest,
+        max_risk=body.max_risk or (chosen.max_risk if chosen else None),
+        only=frozenset(body.only) if body.only else None,
+    )
+    return PreviewOut(
+        summary=summarize(plan),
+        budget=budget,
+        max_risk=limit,
+        prompts=await active_versions(session),
+        in_scope=list(pentest.scope.get("in_scope", [])),
+        runner_ready=runner_ready,
+    )
+
+
+async def _startable(session: AsyncSession, pentest_id: uuid.UUID) -> Pentest:
+    pentest = await find(session, pentest_id)
+    ensure_editable(pentest)
+    if pentest.status != PentestStatus.RUNNING.value:
+        raise AppError(
+            409,
+            "pentest_not_running",
+            "The pentest is not running",
+            "Authorize and start the pentest first. Agents only work on a running pentest.",
+        )
+    return pentest
+
+
+@router.post("/pentests/{pentest_id}/missions/preview")
+async def preview_mission(
+    pentest_id: uuid.UUID, body: StartIn, request: Request, _who: Admin, session: SessionDep
+) -> PreviewOut:
+    """What a start with these choices would run, skip and cost at most, before anyone confirms."""
+    pentest = await _startable(session, pentest_id)
+    return await _preview_of(
+        session, pentest, body, runner_ready=request.app.state.missions is not None
+    )
+
+
 @router.post("/pentests/{pentest_id}/missions", status_code=201)
 async def start_mission(
     pentest_id: uuid.UUID,
@@ -84,14 +138,13 @@ async def start_mission(
 ) -> MissionOut:
     """Plan the pentest's tests and start the agents on them."""
     runner = _runner(request)
-    pentest = await find(session, pentest_id)
-    ensure_editable(pentest)
-    if pentest.status != PentestStatus.RUNNING.value:
+    pentest = await _startable(session, pentest_id)
+    if not body.confirmed:
         raise AppError(
-            409,
-            "pentest_not_running",
-            "The pentest is not running",
-            "Authorize and start the pentest first. Agents only work on a running pentest.",
+            422,
+            "confirm_required",
+            "Confirm the scope first",
+            "Starting agents means testing everything in scope. Confirm that it is authorized.",
         )
     live = await session.scalar(
         select(Mission.id).where(Mission.pentest_id == pentest_id, Mission.status.in_(LIVE))
@@ -103,7 +156,16 @@ async def start_mission(
             "This pentest already has a mission in progress",
             "Cancel it, or wait for it to finish, before starting another.",
         )
-    mission = await runner.engine.create(session, pentest, body.budget, who.user.id)
+    preview = await _preview_of(session, pentest, body, runner_ready=True)
+    mission = await runner.engine.create(
+        session,
+        pentest,
+        preview.budget,
+        who.user.id,
+        prompts=preview.prompts,
+        max_risk=preview.max_risk,
+        only=frozenset(body.only) if body.only else None,
+    )
     audit.record(
         session,
         request,

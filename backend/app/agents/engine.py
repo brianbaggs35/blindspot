@@ -26,7 +26,7 @@ from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from app.agents.budget import Budget, Spent, mission_exhausted, task_exhausted
-from app.agents.plan import SETTLED, plan_mission
+from app.agents.plan import SETTLED, PlannedCategory, plan_mission
 from app.agents.ports import (
     Brain,
     Brief,
@@ -62,7 +62,7 @@ from app.db.models import (
     PentestCheck,
 )
 from app.errors import AppError
-from app.methodology.spec import RiskClass, Test
+from app.methodology.spec import RISK_ORDER, RiskClass, Test
 from app.pentests.checklist import rows_of, snapshot
 from app.results.service import Run, record_result, summary_of
 from app.tools.argv import Call, build_call
@@ -82,6 +82,23 @@ WAITING = "Waiting for a person to approve a step."
 
 Clock = Callable[[], float]
 Now = Callable[[], datetime]
+
+
+async def plan_for(
+    session: AsyncSession,
+    pentest: Pentest,
+    *,
+    max_risk: RiskClass | None = None,
+    only: frozenset[str] | None = None,
+) -> tuple[list[PlannedCategory], RiskClass]:
+    """What a mission would run, and the most intrusive thing it may do: the lower of the pentest's
+    limit and the one asked for."""
+    limit = RiskClass(pentest.rules["max_risk"])
+    if max_risk is not None and RISK_ORDER.index(max_risk) < RISK_ORDER.index(limit):
+        limit = max_risk
+    spec = await snapshot(session, pentest)
+    checks = await rows_of(session, pentest.id)
+    return plan_mission(spec, checks, list(pentest.features), limit, only), limit
 
 
 class Gate(Enum):
@@ -146,15 +163,19 @@ class MissionEngine:
 
     # ------------------------------------------------------------------ making a mission
 
-    async def create(
-        self, session: AsyncSession, pentest: Pentest, budget: Budget, created_by: uuid.UUID | None
+    async def create(  # what the person chose to start the mission with
+        self,
+        session: AsyncSession,
+        pentest: Pentest,
+        budget: Budget,
+        created_by: uuid.UUID | None,
+        *,
+        prompts: dict[str, int] | None = None,
+        max_risk: RiskClass | None = None,
+        only: frozenset[str] | None = None,
     ) -> Mission:
         """Plan a mission for the pentest and store it, ready to run."""
-        spec = await snapshot(session, pentest)
-        checks = await rows_of(session, pentest.id)
-        plan = plan_mission(
-            spec, checks, list(pentest.features), RiskClass(pentest.rules["max_risk"])
-        )
+        plan, limit = await plan_for(session, pentest, max_risk=max_risk, only=only)
         runs = sum(1 for one in plan for p in one.tests if p.skip is None)
         skipped = sum(1 for one in plan for p in one.tests if p.skip is not None)
         mission = Mission(
@@ -168,7 +189,9 @@ class MissionEngine:
                 ],
                 "runs": runs,
                 "skipped": skipped,
+                "max_risk": limit.value,
             },
+            prompts=prompts or {},
             started_at=self.now(),
             created_by=created_by,
         )
@@ -552,7 +575,7 @@ class MissionEngine:
             pentest_name=pentest.name,
             box=pentest.box,
             in_scope=list(pentest.scope.get("in_scope", [])),
-            max_risk=pentest.rules["max_risk"],
+            max_risk=mission.plan.get("max_risk", pentest.rules["max_risk"]),
             brief=Brief(
                 test_id=test.id,
                 name=test.name,
@@ -837,7 +860,7 @@ class MissionEngine:
                 HistoryItem(one.seq, one.tool, one.status, await account_of(session, one))
                 for one in again
             ]
-        verdict = await self.brain.verify(finding, original, replayed)
+        verdict = await self.brain.verify(str(run.mission_id), finding, original, replayed)
         await self._pay(run.mission_id, run.task_id, verdict.spend)
         return "confirmed" if verdict.confirmed else "unconfirmed"
 

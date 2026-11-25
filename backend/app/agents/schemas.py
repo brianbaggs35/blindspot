@@ -2,18 +2,30 @@
 
 import uuid
 from datetime import datetime
-from typing import Any
+from typing import Annotated, Any
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, StringConstraints
 
 from app.agents.budget import Budget
 from app.db.models import Mission, MissionEvent, MissionStep, MissionTask
+from app.methodology.spec import RiskClass
+
+Pick = Annotated[str, StringConstraints(pattern=r"^[A-Za-z][A-Za-z0-9-]{1,63}$")]
 
 
 class StartIn(BaseModel):
+    """How to start a mission. Everything but `confirmed` is optional: with nothing else, the
+    default caps and the pentest's own limit apply and the whole methodology runs."""
+
     model_config = ConfigDict(extra="forbid")
 
-    budget: Budget = Field(default_factory=Budget)
+    preset: Annotated[str, StringConstraints(pattern=r"^[a-z][a-z-]{1,31}$")] | None = None
+    budget: Budget | None = None
+    max_risk: RiskClass | None = None
+    # Category and test ids to run. Empty means the whole methodology.
+    only: list[Pick] = Field(default_factory=list[Pick], max_length=300)
+    # The person has read the scope and confirms it is authorized. Required to start, not to look.
+    confirmed: bool = False
 
 
 class ResumeIn(BaseModel):
@@ -31,6 +43,7 @@ class MissionOut(BaseModel):
     budget: dict[str, Any]
     spent: dict[str, Any]
     plan: dict[str, Any]
+    prompts: dict[str, int]
     stop_reason: str
     started_at: datetime | None
     finished_at: datetime | None
@@ -45,6 +58,7 @@ class MissionOut(BaseModel):
             budget=row.budget,
             spent=row.spent,
             plan=row.plan,
+            prompts=row.prompts,
             stop_reason=row.stop_reason,
             started_at=row.started_at,
             finished_at=row.finished_at,
@@ -146,3 +160,14 @@ class EventPage(BaseModel):
 
     events: list[EventOut]
     next_after: int
+
+
+class PreviewOut(BaseModel):
+    """What a mission would do if it were started now."""
+
+    summary: dict[str, Any]
+    budget: Budget
+    max_risk: RiskClass
+    prompts: dict[str, int]
+    in_scope: list[str]
+    runner_ready: bool
