@@ -1,0 +1,39 @@
+id: c.sqlmap
+name: sqlmap
+tier: core
+binary: sqlmap
+risk: intrusive
+params:
+  url: { type: target, required: true, description: "The address with the parameter to test" }
+  data: { type: string, max_length: 1000, description: "A form body to send with a POST" }
+  parameter:
+    {
+      type: string,
+      pattern: "[A-Za-z0-9_.\\[\\]-]{1,60}",
+      description: "The one parameter to test",
+    }
+  level:
+    {
+      type: integer,
+      minimum: 1,
+      maximum: 3,
+      default: 1,
+      description: "How many places and payload kinds to try",
+    }
+argv:
+  - -u
+  - "{url}"
+  - --batch
+  - --disable-coloring
+  - --risk=1
+  - "--level={level}"
+  - --technique=BEUT
+  - --smart
+  - { when: data, args: ["--data={data}"] }
+  - { when: parameter, args: ["-p", "{parameter}"] }
+version: { args: [--version], pattern: "([0-9]+\\.[0-9]+(?:\\.[0-9]+)*)" }
+timeout_s: 1800
+max_output_mb: 10
+homepage: https://sqlmap.org
+explain: "Tests whether a web address lets an attacker run their own database commands (SQL injection), and shows the proof."
+could_go_wrong: "Sends many odd requests, can slow or crash a weak database and may write to it through a vulnerable page. Risk 3 and stacked queries are never used."

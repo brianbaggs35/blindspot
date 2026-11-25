@@ -1,0 +1,27 @@
+{
+  "artifacts": [],
+  "credentials": [],
+  "hosts": [],
+  "http": [],
+  "issues": [],
+  "parser": "whatweb_json",
+  "raw_ref": null,
+  "technologies": [
+    {
+      "category": null,
+      "name": "Apache",
+      "target": "http://127.0.0.1:8081",
+      "version": "2.4.41"
+    },
+    {
+      "category": null,
+      "name": "PHP",
+      "target": "http://127.0.0.1:8081",
+      "version": "7.4.3"
+    }
+  ],
+  "tls": [],
+  "tool": "t.test",
+  "truncated": false,
+  "warnings": []
+}

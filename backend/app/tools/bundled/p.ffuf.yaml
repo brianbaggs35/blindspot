@@ -1,0 +1,43 @@
+id: p.ffuf
+name: ffuf
+tier: pack
+binary: ffuf
+risk: active
+params:
+  url:
+    {
+      type: target,
+      required: true,
+      description: "The address with FUZZ where the words go, such as https://example.com/FUZZ",
+    }
+  wordlist: { type: file, required: true, description: "A word list in the tool's data folder" }
+  rate:
+    { type: integer, minimum: 1, maximum: 500, default: 50, description: "Most requests a second" }
+  match_codes:
+    {
+      type: string,
+      pattern: "[0-9,-]{1,40}",
+      default: "200,204,301,302,307,401,403",
+      description: "Answers worth keeping",
+    }
+argv:
+  - -u
+  - "{url}"
+  - -w
+  - "{wordlist}"
+  - -rate
+  - "{rate}"
+  - -mc
+  - "{match_codes}"
+  - -of
+  - json
+  - -o
+  - /dev/stdout
+  - -s
+version: { args: [-V], pattern: "([0-9]+\\.[0-9]+\\.[0-9]+)" }
+timeout_s: 1800
+max_output_mb: 20
+parsers: [ffuf_json]
+homepage: https://github.com/ffuf/ffuf
+explain: "Tries a long list of words as page names, folders or parameters and keeps the ones the site answers to, which finds hidden pages."
+could_go_wrong: "Thousands of requests in a short time can slow a small site and fill its logs. The rate limit is on by default."

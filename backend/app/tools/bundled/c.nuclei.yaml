@@ -1,0 +1,36 @@
+id: c.nuclei
+name: Nuclei
+tier: core
+binary: nuclei
+risk: active
+params:
+  url: { type: target, required: true, description: "The address to check" }
+  min_severity:
+    type: enum
+    values: [low, medium, high, critical]
+    default: medium
+    description: Leave out templates for findings less serious than this
+  rate:
+    { type: integer, minimum: 1, maximum: 500, default: 50, description: "Most requests a second" }
+argv:
+  - -u
+  - "{url}"
+  - -jsonl
+  - -silent
+  - -no-color
+  - -disable-update-check
+  - -etags
+  - dos,intrusive,fuzz,bruteforce
+  - -rate-limit
+  - "{rate}"
+  - { when: min_severity, equals: low, args: [-severity, "low,medium,high,critical"] }
+  - { when: min_severity, equals: medium, args: [-severity, "medium,high,critical"] }
+  - { when: min_severity, equals: high, args: [-severity, "high,critical"] }
+  - { when: min_severity, equals: critical, args: [-severity, critical] }
+version: { args: [-version], pattern: "([0-9]+\\.[0-9]+\\.[0-9]+)" }
+timeout_s: 1800
+max_output_mb: 20
+parsers: [nuclei_jsonl]
+homepage: https://github.com/projectdiscovery/nuclei
+explain: "Checks a web address against thousands of community-written tests for known weaknesses, misconfigurations and exposed files."
+could_go_wrong: "Sends many requests and can trip alarms. Templates for denial of service, fuzzing and brute force are always left out."

@@ -1,0 +1,18 @@
+id: b.entropy
+name: Session token strength
+tier: builtin
+execution: builtin
+handler: entropy
+risk: active
+params:
+  url: { type: target, required: true, description: "A page that starts a session" }
+  cookie:
+    {
+      type: string,
+      pattern: "[A-Za-z0-9._-]{1,100}",
+      description: "The session cookie to measure (all that look like sessions if left out)",
+    }
+  samples:
+    { type: integer, minimum: 3, maximum: 30, default: 10, description: "How many times to ask" }
+explain: "Asks for a page several times with no cookie and checks whether the session ids it hands out can be guessed: repeats, counters, short values and shared starts."
+could_go_wrong: "Starts up to 30 sessions on the target. The ids themselves are never written to the result."

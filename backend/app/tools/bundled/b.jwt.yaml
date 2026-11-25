@@ -1,0 +1,17 @@
+id: b.jwt
+name: Token inspector
+tier: builtin
+execution: builtin
+handler: jwt
+risk: passive
+params:
+  token:
+    {
+      type: string,
+      required: true,
+      max_length: 4000,
+      pattern: "[A-Za-z0-9_.=-]{5,4000}",
+      description: "A JSON Web Token",
+    }
+explain: "Reads a login token (JWT) without checking its signature and says what is wrong with it, such as no signature, a weak signing method, no expiry or a header that points at a key the sender chose."
+could_go_wrong: "Nothing is sent anywhere. The token is never stored in the result, only what is wrong with it."

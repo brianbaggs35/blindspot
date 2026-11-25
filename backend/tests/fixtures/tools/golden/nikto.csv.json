@@ -1,0 +1,70 @@
+{
+  "artifacts": [],
+  "credentials": [],
+  "hosts": [],
+  "http": [],
+  "issues": [
+    {
+      "confidence": "tentative",
+      "detail": null,
+      "evidence": null,
+      "reference": null,
+      "severity": "info",
+      "tags": [
+        "GET"
+      ],
+      "target": "localhost:8081/",
+      "title": "Retrieved x-powered-by header: PHP/7.4.3"
+    },
+    {
+      "confidence": "tentative",
+      "detail": null,
+      "evidence": null,
+      "reference": null,
+      "severity": "info",
+      "tags": [
+        "GET"
+      ],
+      "target": "localhost:8081/",
+      "title": "The anti-clickjacking X-Frame-Options header is not present."
+    },
+    {
+      "confidence": "tentative",
+      "detail": null,
+      "evidence": null,
+      "reference": null,
+      "severity": "info",
+      "tags": [
+        "GET"
+      ],
+      "target": "localhost:8081/",
+      "title": "Cookie PHPSESSID created without the httponly flag"
+    },
+    {
+      "confidence": "tentative",
+      "detail": null,
+      "evidence": null,
+      "reference": null,
+      "severity": "info",
+      "tags": [
+        "GET"
+      ],
+      "target": "localhost:8081/robots.txt",
+      "title": "\\robots.txt\\\" contains 1 entry which should be manually viewed.\""
+    }
+  ],
+  "parser": "nikto_csv",
+  "raw_ref": null,
+  "technologies": [
+    {
+      "category": "web server",
+      "name": "Apache",
+      "target": "localhost",
+      "version": "2.4.41"
+    }
+  ],
+  "tls": [],
+  "tool": "t.test",
+  "truncated": false,
+  "warnings": []
+}

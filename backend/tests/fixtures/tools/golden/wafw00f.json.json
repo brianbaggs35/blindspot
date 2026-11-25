@@ -1,0 +1,25 @@
+{
+  "artifacts": [],
+  "credentials": [],
+  "hosts": [],
+  "http": [],
+  "issues": [
+    {
+      "confidence": "tentative",
+      "detail": null,
+      "evidence": null,
+      "reference": null,
+      "severity": "info",
+      "tags": [],
+      "target": "http://127.0.0.1:8081",
+      "title": "No web application firewall detected"
+    }
+  ],
+  "parser": "wafw00f_json",
+  "raw_ref": null,
+  "technologies": [],
+  "tls": [],
+  "tool": "t.test",
+  "truncated": false,
+  "warnings": []
+}

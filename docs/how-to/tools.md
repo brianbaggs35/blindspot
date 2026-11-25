@@ -80,6 +80,55 @@ At most 100 custom tools can exist. Creating, changing and removing one is in th
 
 `load_registry` merges the bundled manifests with the stored custom ones on every request, so a change shows up without a restart. Each tool carries its `origin` and a `fingerprint` (a short hash of the manifest) so a run can record exactly which definition it used. A stored manifest that no longer validates (the rules became stricter) is skipped and logged, not allowed to break the list.
 
+## The core tool pack
+
+Fourteen tools ship with the app as YAML manifests in `backend/app/tools/bundled`. The letter of the id is the tier: `c` core, `p` pack, `o` optional, `b` built in.
+
+| Id            | Tool                          | Risk      | Output parser   | In the image |
+| ------------- | ----------------------------- | --------- | --------------- | ------------ |
+| `c.nmap`      | Nmap, ports and services      | active    | `nmap_xml`      | yes          |
+| `c.sqlmap`    | sqlmap, SQL injection         | intrusive | none (raw text) | yes          |
+| `c.nuclei`    | Nuclei, template checks       | active    | `nuclei_jsonl`  | no           |
+| `p.ffuf`      | ffuf, hidden paths            | active    | `ffuf_json`     | no           |
+| `p.testssl`   | testssl.sh, TLS               | active    | `testssl_json`  | no           |
+| `p.waf`       | wafw00f, firewall detection   | active    | `wafw00f_json`  | no           |
+| `p.pd`        | httpx, one plain request      | passive   | `httpx_jsonl`   | no           |
+| `o.whatweb`   | WhatWeb, software recognition | active    | `whatweb_json`  | no           |
+| `o.nikto`     | Nikto, old web scanner        | active    | `nikto_csv`     | no           |
+| `b.headers`   | Headers, cookies, CORS, CSP   | passive   | built in        | built in     |
+| `b.jwt`       | Token inspector               | passive   | built in        | built in     |
+| `b.wellknown` | robots, sitemap, security.txt | passive   | built in        | built in     |
+| `b.spider`    | Forms and parameters          | active    | built in        | built in     |
+| `b.entropy`   | Session token strength        | active    | built in        | built in     |
+
+Only the small tools are in the image: nmap (27 MB), sqlmap (11 MB), `dig` and `whois`. The rest are installed by the Docker runner (BLI-24) or the administrator, because Nuclei alone is 151 MB; a tool that is not installed shows as missing on the Tools page (BLI-25) instead of failing a run. Nothing here is destructive: sqlmap runs at risk level 1 with no stacked queries, Nuclei always leaves out its denial-of-service, fuzzing and brute-force templates, and Nikto is told to skip its denial-of-service group.
+
+### One result shape
+
+Every tool, parsed or built in, ends as a `ToolResult` (`app/tools/parsers/schema.py`): hosts with services, web responses, technologies, TLS findings, issues (a title, a severity, how sure the check is, a target, evidence and a reference such as a template id), credentials, artifacts, a list of warnings and a `truncated` flag. Agents, the results pages and the findings code read only this, never a tool's own format. `summarize(result)` makes the plain-words lines shown first on a results page.
+
+A parser is a function from bytes to a `ToolResult` and is listed in `PARSERS`. The rules every parser follows:
+
+- Output is data, never trusted: it may be malformed, hostile or enormous. A parser raises only `ParseError`, with a message that is safe to show, and the raw output is kept for a person to read.
+- XML is read with a hardened parser (no entity is expanded, no DTD is loaded, nothing is fetched); a document that declares an entity is refused. JSON that is nested more than 40 levels is refused. Output over 64 MiB is refused.
+- Every list stops at 5,000 items and the result says it was cut short. A line or an entry that cannot be read is left out and counted in a warning, not a crash.
+- Bytes that are not UTF-8 are replaced.
+- A secret a tool finds is a `SecretStr`, so it is never printed or dumped to JSON by accident.
+
+Real captured output for each tool is in `backend/tests/fixtures/tools` (see its README for how each file was made), with the result each parser makes of it in `golden/`. After changing a parser on purpose, run `BLINDSPOT_UPDATE_GOLDEN=1 uv run pytest tests/test_tools_parsers.py` and read the diff. The Nuclei and httpx fixtures are written from the documented formats and will be replaced with captured output once the Docker runner can run those tools.
+
+### Built-in tools
+
+A built-in tool is Python inside the app (`app/tools/analyzers`). It never opens a connection: it is given a `Fetcher`, which the runner builds so that every request, and every redirect it follows, is checked with the scope guard first. A test gives it canned pages instead.
+
+- **`b.headers`** reads one page twice (the second time with a made-up `Origin`) and reports missing or weak HSTS, `X-Content-Type-Options`, framing protection, `Referrer-Policy` and `Permissions-Policy`, version leaks in `Server` and `X-Powered-By`, cookie flags (`Secure`, `HttpOnly`, `SameSite`, the `__Host-` rules; values are never printed), CORS (any origin, the `null` origin, an origin that is repeated back, with or without credentials) and a Content-Security-Policy evaluation (no script limit, inline script and eval without a nonce or hash, wildcards, shared script hosts, no `object-src`, `base-uri` or `frame-ancestors`, report-only policies).
+- **`b.jwt`** decodes a token and never verifies it or puts it in the result: no signature or `alg: none`, shared-secret signing, a header that names its own key (`jku`, `x5u`, `jwk`, `x5c`), a `kid` that looks like a path or a query, no expiry, an expiry more than a year away, and claims that look sensitive.
+- **`b.wellknown`** reads `robots.txt` (paths, sensitive-looking paths, sitemaps), the sitemap (same site only, at most three) and `security.txt` (a contact, an expiry that has not passed).
+- **`b.spider`** reads up to 20 pages of one site and lists forms and parameters. It flags a password sent without HTTPS, a form on an HTTPS page that posts to HTTP, forms that change data without an anti-forgery token and file uploads. It never submits a form and never runs script.
+- **`b.entropy`** asks for a page several times with no cookie and checks the session ids it hands out: repeats, counters, a shared start and an estimate of the guessing work (at least 64 bits, 112 comfortable). It reports lengths and bit counts, never the ids.
+
+The runner (BLI-55) calls `HANDLERS[manifest.handler](values, fetcher)`.
+
 ## The scope guard and the permission policy
 
 Two checks stand between an agent and a tool. Both are plain code, and nothing a model writes can change them: a model picks a tool and gives values; the risk class comes from the manifest, the agent's role from the runtime and the rules from administrators.

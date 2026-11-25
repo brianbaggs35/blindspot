@@ -60,14 +60,16 @@ ARG POSTGRES_VERSION
 # python: the API. nginx: TLS and the web app. postgresql-18: the database; its client (pg_dump)
 # copies the database before a migration. s6: supervises the three. setpriv: drops each service
 # to its own user. tini: the first process. openssl: the first-start certificate. curl: the
-# health check. All upgraded at build time.
+# health check. nmap, sqlmap, bind-tools (dig) and whois: the core tools that are small enough to
+# ship in the image (the rest of the tool pack is in docs/how-to/tools.md). All upgraded at build
+# time.
 # hadolint ignore=DL3018
 RUN echo "$APK_REFRESH $IMAGE_REFRESH" > /dev/null \
     && apk upgrade --no-cache \
     && apk add --no-cache "nginx-mainline>=${NGINX_VERSION}" "postgresql-18>=${POSTGRES_VERSION}" \
         "python-3.14>=${PYTHON_VERSION}" \
-    && apk add --no-cache ca-certificates-bundle curl nginx-mainline-mime-types openssl \
-        postgresql-18-client s6 setpriv tini \
+    && apk add --no-cache bind-tools ca-certificates-bundle curl nginx-mainline-mime-types nmap \
+        openssl postgresql-18-client s6 setpriv sqlmap tini whois \
     # One user per service. nginx reaches the API's socket through the blindspot group; the
     # API and the database share the pgsock group, which owns the database socket.
     && addgroup -S -g 10001 blindspot \

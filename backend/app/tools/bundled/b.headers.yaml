@@ -1,0 +1,10 @@
+id: b.headers
+name: Headers and cookies
+tier: builtin
+execution: builtin
+handler: headers
+risk: passive
+params:
+  url: { type: target, required: true, description: "The page to read" }
+explain: "Reads one page and checks its security headers, cookies, cross-origin sharing rules (CORS) and content security policy, and says what is missing or weak."
+could_go_wrong: "Sends two ordinary requests, the second with a made-up Origin header to see whether the site repeats it back."

@@ -1,0 +1,23 @@
+id: p.testssl
+name: testssl.sh
+tier: pack
+binary: /usr/bin/testssl
+risk: active
+params:
+  target: { type: target, required: true, description: "A host and port, such as example.com:443" }
+argv:
+  - --quiet
+  - --color
+  - "0"
+  - --warnings
+  - batch
+  - --jsonfile
+  - /dev/stdout
+  - "{target}"
+version: { args: [--version], pattern: "([0-9]+\\.[0-9]+[A-Za-z0-9]*)" }
+timeout_s: 1200
+max_output_mb: 20
+parsers: [testssl_json]
+homepage: https://testssl.sh
+explain: "Checks how well a server protects its encrypted connections: old protocols, weak ciphers, certificate problems and known flaws such as Heartbleed."
+could_go_wrong: "Opens many connections with odd settings, which some servers and firewalls log as an attack."

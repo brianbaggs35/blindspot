@@ -1,0 +1,1377 @@
+{
+  "artifacts": [],
+  "credentials": [],
+  "hosts": [],
+  "http": [],
+  "issues": [
+    {
+      "confidence": "firm",
+      "detail": "offered",
+      "evidence": null,
+      "reference": null,
+      "severity": "low",
+      "tags": [
+        "tls"
+      ],
+      "target": "127.0.0.1:8443",
+      "title": "TLS: cipherlist_OBSOLETED"
+    },
+    {
+      "confidence": "firm",
+      "detail": "No SAN, browsers are complaining",
+      "evidence": null,
+      "reference": null,
+      "severity": "high",
+      "tags": [
+        "tls"
+      ],
+      "target": "127.0.0.1:8443",
+      "title": "TLS: cert_subjectAltName"
+    },
+    {
+      "confidence": "firm",
+      "detail": "certificate does not match supplied URI",
+      "evidence": null,
+      "reference": null,
+      "severity": "high",
+      "tags": [
+        "tls"
+      ],
+      "target": "127.0.0.1:8443",
+      "title": "TLS: cert_trust"
+    },
+    {
+      "confidence": "firm",
+      "detail": "failed (self signed).",
+      "evidence": null,
+      "reference": null,
+      "severity": "critical",
+      "tags": [
+        "tls"
+      ],
+      "target": "127.0.0.1:8443",
+      "title": "TLS: cert_chain_of_trust"
+    },
+    {
+      "confidence": "firm",
+      "detail": "expires < 30 days (29)",
+      "evidence": null,
+      "reference": null,
+      "severity": "high",
+      "tags": [
+        "tls"
+      ],
+      "target": "127.0.0.1:8443",
+      "title": "TLS: cert_expirationStatus"
+    },
+    {
+      "confidence": "firm",
+      "detail": "2026-12-25 08:56",
+      "evidence": null,
+      "reference": null,
+      "severity": "high",
+      "tags": [
+        "tls"
+      ],
+      "target": "127.0.0.1:8443",
+      "title": "TLS: cert_notAfter"
+    },
+    {
+      "confidence": "firm",
+      "detail": "Neither CRL nor OCSP URI provided",
+      "evidence": null,
+      "reference": null,
+      "severity": "high",
+      "tags": [
+        "tls"
+      ],
+      "target": "127.0.0.1:8443",
+      "title": "TLS: cert_revocation"
+    },
+    {
+      "confidence": "firm",
+      "detail": "--",
+      "evidence": null,
+      "reference": null,
+      "severity": "low",
+      "tags": [
+        "tls"
+      ],
+      "target": "127.0.0.1:8443",
+      "title": "TLS: DNS_CAArecord"
+    },
+    {
+      "confidence": "firm",
+      "detail": "not offered",
+      "evidence": null,
+      "reference": null,
+      "severity": "low",
+      "tags": [
+        "tls"
+      ],
+      "target": "127.0.0.1:8443",
+      "title": "TLS: HSTS"
+    },
+    {
+      "confidence": "firm",
+      "detail": "--",
+      "evidence": null,
+      "reference": null,
+      "severity": "medium",
+      "tags": [
+        "tls"
+      ],
+      "target": "127.0.0.1:8443",
+      "title": "TLS: security_headers"
+    },
+    {
+      "confidence": "firm",
+      "detail": "potentially vulnerable, uses TLS CBC ciphers",
+      "evidence": null,
+      "reference": "CVE-2013-0169",
+      "severity": "low",
+      "tags": [
+        "tls"
+      ],
+      "target": "127.0.0.1:8443",
+      "title": "TLS: LUCKY13"
+    },
+    {
+      "confidence": "firm",
+      "detail": "RC4 ciphers not supported by local OpenSSL (/usr/bin/openssl)",
+      "evidence": null,
+      "reference": null,
+      "severity": "low",
+      "tags": [
+        "tls"
+      ],
+      "target": "127.0.0.1:8443",
+      "title": "TLS: RC4"
+    },
+    {
+      "confidence": "firm",
+      "detail": "T",
+      "evidence": null,
+      "reference": null,
+      "severity": "critical",
+      "tags": [
+        "tls"
+      ],
+      "target": "127.0.0.1:8443",
+      "title": "TLS: overall_grade"
+    }
+  ],
+  "parser": "testssl_json",
+  "raw_ref": null,
+  "technologies": [],
+  "tls": [
+    {
+      "cve": [],
+      "finding": "HTTP",
+      "host": "127.0.0.1",
+      "id": "service",
+      "port": 8443,
+      "severity": "info"
+    },
+    {
+      "cve": [],
+      "finding": "No 128 cipher limit bug",
+      "host": "127.0.0.1",
+      "id": "pre_128cipher",
+      "port": 8443,
+      "severity": "info"
+    },
+    {
+      "cve": [],
+      "finding": "not offered",
+      "host": "127.0.0.1",
+      "id": "SSLv2",
+      "port": 8443,
+      "severity": "info"
+    },
+    {
+      "cve": [],
+      "finding": "not offered",
+      "host": "127.0.0.1",
+      "id": "SSLv3",
+      "port": 8443,
+      "severity": "info"
+    },
+    {
+      "cve": [],
+      "finding": "not offered",
+      "host": "127.0.0.1",
+      "id": "TLS1",
+      "port": 8443,
+      "severity": "info"
+    },
+    {
+      "cve": [],
+      "finding": "not offered",
+      "host": "127.0.0.1",
+      "id": "TLS1_1",
+      "port": 8443,
+      "severity": "info"
+    },
+    {
+      "cve": [],
+      "finding": "offered",
+      "host": "127.0.0.1",
+      "id": "TLS1_2",
+      "port": 8443,
+      "severity": "info"
+    },
+    {
+      "cve": [],
+      "finding": "offered with final",
+      "host": "127.0.0.1",
+      "id": "TLS1_3",
+      "port": 8443,
+      "severity": "info"
+    },
+    {
+      "cve": [],
+      "finding": "not offered",
+      "host": "127.0.0.1",
+      "id": "ALPN",
+      "port": 8443,
+      "severity": "info"
+    },
+    {
+      "cve": [],
+      "finding": "not offered",
+      "host": "127.0.0.1",
+      "id": "cipherlist_NULL",
+      "port": 8443,
+      "severity": "info"
+    },
+    {
+      "cve": [],
+      "finding": "not offered",
+      "host": "127.0.0.1",
+      "id": "cipherlist_aNULL",
+      "port": 8443,
+      "severity": "info"
+    },
+    {
+      "cve": [],
+      "finding": "not offered",
+      "host": "127.0.0.1",
+      "id": "cipherlist_EXPORT",
+      "port": 8443,
+      "severity": "info"
+    },
+    {
+      "cve": [],
+      "finding": "not offered",
+      "host": "127.0.0.1",
+      "id": "cipherlist_LOW",
+      "port": 8443,
+      "severity": "info"
+    },
+    {
+      "cve": [],
+      "finding": "not offered",
+      "host": "127.0.0.1",
+      "id": "cipherlist_3DES_IDEA",
+      "port": 8443,
+      "severity": "info"
+    },
+    {
+      "cve": [],
+      "finding": "offered",
+      "host": "127.0.0.1",
+      "id": "cipherlist_OBSOLETED",
+      "port": 8443,
+      "severity": "low"
+    },
+    {
+      "cve": [],
+      "finding": "not offered",
+      "host": "127.0.0.1",
+      "id": "cipherlist_STRONG_NOFS",
+      "port": 8443,
+      "severity": "info"
+    },
+    {
+      "cve": [],
+      "finding": "offered",
+      "host": "127.0.0.1",
+      "id": "cipherlist_STRONG_FS",
+      "port": 8443,
+      "severity": "info"
+    },
+    {
+      "cve": [],
+      "finding": "server",
+      "host": "127.0.0.1",
+      "id": "cipher_order-tls1_2",
+      "port": 8443,
+      "severity": "info"
+    },
+    {
+      "cve": [],
+      "finding": "ECDHE-RSA-AES256-GCM-SHA384",
+      "host": "127.0.0.1",
+      "id": "cipherorder_TLSv1_2",
+      "port": 8443,
+      "severity": "info"
+    },
+    {
+      "cve": [],
+      "finding": "server",
+      "host": "127.0.0.1",
+      "id": "cipher_order-tls1_3",
+      "port": 8443,
+      "severity": "info"
+    },
+    {
+      "cve": [],
+      "finding": "TLS_AES_256_GCM_SHA384",
+      "host": "127.0.0.1",
+      "id": "cipherorder_TLSv1_3",
+      "port": 8443,
+      "severity": "info"
+    },
+    {
+      "cve": [],
+      "finding": "server",
+      "host": "127.0.0.1",
+      "id": "cipher_order",
+      "port": 8443,
+      "severity": "info"
+    },
+    {
+      "cve": [],
+      "finding": "offered",
+      "host": "127.0.0.1",
+      "id": "FS",
+      "port": 8443,
+      "severity": "info"
+    },
+    {
+      "cve": [],
+      "finding": "TLS_AES_256_GCM_SHA384 TLS_CHACHA20_POLY1305_SHA256 TLS_AES_128_GCM_SHA256 ECDHE-RSA-AES128-GCM-SHA256 ECDHE-RSA-AES128-SHA256 ECDHE-RSA-AES256-GCM-SHA384 ECDHE-RSA-AES256-SHA384 ECDHE-RSA-CHACHA20-POLY1305",
+      "host": "127.0.0.1",
+      "id": "FS_ciphers",
+      "port": 8443,
+      "severity": "info"
+    },
+    {
+      "cve": [],
+      "finding": "'renegotiation info/#65281' 'EC point formats/#11' 'session ticket/#35' 'supported versions/#43' 'key share/#51' 'supported_groups/#10' 'max fragment length/#1' 'encrypt-then-mac/#22' 'extended master secret/#23'",
+      "host": "127.0.0.1",
+      "id": "TLS_extensions",
+      "port": 8443,
+      "severity": "info"
+    },
+    {
+      "cve": [],
+      "finding": "valid for 7200 seconds only (<daily)",
+      "host": "127.0.0.1",
+      "id": "TLS_session_ticket",
+      "port": 8443,
+      "severity": "info"
+    },
+    {
+      "cve": [],
+      "finding": "yes",
+      "host": "127.0.0.1",
+      "id": "SSL_sessionID_support",
+      "port": 8443,
+      "severity": "info"
+    },
+    {
+      "cve": [],
+      "finding": "supported",
+      "host": "127.0.0.1",
+      "id": "sessionresumption_ticket",
+      "port": 8443,
+      "severity": "info"
+    },
+    {
+      "cve": [],
+      "finding": "supported",
+      "host": "127.0.0.1",
+      "id": "sessionresumption_ID",
+      "port": 8443,
+      "severity": "info"
+    },
+    {
+      "cve": [],
+      "finding": "random",
+      "host": "127.0.0.1",
+      "id": "TLS_timestamp",
+      "port": 8443,
+      "severity": "info"
+    },
+    {
+      "cve": [],
+      "finding": "none",
+      "host": "127.0.0.1",
+      "id": "certificate_compression",
+      "port": 8443,
+      "severity": "info"
+    },
+    {
+      "cve": [],
+      "finding": "none",
+      "host": "127.0.0.1",
+      "id": "clientAuth",
+      "port": 8443,
+      "severity": "info"
+    },
+    {
+      "cve": [],
+      "finding": "1",
+      "host": "127.0.0.1",
+      "id": "cert_numbers",
+      "port": 8443,
+      "severity": "info"
+    },
+    {
+      "cve": [],
+      "finding": "SHA256 with RSA",
+      "host": "127.0.0.1",
+      "id": "cert_signatureAlgorithm",
+      "port": 8443,
+      "severity": "info"
+    },
+    {
+      "cve": [],
+      "finding": "RSA 2048 bits (exponent is 65537)",
+      "host": "127.0.0.1",
+      "id": "cert_keySize",
+      "port": 8443,
+      "severity": "info"
+    },
+    {
+      "cve": [],
+      "finding": "No server key usage information",
+      "host": "127.0.0.1",
+      "id": "cert_keyUsage",
+      "port": 8443,
+      "severity": "info"
+    },
+    {
+      "cve": [],
+      "finding": "No server extended key usage information",
+      "host": "127.0.0.1",
+      "id": "cert_extKeyUsage",
+      "port": 8443,
+      "severity": "info"
+    },
+    {
+      "cve": [],
+      "finding": "4662D9E8E0F95FEBC380A92E0D7BF222A43E2C02",
+      "host": "127.0.0.1",
+      "id": "cert_serialNumber",
+      "port": 8443,
+      "severity": "info"
+    },
+    {
+      "cve": [],
+      "finding": "20",
+      "host": "127.0.0.1",
+      "id": "cert_serialNumberLen",
+      "port": 8443,
+      "severity": "info"
+    },
+    {
+      "cve": [],
+      "finding": "1ABF10F393659564AD6C90A2810C3190560F9982",
+      "host": "127.0.0.1",
+      "id": "cert_fingerprintSHA1",
+      "port": 8443,
+      "severity": "info"
+    },
+    {
+      "cve": [],
+      "finding": "71930BB9B797FC6AF352B3358D456F0E3B3E25075304E1541E39B60B53119481",
+      "host": "127.0.0.1",
+      "id": "cert_fingerprintSHA256",
+      "port": 8443,
+      "severity": "info"
+    },
+    {
+      "cve": [],
+      "finding": "-----BEGIN CERTIFICATE-----\nMIIDCTCCAfGgAwIBAgIURmLZ6OD5X+vDgKkuDXvyIqQ+LAIwDQYJKoZIhvcNAQELBQAwFDESMBAGA1UEAwwJbG9jYWxob3N0MB4XDTI2MTEyNTA4NTYyMloXDTI2MTIyNTA4NTYyMlowFDESMBAGA1UEAwwJbG9jYWxob3N0MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAzbRPxAqM6m07S4VG7h61+k4y9i+VvOKSZEEjvqY6uy3qBddrl+FgTW1trtX+gKZLo47Su3VhB448XIPA3Sqe/fkUKqJMXUWp6jH+0ew5GgUQ3gBJsaeIa+q5cHSWc4WPekP1qoyPz30u+JrygKS35A4OnrqUfSZmrDeTJl+JH4uuFTZ7lbRf6FhA6pqlECuHAaqi2YOYxAcSbHZyBoIgqthBi0xxnTmFrM7Ki0xEkzxwq8X34X+IEaBeffykyv09Wts6Jc3xLh0hnxv5DeVnd53MLV3VL8w65P80xVu3MBpM8jcRxZ6xmEVKEfqZGgc6gwOMDpzG/oHIxlDEDsYp7QIDAQABo1MwUTAdBgNVHQ4EFgQUn1yrQEObvh7yqriW6SnKyRzw8Z8wHwYDVR0jBBgwFoAUn1yrQEObvh7yqriW6SnKyRzw8Z8wDwYDVR0TAQH/BAUwAwEB/zANBgkqhkiG9w0BAQsFAAOCAQEAV/GH0r3WZ6vu9h0X1xmjmw9vEnVdJth3DnhnwBhr9CkTFVSKona2Zw2Mw/mgrXcr2ASSamWXx9U4l7WHLeI96W6dyXkLZgyQuRF/Lfeieri1LCuhOb51fKQvv8EHwFSjDCKzbLw5T6E09H9lPzcFdiUIw31jL887YL5Q+4DLpBGw9NHBGBPKshbZ70hqo9WzDj2wSAT6PJq0V+Ud44wB19uH7j0zS3BC0eUpdKzCyuWMdFyJX9e8nfARtHM7q6iDKwFBxaL6pNi96vqzCzodIq/eXA8PSrhDT6euYeRAd7gLOpSFwnz97t22EbehCFpkKPbo62WL2DxEAkyWQ8mCcg==\n-----END CERTIFICATE-----",
+      "host": "127.0.0.1",
+      "id": "cert",
+      "port": 8443,
+      "severity": "info"
+    },
+    {
+      "cve": [],
+      "finding": "localhost",
+      "host": "127.0.0.1",
+      "id": "cert_commonName",
+      "port": 8443,
+      "severity": "info"
+    },
+    {
+      "cve": [],
+      "finding": "localhost",
+      "host": "127.0.0.1",
+      "id": "cert_commonName_wo_SNI",
+      "port": 8443,
+      "severity": "info"
+    },
+    {
+      "cve": [],
+      "finding": "No SAN, browsers are complaining",
+      "host": "127.0.0.1",
+      "id": "cert_subjectAltName",
+      "port": 8443,
+      "severity": "high"
+    },
+    {
+      "cve": [],
+      "finding": "certificate does not match supplied URI",
+      "host": "127.0.0.1",
+      "id": "cert_trust",
+      "port": 8443,
+      "severity": "high"
+    },
+    {
+      "cve": [],
+      "finding": "failed (self signed).",
+      "host": "127.0.0.1",
+      "id": "cert_chain_of_trust",
+      "port": 8443,
+      "severity": "critical"
+    },
+    {
+      "cve": [],
+      "finding": "no",
+      "host": "127.0.0.1",
+      "id": "cert_certificatePolicies_EV",
+      "port": 8443,
+      "severity": "info"
+    },
+    {
+      "cve": [],
+      "finding": "expires < 30 days (29)",
+      "host": "127.0.0.1",
+      "id": "cert_expirationStatus",
+      "port": 8443,
+      "severity": "high"
+    },
+    {
+      "cve": [],
+      "finding": "2026-11-25 08:56",
+      "host": "127.0.0.1",
+      "id": "cert_notBefore",
+      "port": 8443,
+      "severity": "info"
+    },
+    {
+      "cve": [],
+      "finding": "2026-12-25 08:56",
+      "host": "127.0.0.1",
+      "id": "cert_notAfter",
+      "port": 8443,
+      "severity": "high"
+    },
+    {
+      "cve": [],
+      "finding": "certificate has no extended life time according to browser forum",
+      "host": "127.0.0.1",
+      "id": "cert_extlifeSpan",
+      "port": 8443,
+      "severity": "info"
+    },
+    {
+      "cve": [],
+      "finding": "not present",
+      "host": "127.0.0.1",
+      "id": "cert_eTLS",
+      "port": 8443,
+      "severity": "info"
+    },
+    {
+      "cve": [],
+      "finding": "--",
+      "host": "127.0.0.1",
+      "id": "cert_crlDistributionPoints",
+      "port": 8443,
+      "severity": "info"
+    },
+    {
+      "cve": [],
+      "finding": "--",
+      "host": "127.0.0.1",
+      "id": "cert_ocspURL",
+      "port": 8443,
+      "severity": "info"
+    },
+    {
+      "cve": [],
+      "finding": "Neither CRL nor OCSP URI provided",
+      "host": "127.0.0.1",
+      "id": "cert_revocation",
+      "port": 8443,
+      "severity": "high"
+    },
+    {
+      "cve": [],
+      "finding": "not offered",
+      "host": "127.0.0.1",
+      "id": "OCSP_stapling",
+      "port": 8443,
+      "severity": "info"
+    },
+    {
+      "cve": [],
+      "finding": "--",
+      "host": "127.0.0.1",
+      "id": "cert_mustStapleExtension",
+      "port": 8443,
+      "severity": "info"
+    },
+    {
+      "cve": [],
+      "finding": "--",
+      "host": "127.0.0.1",
+      "id": "DNS_CAArecord",
+      "port": 8443,
+      "severity": "low"
+    },
+    {
+      "cve": [],
+      "finding": "--",
+      "host": "127.0.0.1",
+      "id": "certificate_transparency",
+      "port": 8443,
+      "severity": "info"
+    },
+    {
+      "cve": [],
+      "finding": "1",
+      "host": "127.0.0.1",
+      "id": "certs_countServer",
+      "port": 8443,
+      "severity": "info"
+    },
+    {
+      "cve": [],
+      "finding": "no",
+      "host": "127.0.0.1",
+      "id": "certs_list_ordering_problem",
+      "port": 8443,
+      "severity": "info"
+    },
+    {
+      "cve": [],
+      "finding": "localhost",
+      "host": "127.0.0.1",
+      "id": "cert_caIssuers",
+      "port": 8443,
+      "severity": "info"
+    },
+    {
+      "cve": [],
+      "finding": "intermediate certificate(s) is/are ok",
+      "host": "127.0.0.1",
+      "id": "intermediate_cert_badOCSP",
+      "port": 8443,
+      "severity": "info"
+    },
+    {
+      "cve": [],
+      "finding": "200 OK ('/')",
+      "host": "127.0.0.1",
+      "id": "HTTP_status_code",
+      "port": 8443,
+      "severity": "info"
+    },
+    {
+      "cve": [],
+      "finding": "0 seconds from localtime",
+      "host": "127.0.0.1",
+      "id": "HTTP_clock_skew",
+      "port": 8443,
+      "severity": "info"
+    },
+    {
+      "cve": [],
+      "finding": "1795597032",
+      "host": "127.0.0.1",
+      "id": "HTTP_headerTime",
+      "port": 8443,
+      "severity": "info"
+    },
+    {
+      "cve": [],
+      "finding": "not offered",
+      "host": "127.0.0.1",
+      "id": "HSTS",
+      "port": 8443,
+      "severity": "low"
+    },
+    {
+      "cve": [],
+      "finding": "No support for HTTP Public Key Pinning",
+      "host": "127.0.0.1",
+      "id": "HPKP",
+      "port": 8443,
+      "severity": "info"
+    },
+    {
+      "cve": [],
+      "finding": "Apache/2.4.41",
+      "host": "127.0.0.1",
+      "id": "banner_server",
+      "port": 8443,
+      "severity": "info"
+    },
+    {
+      "cve": [],
+      "finding": "X-Powered-By: PHP/7.4.3",
+      "host": "127.0.0.1",
+      "id": "banner_application",
+      "port": 8443,
+      "severity": "info"
+    },
+    {
+      "cve": [],
+      "finding": "1 at '/'",
+      "host": "127.0.0.1",
+      "id": "cookie_count",
+      "port": 8443,
+      "severity": "info"
+    },
+    {
+      "cve": [],
+      "finding": "0/1 at '/' marked as secure",
+      "host": "127.0.0.1",
+      "id": "cookie_secure",
+      "port": 8443,
+      "severity": "info"
+    },
+    {
+      "cve": [],
+      "finding": "0/1 at '/' marked as HttpOnly",
+      "host": "127.0.0.1",
+      "id": "cookie_httponly",
+      "port": 8443,
+      "severity": "info"
+    },
+    {
+      "cve": [],
+      "finding": "--",
+      "host": "127.0.0.1",
+      "id": "security_headers",
+      "port": 8443,
+      "severity": "medium"
+    },
+    {
+      "cve": [],
+      "finding": "--",
+      "host": "127.0.0.1",
+      "id": "banner_reverseproxy",
+      "port": 8443,
+      "severity": "info"
+    },
+    {
+      "cve": [
+        "CVE-2014-0160"
+      ],
+      "finding": "not vulnerable, no heartbeat extension",
+      "host": "127.0.0.1",
+      "id": "heartbleed",
+      "port": 8443,
+      "severity": "info"
+    },
+    {
+      "cve": [
+        "CVE-2014-0224"
+      ],
+      "finding": "not vulnerable",
+      "host": "127.0.0.1",
+      "id": "CCS",
+      "port": 8443,
+      "severity": "info"
+    },
+    {
+      "cve": [
+        "CVE-2016-9244"
+      ],
+      "finding": "not vulnerable",
+      "host": "127.0.0.1",
+      "id": "ticketbleed",
+      "port": 8443,
+      "severity": "info"
+    },
+    {
+      "cve": [
+        "CVE-2017-17382",
+        "CVE-2017-17427",
+        "CVE-2017-17428",
+        "CVE-2017-13098",
+        "CVE-2017-1000385",
+        "CVE-2017-13099",
+        "CVE-2016-6883",
+        "CVE-2012-5081",
+        "CVE-2017-6168"
+      ],
+      "finding": "not vulnerable, no RSA key transport cipher",
+      "host": "127.0.0.1",
+      "id": "ROBOT",
+      "port": 8443,
+      "severity": "info"
+    },
+    {
+      "cve": [],
+      "finding": "supported",
+      "host": "127.0.0.1",
+      "id": "secure_renego",
+      "port": 8443,
+      "severity": "info"
+    },
+    {
+      "cve": [
+        "CVE-2011-1473"
+      ],
+      "finding": "not vulnerable",
+      "host": "127.0.0.1",
+      "id": "secure_client_renego",
+      "port": 8443,
+      "severity": "info"
+    },
+    {
+      "cve": [
+        "CVE-2012-4929"
+      ],
+      "finding": "not vulnerable",
+      "host": "127.0.0.1",
+      "id": "CRIME_TLS",
+      "port": 8443,
+      "severity": "info"
+    },
+    {
+      "cve": [
+        "CVE-2013-3587"
+      ],
+      "finding": "not vulnerable, no gzip/deflate/compress/br HTTP compression  - only supplied '/' tested",
+      "host": "127.0.0.1",
+      "id": "BREACH",
+      "port": 8443,
+      "severity": "info"
+    },
+    {
+      "cve": [
+        "CVE-2014-3566"
+      ],
+      "finding": "not vulnerable, no SSLv3",
+      "host": "127.0.0.1",
+      "id": "POODLE_SSL",
+      "port": 8443,
+      "severity": "info"
+    },
+    {
+      "cve": [],
+      "finding": "no protocol below TLS 1.2 offered",
+      "host": "127.0.0.1",
+      "id": "fallback_SCSV",
+      "port": 8443,
+      "severity": "info"
+    },
+    {
+      "cve": [
+        "CVE-2016-2183",
+        "CVE-2016-6329"
+      ],
+      "finding": "not vulnerable",
+      "host": "127.0.0.1",
+      "id": "SWEET32",
+      "port": 8443,
+      "severity": "info"
+    },
+    {
+      "cve": [
+        "CVE-2015-0204"
+      ],
+      "finding": "not vulnerable",
+      "host": "127.0.0.1",
+      "id": "FREAK",
+      "port": 8443,
+      "severity": "info"
+    },
+    {
+      "cve": [
+        "CVE-2016-0800",
+        "CVE-2016-0703"
+      ],
+      "finding": "not vulnerable on this host and port",
+      "host": "127.0.0.1",
+      "id": "DROWN",
+      "port": 8443,
+      "severity": "info"
+    },
+    {
+      "cve": [
+        "CVE-2016-0800",
+        "CVE-2016-0703"
+      ],
+      "finding": "Make sure you don't use this certificate elsewhere with SSLv2 enabled services, see https://search.censys.io/search?resource=hosts&virtual_hosts=INCLUDE&q=71930BB9B797FC6AF352B3358D456F0E3B3E25075304E1541E39B60B53119481",
+      "host": "127.0.0.1",
+      "id": "DROWN_hint",
+      "port": 8443,
+      "severity": "info"
+    },
+    {
+      "cve": [
+        "CVE-2015-4000"
+      ],
+      "finding": "not vulnerable, no DH EXPORT ciphers,",
+      "host": "127.0.0.1",
+      "id": "LOGJAM",
+      "port": 8443,
+      "severity": "info"
+    },
+    {
+      "cve": [
+        "CVE-2015-4000"
+      ],
+      "finding": "no DH key with <= TLS 1.2",
+      "host": "127.0.0.1",
+      "id": "LOGJAM-common_primes",
+      "port": 8443,
+      "severity": "info"
+    },
+    {
+      "cve": [
+        "CVE-2011-3389"
+      ],
+      "finding": "not vulnerable, no SSL3 or TLS1",
+      "host": "127.0.0.1",
+      "id": "BEAST",
+      "port": 8443,
+      "severity": "info"
+    },
+    {
+      "cve": [
+        "CVE-2013-0169"
+      ],
+      "finding": "potentially vulnerable, uses TLS CBC ciphers",
+      "host": "127.0.0.1",
+      "id": "LUCKY13",
+      "port": 8443,
+      "severity": "low"
+    },
+    {
+      "cve": [
+        "CVE-2014-6321"
+      ],
+      "finding": "not vulnerable",
+      "host": "127.0.0.1",
+      "id": "winshock",
+      "port": 8443,
+      "severity": "info"
+    },
+    {
+      "cve": [],
+      "finding": "RC4 ciphers not supported by local OpenSSL (/usr/bin/openssl)",
+      "host": "127.0.0.1",
+      "id": "RC4",
+      "port": 8443,
+      "severity": "low"
+    },
+    {
+      "cve": [],
+      "finding": "TLSv1.2 ECDHE-RSA-AES128-GCM-SHA256",
+      "host": "127.0.0.1",
+      "id": "clientsimulation-android_60",
+      "port": 8443,
+      "severity": "info"
+    },
+    {
+      "cve": [],
+      "finding": "TLSv1.2 ECDHE-RSA-AES256-GCM-SHA384",
+      "host": "127.0.0.1",
+      "id": "clientsimulation-android_70",
+      "port": 8443,
+      "severity": "info"
+    },
+    {
+      "cve": [],
+      "finding": "TLSv1.2 ECDHE-RSA-AES256-GCM-SHA384",
+      "host": "127.0.0.1",
+      "id": "clientsimulation-android_81",
+      "port": 8443,
+      "severity": "info"
+    },
+    {
+      "cve": [],
+      "finding": "TLSv1.3 TLS_AES_256_GCM_SHA384",
+      "host": "127.0.0.1",
+      "id": "clientsimulation-android_90",
+      "port": 8443,
+      "severity": "info"
+    },
+    {
+      "cve": [],
+      "finding": "TLSv1.3 TLS_AES_256_GCM_SHA384",
+      "host": "127.0.0.1",
+      "id": "clientsimulation-android_X",
+      "port": 8443,
+      "severity": "info"
+    },
+    {
+      "cve": [],
+      "finding": "TLSv1.3 TLS_AES_256_GCM_SHA384",
+      "host": "127.0.0.1",
+      "id": "clientsimulation-android_11",
+      "port": 8443,
+      "severity": "info"
+    },
+    {
+      "cve": [],
+      "finding": "TLSv1.3 TLS_AES_256_GCM_SHA384",
+      "host": "127.0.0.1",
+      "id": "clientsimulation-android_12",
+      "port": 8443,
+      "severity": "info"
+    },
+    {
+      "cve": [],
+      "finding": "TLSv1.3 TLS_AES_256_GCM_SHA384",
+      "host": "127.0.0.1",
+      "id": "clientsimulation-chrome_79_win10",
+      "port": 8443,
+      "severity": "info"
+    },
+    {
+      "cve": [],
+      "finding": "TLSv1.3 TLS_AES_256_GCM_SHA384",
+      "host": "127.0.0.1",
+      "id": "clientsimulation-chrome_101_win10",
+      "port": 8443,
+      "severity": "info"
+    },
+    {
+      "cve": [],
+      "finding": "TLSv1.3 TLS_AES_256_GCM_SHA384",
+      "host": "127.0.0.1",
+      "id": "clientsimulation-firefox_66_win81",
+      "port": 8443,
+      "severity": "info"
+    },
+    {
+      "cve": [],
+      "finding": "TLSv1.3 TLS_AES_256_GCM_SHA384",
+      "host": "127.0.0.1",
+      "id": "clientsimulation-firefox_100_win10",
+      "port": 8443,
+      "severity": "info"
+    },
+    {
+      "cve": [],
+      "finding": "No connection",
+      "host": "127.0.0.1",
+      "id": "clientsimulation-ie_6_xp",
+      "port": 8443,
+      "severity": "info"
+    },
+    {
+      "cve": [],
+      "finding": "No connection",
+      "host": "127.0.0.1",
+      "id": "clientsimulation-ie_8_win7",
+      "port": 8443,
+      "severity": "info"
+    },
+    {
+      "cve": [],
+      "finding": "No connection",
+      "host": "127.0.0.1",
+      "id": "clientsimulation-ie_8_xp",
+      "port": 8443,
+      "severity": "info"
+    },
+    {
+      "cve": [],
+      "finding": "TLSv1.2 ECDHE-RSA-AES256-SHA384",
+      "host": "127.0.0.1",
+      "id": "clientsimulation-ie_11_win7",
+      "port": 8443,
+      "severity": "info"
+    },
+    {
+      "cve": [],
+      "finding": "TLSv1.2 ECDHE-RSA-AES256-SHA384",
+      "host": "127.0.0.1",
+      "id": "clientsimulation-ie_11_win81",
+      "port": 8443,
+      "severity": "info"
+    },
+    {
+      "cve": [],
+      "finding": "TLSv1.2 ECDHE-RSA-AES128-SHA256",
+      "host": "127.0.0.1",
+      "id": "clientsimulation-ie_11_winphone81",
+      "port": 8443,
+      "severity": "info"
+    },
+    {
+      "cve": [],
+      "finding": "TLSv1.2 ECDHE-RSA-AES256-GCM-SHA384",
+      "host": "127.0.0.1",
+      "id": "clientsimulation-ie_11_win10",
+      "port": 8443,
+      "severity": "info"
+    },
+    {
+      "cve": [],
+      "finding": "TLSv1.2 ECDHE-RSA-AES256-GCM-SHA384",
+      "host": "127.0.0.1",
+      "id": "clientsimulation-edge_15_win10",
+      "port": 8443,
+      "severity": "info"
+    },
+    {
+      "cve": [],
+      "finding": "TLSv1.3 TLS_AES_256_GCM_SHA384",
+      "host": "127.0.0.1",
+      "id": "clientsimulation-edge_101_win10_21h2",
+      "port": 8443,
+      "severity": "info"
+    },
+    {
+      "cve": [],
+      "finding": "TLSv1.3 TLS_AES_256_GCM_SHA384",
+      "host": "127.0.0.1",
+      "id": "clientsimulation-safari_121_ios_122",
+      "port": 8443,
+      "severity": "info"
+    },
+    {
+      "cve": [],
+      "finding": "TLSv1.3 TLS_AES_256_GCM_SHA384",
+      "host": "127.0.0.1",
+      "id": "clientsimulation-safari_130_osx_10146",
+      "port": 8443,
+      "severity": "info"
+    },
+    {
+      "cve": [],
+      "finding": "TLSv1.3 TLS_AES_256_GCM_SHA384",
+      "host": "127.0.0.1",
+      "id": "clientsimulation-safari_154_osx_1231",
+      "port": 8443,
+      "severity": "info"
+    },
+    {
+      "cve": [],
+      "finding": "No connection",
+      "host": "127.0.0.1",
+      "id": "clientsimulation-java_7u25",
+      "port": 8443,
+      "severity": "info"
+    },
+    {
+      "cve": [],
+      "finding": "TLSv1.2 ECDHE-RSA-AES256-GCM-SHA384",
+      "host": "127.0.0.1",
+      "id": "clientsimulation-java_8u161",
+      "port": 8443,
+      "severity": "info"
+    },
+    {
+      "cve": [],
+      "finding": "TLSv1.3 TLS_AES_256_GCM_SHA384",
+      "host": "127.0.0.1",
+      "id": "clientsimulation-java1102",
+      "port": 8443,
+      "severity": "info"
+    },
+    {
+      "cve": [],
+      "finding": "TLSv1.3 TLS_AES_256_GCM_SHA384",
+      "host": "127.0.0.1",
+      "id": "clientsimulation-java1703",
+      "port": 8443,
+      "severity": "info"
+    },
+    {
+      "cve": [],
+      "finding": "TLSv1.3 TLS_AES_256_GCM_SHA384",
+      "host": "127.0.0.1",
+      "id": "clientsimulation-go_1178",
+      "port": 8443,
+      "severity": "info"
+    },
+    {
+      "cve": [],
+      "finding": "TLSv1.2 ECDHE-RSA-AES256-GCM-SHA384",
+      "host": "127.0.0.1",
+      "id": "clientsimulation-libressl_283",
+      "port": 8443,
+      "severity": "info"
+    },
+    {
+      "cve": [],
+      "finding": "TLSv1.2 ECDHE-RSA-AES256-GCM-SHA384",
+      "host": "127.0.0.1",
+      "id": "clientsimulation-openssl_102e",
+      "port": 8443,
+      "severity": "info"
+    },
+    {
+      "cve": [],
+      "finding": "TLSv1.2 ECDHE-RSA-AES256-GCM-SHA384",
+      "host": "127.0.0.1",
+      "id": "clientsimulation-openssl_110l",
+      "port": 8443,
+      "severity": "info"
+    },
+    {
+      "cve": [],
+      "finding": "TLSv1.3 TLS_AES_256_GCM_SHA384",
+      "host": "127.0.0.1",
+      "id": "clientsimulation-openssl_111d",
+      "port": 8443,
+      "severity": "info"
+    },
+    {
+      "cve": [],
+      "finding": "TLSv1.3 TLS_AES_256_GCM_SHA384",
+      "host": "127.0.0.1",
+      "id": "clientsimulation-openssl_303",
+      "port": 8443,
+      "severity": "info"
+    },
+    {
+      "cve": [],
+      "finding": "TLSv1.2 ECDHE-RSA-AES256-GCM-SHA384",
+      "host": "127.0.0.1",
+      "id": "clientsimulation-apple_mail_16_0",
+      "port": 8443,
+      "severity": "info"
+    },
+    {
+      "cve": [],
+      "finding": "TLSv1.3 TLS_AES_256_GCM_SHA384",
+      "host": "127.0.0.1",
+      "id": "clientsimulation-thunderbird_91_9",
+      "port": 8443,
+      "severity": "info"
+    },
+    {
+      "cve": [],
+      "finding": "SSL Labs's 'SSL Server Rating Guide' (version 2009q from 2020-01-30)",
+      "host": "127.0.0.1",
+      "id": "rating_spec",
+      "port": 8443,
+      "severity": "info"
+    },
+    {
+      "cve": [],
+      "finding": "https://github.com/ssllabs/research/wiki/SSL-Server-Rating-Guide",
+      "host": "127.0.0.1",
+      "id": "rating_doc",
+      "port": 8443,
+      "severity": "info"
+    },
+    {
+      "cve": [],
+      "finding": "0",
+      "host": "127.0.0.1",
+      "id": "protocol_support_score",
+      "port": 8443,
+      "severity": "info"
+    },
+    {
+      "cve": [],
+      "finding": "0",
+      "host": "127.0.0.1",
+      "id": "protocol_support_score_weighted",
+      "port": 8443,
+      "severity": "info"
+    },
+    {
+      "cve": [],
+      "finding": "0",
+      "host": "127.0.0.1",
+      "id": "key_exchange_score",
+      "port": 8443,
+      "severity": "info"
+    },
+    {
+      "cve": [],
+      "finding": "0",
+      "host": "127.0.0.1",
+      "id": "key_exchange_score_weighted",
+      "port": 8443,
+      "severity": "info"
+    },
+    {
+      "cve": [],
+      "finding": "0",
+      "host": "127.0.0.1",
+      "id": "cipher_strength_score",
+      "port": 8443,
+      "severity": "info"
+    },
+    {
+      "cve": [],
+      "finding": "0",
+      "host": "127.0.0.1",
+      "id": "cipher_strength_score_weighted",
+      "port": 8443,
+      "severity": "info"
+    },
+    {
+      "cve": [],
+      "finding": "0",
+      "host": "127.0.0.1",
+      "id": "final_score",
+      "port": 8443,
+      "severity": "info"
+    },
+    {
+      "cve": [],
+      "finding": "T",
+      "host": "127.0.0.1",
+      "id": "overall_grade",
+      "port": 8443,
+      "severity": "critical"
+    },
+    {
+      "cve": [],
+      "finding": "Grade capped to T. Issues with the chain of trust (self signed)",
+      "host": "127.0.0.1",
+      "id": "grade_cap_reason_1",
+      "port": 8443,
+      "severity": "info"
+    },
+    {
+      "cve": [],
+      "finding": "Grade capped to M. Domain name mismatch",
+      "host": "127.0.0.1",
+      "id": "grade_cap_reason_2",
+      "port": 8443,
+      "severity": "info"
+    },
+    {
+      "cve": [],
+      "finding": "Grade capped to A. HSTS is not offered",
+      "host": "127.0.0.1",
+      "id": "grade_cap_reason_3",
+      "port": 8443,
+      "severity": "info"
+    },
+    {
+      "cve": [],
+      "finding": "38",
+      "host": "127.0.0.1",
+      "id": "scanTime",
+      "port": 8443,
+      "severity": "info"
+    }
+  ],
+  "tool": "t.test",
+  "truncated": false,
+  "warnings": []
+}

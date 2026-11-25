@@ -13,3 +13,6 @@ docs/assets/*.svg
 docs/PLAN.md
 docs/research
 backend/app/methodology/bundled/wstg/checklist.json
+
+# Captured tool output, kept byte for byte.
+backend/tests/fixtures/tools/

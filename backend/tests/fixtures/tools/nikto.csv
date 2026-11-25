@@ -1,0 +1,6 @@
+"Nikto - v2.1.5/2.1.5"
+"localhost","127.0.0.1","8081","","","","Apache/2.4.41 "
+"localhost","127.0.0.1SCALAR(0x56321acc4790)"8081","OSVDB-0","GET","/","Retrieved x-powered-by header: PHP/7.4.3"
+"localhost","127.0.0.1SCALAR(0x56321acc4790)"8081","OSVDB-0","GET","/","The anti-clickjacking X-Frame-Options header is not present."
+"localhost","127.0.0.1SCALAR(0x56321acc4790)"8081","OSVDB-0","GET","/","Cookie PHPSESSID created without the httponly flag"
+"localhost","127.0.0.1SCALAR(0x56321acc4790)"8081","OSVDB-0","GET","/robots.txt","\"robots.txt\" contains 1 entry which should be manually viewed."
