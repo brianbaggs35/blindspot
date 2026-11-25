@@ -32,7 +32,7 @@ async function agentsPage(handlers: Handlers = {}, user = undefined as typeof vi
   return { ...api, ...mounted };
 }
 
-async function openTab(wrapper: VueWrapper, name: string) {
+async function openTab(wrapper: Pick<VueWrapper, "findAll">, name: string) {
   const tab = wrapper.findAll("[role=tab]").find((one) => one.text() === name);
   if (tab === undefined) throw new Error(`no ${name} tab`);
   await tab.trigger("click");
