@@ -15,6 +15,7 @@ from app.pentests.checklist import router as checklist_router
 from app.pentests.gate import router as gate_router
 from app.pentests.routes import router as pentests_router
 from app.terms.routes import router as terms_router
+from app.tools.routes import router as tools_router
 
 ROUTERS: list[APIRouter] = [
     health_router,
@@ -29,4 +30,5 @@ ROUTERS: list[APIRouter] = [
     checklist_router,
     pentests_router,
     terms_router,
+    tools_router,
 ]
