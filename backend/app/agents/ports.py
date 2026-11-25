@@ -133,7 +133,11 @@ class Brain(Protocol):
     async def decide(self, context: Context) -> Turn: ...
 
     async def verify(
-        self, finding: FindingIn, original: list[HistoryItem], replay: list[HistoryItem]
+        self,
+        mission_id: str,
+        finding: FindingIn,
+        original: list[HistoryItem],
+        replay: list[HistoryItem],
     ) -> Verification: ...
 
 
