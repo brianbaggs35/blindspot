@@ -15,7 +15,7 @@ What it guarantees, and where:
 import asyncio
 import time
 import uuid
-from collections.abc import Awaitable, Callable, Mapping
+from collections.abc import Awaitable, Callable, Iterable, Mapping
 from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
@@ -388,9 +388,9 @@ class MissionEngine:
             async with gate:
                 return await self._run_test(mission_id, task_id)
 
-        async with asyncio.TaskGroup() as group:
-            running = [group.create_task(one(task_id)) for task_id in ids]
-        stops = [r.result() for r in running if r.result().gate is not Gate.GO]
+        # `one` never raises, and cancelling this call cancels every test it started.
+        ended = await asyncio.gather(*(one(task_id) for task_id in ids))
+        stops = [result for result in ended if result.gate is not Gate.GO]
         if stops:
             return stops[0]
         return await self._close_category(mission_id, category_id)
@@ -566,11 +566,7 @@ class MissionEngine:
                 success=playbook.success,
                 failure=playbook.failure,
             ),
-            tools={
-                tool.manifest.id: tool.manifest.explain
-                for name in playbook.tools
-                if (tool := run.registry.get(name)) is not None
-            },
+            tools=explained(run.registry, playbook.tools),
             history=history,
             facts=facts,
             steps_left=run.budget.steps_per_test - spent.steps,
@@ -844,6 +840,12 @@ class MissionEngine:
         verdict = await self.brain.verify(finding, original, replayed)
         await self._pay(run.mission_id, run.task_id, verdict.spend)
         return "confirmed" if verdict.confirmed else "unconfirmed"
+
+
+def explained(registry: Registry, names: Iterable[str]) -> dict[str, str]:
+    """What each of these tools does, in its own words, for the tools that are installed."""
+    found = (registry.get(name) for name in names)
+    return {tool.manifest.id: tool.manifest.explain for tool in found if tool is not None}
 
 
 def _findings_in(task: MissionTask) -> int:

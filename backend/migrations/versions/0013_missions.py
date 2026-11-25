@@ -17,6 +17,7 @@ depends_on = None
 
 _NOW = sa.func.now()
 _EMPTY_OBJECT = sa.text("'{}'::jsonb")
+_MISSION_ID = "mission.id"
 _JSONB = postgresql.JSONB(astext_type=sa.Text())
 _MISSION_STATUSES = (
     "'pending', 'running', 'paused', 'cancelling', 'cancelled', 'completed', 'failed', 'stopped'"
@@ -80,7 +81,7 @@ def upgrade() -> None:
         sa.CheckConstraint(f"status IN ({_TASK_STATUSES})", name=op.f("ck_mission_task_status")),
         sa.ForeignKeyConstraint(
             ["mission_id"],
-            ["mission.id"],
+            [_MISSION_ID],
             name=op.f("fk_mission_task_mission_id_mission"),
             ondelete="CASCADE",
         ),
@@ -103,7 +104,7 @@ def upgrade() -> None:
         sa.CheckConstraint(f"status IN ({_STEP_STATUSES})", name=op.f("ck_mission_step_status")),
         sa.ForeignKeyConstraint(
             ["mission_id"],
-            ["mission.id"],
+            [_MISSION_ID],
             name=op.f("fk_mission_step_mission_id_mission"),
             ondelete="CASCADE",
         ),
@@ -128,7 +129,7 @@ def upgrade() -> None:
         sa.Column("created_at", sa.DateTime(timezone=True), server_default=_NOW, nullable=False),
         sa.ForeignKeyConstraint(
             ["mission_id"],
-            ["mission.id"],
+            [_MISSION_ID],
             name=op.f("fk_mission_event_mission_id_mission"),
             ondelete="CASCADE",
         ),
@@ -150,7 +151,7 @@ def upgrade() -> None:
         ),
         sa.ForeignKeyConstraint(
             ["mission_id"],
-            ["mission.id"],
+            [_MISSION_ID],
             name=op.f("fk_mission_fact_mission_id_mission"),
             ondelete="CASCADE",
         ),

@@ -35,11 +35,12 @@ HEADERS_TEST = "WSTG-CONF-06"  # its playbook names b.headers (passive) and b.tl
 SCAN_TEST = "WSTG-CONF-01"  # its playbook names c.nmap (active) as well
 OTHER_TEST = "WSTG-CONF-10"
 URL = "https://shop.example.com/"
+SHOP_HOSTS = {"shop.example.com", "example.com"}
 
 
 async def lookup(host: str, port: int) -> list[str]:
     assert port
-    return [SHOP] if host.endswith("example.com") else ["8.8.8.8"]
+    return [SHOP] if host in SHOP_HOSTS else ["8.8.8.8"]
 
 
 def look(**values: Any) -> ToolRequest:
