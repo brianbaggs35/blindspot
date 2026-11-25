@@ -14,6 +14,7 @@ from app.methodology.routes import router as methodology_router
 from app.pentests.checklist import router as checklist_router
 from app.pentests.gate import router as gate_router
 from app.pentests.routes import router as pentests_router
+from app.results.routes import router as results_router
 from app.terms.routes import router as terms_router
 from app.tools.policy_routes import router as tool_policy_router
 from app.tools.routes import router as tools_router
@@ -30,6 +31,7 @@ ROUTERS: list[APIRouter] = [
     gate_router,
     checklist_router,
     pentests_router,
+    results_router,
     terms_router,
     tool_policy_router,
     tools_router,
