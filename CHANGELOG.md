@@ -13,6 +13,7 @@ How a release is made, and what to update with it, is in [Contributing](docs/how
 ### Added
 
 - Tool manifests and the tool registry: a validated description of each tool (risk class, capabilities, typed parameters, timeouts, output cap, plain-language explanation), a command-line builder that fills one argument for each value and never makes a shell string, bundled manifests as YAML, and administrators' custom tools (ids start with `x.`) with a read, preview and edit API.
+- The tool scope guard and the permission policy: every target of a tool call is looked up and checked address by address against the pentest's scope (loopback, metadata and other never-reachable addresses are always refused, ranges and whole-host scans need the whole host or range in scope), and a rule table decides per agent role, tool and pentest whether a call runs on its own, asks a person or is denied. Intrusive tools always ask, destructive tools are off, and a kill switch and a paused pentest stop everything. Administrators manage the rules and the kill switch through the API, and every decision has a plain-words reason.
 - `make up` builds the image and starts Blindspot, `make down` stops it and keeps all data, and `make delete` removes everything including the volumes and the build cache after asking for confirmation. CI tests that the data survives `make down` and `make up`.
 
 ## [0.0.1] - 2026-11-25

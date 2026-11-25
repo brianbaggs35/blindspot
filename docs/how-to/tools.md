@@ -80,6 +80,37 @@ At most 100 custom tools can exist. Creating, changing and removing one is in th
 
 `load_registry` merges the bundled manifests with the stored custom ones on every request, so a change shows up without a restart. Each tool carries its `origin` and a `fingerprint` (a short hash of the manifest) so a run can record exactly which definition it used. A stored manifest that no longer validates (the rules became stricter) is skipped and logged, not allowed to break the list.
 
+## The scope guard and the permission policy
+
+Two checks stand between an agent and a tool. Both are plain code, and nothing a model writes can change them: a model picks a tool and gives values; the risk class comes from the manifest, the agent's role from the runtime and the rules from administrators.
+
+`authorize(session, pentest, role, tool, call)` in `app/tools/authorize.py` is the one question the runner asks before it starts a tool. It answers with a `Verdict` (`auto`, `ask` or `deny`) and a reason in plain words, kept with the run. A call is denied when:
+
+- it is for a different tool than the one that was checked;
+- the kill switch is on, the pentest is paused, or it is not authorized or running;
+- a rule denies it, or the tool is destructive (those are off and no rule can turn them on);
+- a target is out of scope, cannot be looked up, or is an address that is never reachable;
+- the tool is active or riskier and names no target, so it cannot be held to a scope.
+
+### The scope guard
+
+`app/tools/guard.py` reads every `target` value of a call as a web address, a host (with or without a port), an address or a range. A name is looked up, and every address it has must be allowed by `CompiledScope.allows`, so a name that points at one public and one private address is refused. Loopback (the app's own container), cloud metadata addresses and the other addresses that are never reachable are refused whatever the scope says. `check_url` is for the runner to ask again about every redirect a response sends.
+
+A tool that scans a host or a range does more than a web request, so it needs the whole host or range in scope: every port and both web schemes, with no path limit. A scope line of `https://app.example.com/shop` allows requests to that address and not a port scan of the host; the refusal says so. A range is checked as a whole: it must sit inside one scope line, may not overlap anything out of scope, and may not hold an address that is never reachable.
+
+### The permission policy
+
+With no rule: passive tools run on their own, active tools ask a person, intrusive tools always ask and destructive tools are off. A rule (a grant) is for an agent role (or any), a tool (or any), up to a risk class, and for one pentest (or all). It can make a tool run on its own, ask first or be denied. It can never skip the ask for an intrusive tool or turn a destructive tool on. A deny rule beats every allow rule; among allow rules the most specific wins (a tool beats a role, which beats every pentest). The kill switch beats all of it.
+
+| Route                                  | Who   | What it does                                                          |
+| -------------------------------------- | ----- | --------------------------------------------------------------------- |
+| `GET /api/tools/policy`                | any   | The kill switch, the defaults and every rule                          |
+| `PUT /api/tools/policy/grants`         | admin | Make a rule, or change the one for the same role, tool and pentest    |
+| `DELETE /api/tools/policy/grants/{id}` | admin | Remove a rule                                                         |
+| `PUT /api/tools/policy/kill-switch`    | admin | `{"on": true}` stops every tool at once, `{"on": false}` lets them go |
+
+Pausing a pentest is its status (`running` to `paused`): a paused pentest runs no tools. Every change is in the audit trail (`tool.policy.grant`, `tool.policy.revoke`, `tool.policy.kill_switch`). Errors: `grant_destructive` and `grant_needs_a_person` (422), `tool_not_found`, `pentest_not_found` and `grant_not_found` (404), `too_many_grants` (409).
+
 ## The API
 
 | Route                           | Who   | What it does                                                       |
