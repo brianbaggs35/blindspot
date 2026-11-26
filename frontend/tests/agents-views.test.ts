@@ -189,7 +189,7 @@ describe("the defaults", () => {
     await flushPromises();
     expect(saved).toEqual({ ...budget, steps: 120, verify_from: "high" });
     expect(document.body.textContent).toContain("The default caps were saved.");
-    expect(calls.filter((one) => one.key === "GET /api/agents/settings").length).toBe(2);
+    expect(calls.filter((one) => one.key === "GET /api/agents/settings")).toHaveLength(2);
   });
 
   it("will not save caps the server would refuse", async () => {
