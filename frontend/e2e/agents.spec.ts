@@ -164,3 +164,190 @@ test.describe("Deploying agents (administrator)", () => {
     await expect(page.getByText("No agents have been deployed on this pentest.")).toBeVisible();
   });
 });
+
+test.describe("Following a mission", () => {
+  test("shows its progress and lets an administrator review and control it", async ({ page }) => {
+    let status = "running";
+    let awaitingApproval = true;
+    const missionId = "mission-coverage";
+    const missionPath = `/api/pentests/coverage/missions/${missionId}`;
+    const budget = {
+      steps: 300,
+      steps_per_test: 12,
+      tokens: 2_000_000,
+      tokens_per_test: 120_000,
+      cost_usd: 25,
+      seconds: 21_600,
+      seconds_per_test: 900,
+      concurrency: 2,
+      verify_from: "medium",
+    };
+
+    await page.route("**/api/pentests/coverage", (route) =>
+      route.fulfill({
+        json: {
+          id: "coverage",
+          name: "Coverage mission",
+          status: "running",
+          methodology_id: "wstg",
+          archived_at: null,
+          deleted_at: null,
+          scope: { in_scope: ["https://shop.example.com/"] },
+        },
+      }),
+    );
+    await page.route("**/api/pentests/coverage/missions", (route) =>
+      route.fulfill({
+        json: {
+          missions: [
+            {
+              id: missionId,
+              pentest_id: "coverage",
+              status,
+              budget,
+              spent: { steps: 1, cost_usd: 0.5, seconds: 120 },
+              plan: { runs: 1, skipped: 0, max_risk: "active" },
+              prompts: { "test-agent": 0, verifier: 0 },
+              stop_reason: "",
+              started_at: "2026-11-25T10:00:00Z",
+              finished_at: null,
+              created_at: "2026-11-25T10:00:00Z",
+            },
+          ],
+        },
+      }),
+    );
+    await page.route("**/api/agents/overview", (route) =>
+      route.fulfill({ json: { runner_ready: true } }),
+    );
+    await page.route(`${missionPath}**`, async (route) => {
+      const method = route.request().method();
+      const url = new URL(route.request().url());
+      const path = url.pathname;
+      if (method === "GET" && path === missionPath) {
+        await route.fulfill({
+          json: {
+            mission: {
+              id: missionId,
+              pentest_id: "coverage",
+              status,
+              budget,
+              spent: { steps: 1, cost_usd: 0.5, seconds: 120 },
+              plan: { runs: 1, skipped: 0, max_risk: "active" },
+              prompts: { "test-agent": 0, verifier: 0 },
+              stop_reason: "",
+              started_at: "2026-11-25T10:00:00Z",
+              finished_at: null,
+              created_at: "2026-11-25T10:00:00Z",
+            },
+            tasks: [
+              {
+                id: "commander",
+                parent_id: null,
+                kind: "commander",
+                ref: "commander",
+                name: "Mission Commander",
+                phase: 0,
+                position: 0,
+                status: "done",
+                summary: "Planned 1 test in 1 category.",
+                outcome: null,
+                spent: {},
+              },
+              {
+                id: "category",
+                parent_id: "commander",
+                kind: "category",
+                ref: "WSTG-CONF",
+                name: "Configuration",
+                phase: 0,
+                position: 0,
+                status: "running",
+                summary: "",
+                outcome: null,
+                spent: {},
+              },
+              {
+                id: "test",
+                parent_id: "category",
+                kind: "test",
+                ref: "WSTG-CONF-01",
+                name: "Network configuration",
+                phase: 0,
+                position: 0,
+                status: "waiting",
+                summary: "Waiting for approval.",
+                outcome: null,
+                spent: {},
+              },
+            ],
+          },
+        });
+      } else if (method === "GET" && path.endsWith("/steps")) {
+        await route.fulfill({
+          json: {
+            steps: awaitingApproval
+              ? [
+                  {
+                    id: "step",
+                    task_id: "test",
+                    seq: 1,
+                    status: "awaiting_approval",
+                    tool: "c.nmap",
+                    request: { target: "shop.example.com", ports: [80, 443] },
+                    verdict: null,
+                    result_id: null,
+                    note: "",
+                    created_at: "2026-11-25T10:01:00Z",
+                  },
+                ]
+              : [],
+          },
+        });
+      } else if (method === "GET" && path.endsWith("/events")) {
+        await route.fulfill({
+          json: {
+            events:
+              url.searchParams.get("after") === "0"
+                ? [
+                    {
+                      id: 1,
+                      task_id: null,
+                      type: "mission_started",
+                      data: { runs: 1, skipped: 0 },
+                      created_at: "2026-11-25T10:00:00Z",
+                    },
+                  ]
+                : [],
+            next_after: 1,
+          },
+        });
+      } else if (method === "POST") {
+        if (path.endsWith("/pause")) status = "paused";
+        if (path.endsWith("/resume")) status = "running";
+        if (path.endsWith("/cancel")) status = "cancelling";
+        if (path.endsWith("/approve")) awaitingApproval = false;
+        await route.fulfill({ status: 204 });
+      } else {
+        await route.fulfill({ status: 404 });
+      }
+    });
+
+    await page.goto("/pentests/coverage/agents");
+    await expect(page.getByRole("heading", { name: "Agents: Coverage mission" })).toBeVisible();
+    await expect(page.getByText("Waiting for you")).toBeVisible();
+    await expect(page.getByText("Mission started: 1 tests to run, 0 skipped.")).toBeVisible();
+    await expect(page.getByText("target: shop.example.com, ports: [80,443]")).toBeVisible();
+
+    await page.getByRole("button", { name: "Approve" }).click();
+    await expect(page.getByText("Waiting for you")).toHaveCount(0);
+    await page.getByRole("button", { name: "Pause" }).click();
+    const missionStatus = page.locator("section[aria-label='Mission'] .v-chip").first();
+    await expect(missionStatus).toHaveText("Paused");
+    await page.getByRole("button", { name: "Resume" }).click();
+    await expect(missionStatus).toHaveText("Running");
+    await page.getByRole("button", { name: "Cancel the mission" }).click();
+    await expect(missionStatus).toHaveText("Cancelling");
+    await expect(page.getByRole("button", { name: "Cancel the mission" })).toHaveCount(0);
+  });
+});

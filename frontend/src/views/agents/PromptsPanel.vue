@@ -56,16 +56,22 @@ const other = computed(() =>
   compareWith.value === null ? null : (bodies.value[key(compareWith.value)] ?? null),
 );
 const diff = computed(() => (other.value === null ? [] : lineDiff(other.value, text.value)));
+const compareTitle = computed(() => {
+  if (compareWith.value === null) return "Text";
+  return compareWith.value === 0
+    ? "Changes from the built-in prompt"
+    : `Changes from version ${String(compareWith.value)}`;
+});
 
 function label(version: { version: number; note: string }): string {
   return version.version === 0 ? "Built in" : `Version ${String(version.version)}`;
 }
 
 const options = computed(() =>
-  versions.value.map((one) => ({
-    title: `${label(one)}${one.note && one.version !== 0 ? `: ${one.note}` : ""}`,
-    value: one.version,
-  })),
+  versions.value.map((one) => {
+    const title = one.note && one.version !== 0 ? `${label(one)}: ${one.note}` : label(one);
+    return { title, value: one.version };
+  }),
 );
 
 async function use(version: number) {
@@ -110,7 +116,7 @@ async function add() {
       activate: newUse.value,
     });
     adding.value = false;
-    viewing.value = made.versions[made.versions.length - 1]?.version ?? 0;
+    viewing.value = made.versions.at(-1)?.version ?? 0;
     emit("changed", "A new version was added.");
   } catch (error) {
     addFailure.value = describe(error);
@@ -203,11 +209,7 @@ const tooLong = computed(() => newBody.value.length > props.maxPrompt);
 
     <v-sheet border rounded="lg" class="pa-3">
       <h2 class="text-subtitle-1 mb-2">
-        {{
-          compareWith === null
-            ? "Text"
-            : `Changes from ${compareWith === 0 ? "the built-in prompt" : `version ${String(compareWith)}`}`
-        }}
+        {{ compareTitle }}
       </h2>
       <pre v-if="compareWith === null" class="bs-prompt" aria-label="Prompt text">{{ text }}</pre>
       <pre v-else class="bs-prompt" aria-label="Prompt changes"><span

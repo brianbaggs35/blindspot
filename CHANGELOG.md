@@ -9,6 +9,7 @@ How a release is made, and what to update with it, is in [Contributing](docs/how
 ### Changed
 
 - The image now runs Python 3.14.10, nginx 1.31.10 and PostgreSQL 18.7, the latest patch releases. The build fails if a lower version would be installed, the smoke test checks the running container, and CI uses the same Python and PostgreSQL.
+- Fix the Agents page's SonarQube findings and add browser coverage for following a mission.
 
 ### Added
 

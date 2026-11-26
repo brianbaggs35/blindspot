@@ -17,7 +17,7 @@ const props = defineProps<{ pentestId: string; missionId: string; canEdit: boole
 const emit = defineEmits<{ changed: [] }>();
 
 const POLL_MS = 4000;
-const FINISHED = ["completed", "cancelled", "failed"];
+const FINISHED = new Set(["completed", "cancelled", "failed"]);
 
 const mission = ref<Mission | null>(null);
 const tasks = ref<MissionTask[]>([]);
@@ -54,7 +54,7 @@ async function refresh() {
   } finally {
     loaded.value = true;
   }
-  if (alive && mission.value && !FINISHED.includes(mission.value.status)) {
+  if (alive && mission.value && !FINISHED.has(mission.value.status)) {
     timer = setTimeout(() => void refresh(), POLL_MS);
   }
 }
@@ -140,7 +140,7 @@ const budget = computed(() => mission.value?.budget);
             Resume
           </v-btn>
           <v-btn
-            v-if="!FINISHED.includes(mission.status) && mission.status !== 'cancelling'"
+            v-if="!FINISHED.has(mission.status) && mission.status !== 'cancelling'"
             color="error"
             variant="tonal"
             :prepend-icon="mdiStop"

@@ -34,7 +34,9 @@ const headers = [
 ];
 
 function state(node: AgentNode): string {
-  return node.stats.active ? "Working now" : node.stats.runs > 0 ? "Idle" : "Never run";
+  if (node.stats.active) return "Working now";
+  if (node.stats.runs > 0) return "Idle";
+  return "Never run";
 }
 
 const tableItems = computed(() =>
