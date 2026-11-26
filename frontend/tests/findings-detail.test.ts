@@ -352,7 +352,7 @@ describe("PentestFindingView", () => {
     await flushPromises();
     emitFrom(wrapper.getComponent(EvidenceList), "changed", "Sealed.");
     await flushPromises();
-    expect(calls.length).toBe(before + 6);
+    expect(calls).toHaveLength(before + 6);
     expect(document.body.textContent).toContain("Sealed.");
   });
 

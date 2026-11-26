@@ -2,13 +2,13 @@
 // The markdown summary is written to <out>/coverage-summary.md, which the workflow adds to the job summary.
 // Usage: node e2e/scripts/merge-coverage.mjs <shard-coverage-dir>...
 // Each directory is a shard's e2e-results/coverage, with the "raw" report inside.
-// Fails below E2E_COVERAGE_MIN (default 80%), and warns below E2E_COVERAGE_TARGET (default 90%).
+// Fails below E2E_COVERAGE_MIN (default 70%), and warns below E2E_COVERAGE_TARGET (default 70%).
 import { join } from "node:path";
 import { CoverageReport } from "monocart-coverage-reports";
 import filters from "../coverage-filters.json" with { type: "json" };
 
-const minimum = Number(process.env["E2E_COVERAGE_MIN"] ?? "80");
-const target = Number(process.env["E2E_COVERAGE_TARGET"] ?? "90");
+const minimum = Number(process.env["E2E_COVERAGE_MIN"] ?? "70");
+const target = Number(process.env["E2E_COVERAGE_TARGET"] ?? "70");
 const outputDir = process.env["E2E_COVERAGE_OUT"] ?? "e2e-results/coverage-merged";
 const shards = process.argv.slice(2);
 

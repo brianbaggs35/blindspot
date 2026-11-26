@@ -53,7 +53,7 @@ async function save() {
   failure.value = "";
   // A severity that was not touched is left out, so a new vector can re-rate the finding.
   const { severity, ...rest } = draft.value;
-  const untouched = props.finding !== undefined && severity === props.finding.severity;
+  const untouched = severity === props.finding?.severity;
   const body = {
     ...rest,
     ...(untouched ? {} : { severity }),

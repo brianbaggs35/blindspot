@@ -986,7 +986,7 @@ def test_two_findings_made_at_once_get_two_numbers(admin: TestClient) -> None:
     ids = [write(admin, made, title=f"F{n}")["number"] for n in range(3)]
     assert ids == [1, 2, 3]
     assert uuid.UUID(made["id"])
-    assert {"image/png", "image/jpeg", "image/webp"} == findings_routes.IMAGE_TYPES
+    assert findings_routes.IMAGE_TYPES == {"image/png", "image/jpeg", "image/webp"}  # noqa: SIM300
 
 
 def test_helpers_of_the_service() -> None:

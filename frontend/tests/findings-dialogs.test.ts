@@ -75,7 +75,7 @@ describe("CvssCalculator", () => {
       await flushPromises();
     }
     expect(wrapper.text()).toContain("9.8 · Critical");
-    expect(api.calls.length).toBe(1);
+    expect(api.calls).toHaveLength(1);
     // Taking a metric away empties the vector again.
     const first = wrapper
       .findAllComponents({ name: "VSelect" })
@@ -267,7 +267,7 @@ describe("FindingFormDialog", () => {
     await wrapper.setProps({ modelValue: false });
     await wrapper.setProps({ modelValue: true });
     await flushPromises();
-    expect(api.calls.filter((one) => one.key === "GET /api/findings/reference").length).toBe(2);
+    expect(api.calls.filter((one) => one.key === "GET /api/findings/reference")).toHaveLength(2);
   });
 
   it("asks for the OWASP list once it has it", async () => {
@@ -276,7 +276,7 @@ describe("FindingFormDialog", () => {
     await wrapper.setProps({ modelValue: false });
     await wrapper.setProps({ modelValue: true });
     await flushPromises();
-    expect(api.calls.filter((one) => one.key === "GET /api/findings/reference").length).toBe(1);
+    expect(api.calls.filter((one) => one.key === "GET /api/findings/reference")).toHaveLength(1);
   });
 });
 

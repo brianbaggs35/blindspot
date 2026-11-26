@@ -89,11 +89,11 @@ watch(
       @keydown.enter.prevent="accept"
       @click:clear="accept"
     />
-    <p v-if="score" class="mt-2" role="status">
+    <output v-if="score" class="mt-2" aria-label="CVSS score">
       <v-chip :color="SEVERITY_COLORS[score.severity]" label variant="tonal">
         {{ score.score }} · {{ SEVERITY_LABELS[score.severity] }}
       </v-chip>
-    </p>
+    </output>
   </section>
 </template>
 

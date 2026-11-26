@@ -148,7 +148,7 @@ describe("PentestFindingsView", () => {
     await fieldNamed(wrapper, "VTextField", "Search findings").setValue("noth");
     await fieldNamed(wrapper, "VTextField", "Search findings").setValue("nothing");
     await vi.advanceTimersByTimeAsync(100);
-    expect(calls.length).toBe(before);
+    expect(calls).toHaveLength(before);
     await vi.advanceTimersByTimeAsync(400);
     await flushPromises();
     expect(read(wrapper)).toContain("No finding matches that");

@@ -11,7 +11,7 @@ import uuid
 from collections import Counter
 from typing import Annotated, Literal
 
-from fastapi import APIRouter, Query, Request, Response
+from fastapi import APIRouter, Depends, Query, Request, Response
 from sqlalchemy import Float, case, cast, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import InstrumentedAttribute
@@ -19,7 +19,7 @@ from sqlalchemy.sql.elements import ColumnElement
 from sqlalchemy.types import Text
 
 from app.auth import audit
-from app.auth.deps import Admin, SignedIn
+from app.auth.deps import USER, Admin, SignedIn
 from app.db.base import utc_now
 from app.db.models import Finding, FindingEvidence, Pentest, PentestResult
 from app.db.session import SessionDep
@@ -191,10 +191,9 @@ async def _groups(
     return [Group(key=key, count=count) for key, count in sorted(Counter(keys).items())]
 
 
-@router.get("/pentests/{pentest_id}/findings")
+@router.get("/pentests/{pentest_id}/findings", dependencies=[Depends(USER)])
 async def list_findings(  # noqa: PLR0913  # one parameter for each filter of the page
     pentest_id: uuid.UUID,
-    _who: SignedIn,
     session: SessionDep,
     *,
     view: Literal["live", "trash"] = "live",
