@@ -4,9 +4,9 @@ sealed evidence stays hidden) hold wherever a finding comes from: a person, an a
 an import."""
 
 import base64
-import binascii
 import uuid
 from collections import Counter
+from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any
 
@@ -89,23 +89,23 @@ def can_rate(data: FindingIn) -> bool:
     return data.severity is not None or derived is not None
 
 
+def _score_vector(vector: str | None, scorer: Callable[[str], cvss.Scored]) -> cvss.Scored | None:
+    if not vector:
+        return None
+    try:
+        return scorer(vector)
+    except cvss.VectorError as error:
+        raise AppError(422, "bad_vector", str(error)) from None
+
+
 def set_vectors(row: Finding, *, vector31: str | None, vector4: str | None) -> None:
     """Put the vectors on the row with the scores worked out from them. An empty vector clears."""
-    for version, vector in (("3.1", vector31), ("4.0", vector4)):
-        scored = None
-        if vector:
-            try:
-                scored = cvss.score_v31(vector) if version == "3.1" else cvss.score_v4(vector)
-            except cvss.VectorError as error:
-                raise AppError(422, "bad_vector", str(error)) from None
-        if version == "3.1":
-            row.cvss31_vector, row.cvss31_score = (
-                (scored.vector, scored.score) if scored else (None, None)
-            )
-        else:
-            row.cvss4_vector, row.cvss4_score = (
-                (scored.vector, scored.score) if scored else (None, None)
-            )
+    scored31 = _score_vector(vector31, cvss.score_v31)
+    row.cvss31_vector, row.cvss31_score = (
+        (scored31.vector, scored31.score) if scored31 else (None, None)
+    )
+    scored4 = _score_vector(vector4, cvss.score_v4)
+    row.cvss4_vector, row.cvss4_score = (scored4.vector, scored4.score) if scored4 else (None, None)
 
 
 def add_event(
@@ -186,24 +186,28 @@ async def create_finding(
     return row
 
 
-def apply_patch(row: Finding, body: FindingPatch) -> list[str]:
-    """Change the fields that were sent. A new vector without a severity re-rates the finding.
-    Returns the names of the fields that changed."""
-    sent = body.model_fields_set
+def _apply_scalar_fields(row: Finding, body: FindingPatch, sent: set[str]) -> list[str]:
     changed: list[str] = []
     for name in ("title", "description", "target", "confidence", "remediation"):
         value = getattr(body, name)
         if name in sent and value is not None and value != getattr(row, name):
             setattr(row, name, value)
             changed.append(name)
+    return changed
+
+
+def _apply_list_fields(row: Finding, body: FindingPatch, sent: set[str]) -> list[str]:
+    changed: list[str] = []
     for name in ("test_ids", "cwe", "references"):
         value = getattr(body, name)
         if name in sent and value is not None and list(dict.fromkeys(value)) != getattr(row, name):
             setattr(row, name, list(dict.fromkeys(value)))
             changed.append(name)
-    if "owasp" in sent and body.owasp != row.owasp:
-        row.owasp = body.owasp
-        changed.append("owasp")
+    return changed
+
+
+def _apply_vectors(row: Finding, body: FindingPatch, sent: set[str]) -> list[str]:
+    changed: list[str] = []
     vectors_sent = {"cvss31_vector", "cvss4_vector"} & sent
     if vectors_sent:
         vector31 = body.cvss31_vector if "cvss31_vector" in sent else row.cvss31_vector
@@ -217,6 +221,19 @@ def apply_patch(row: Finding, body: FindingPatch) -> list[str]:
                 if derived is not None and derived.value != row.severity:
                     row.severity = derived.value
                     changed.append("severity")
+    return changed
+
+
+def apply_patch(row: Finding, body: FindingPatch) -> list[str]:
+    """Change the fields that were sent. A new vector without a severity re-rates the finding.
+    Returns the names of the fields that changed."""
+    sent = body.model_fields_set
+    changed = _apply_scalar_fields(row, body, sent)
+    changed.extend(_apply_list_fields(row, body, sent))
+    if "owasp" in sent and body.owasp != row.owasp:
+        row.owasp = body.owasp
+        changed.append("owasp")
+    changed.extend(_apply_vectors(row, body, sent))
     if "severity" in sent and body.severity is not None and body.severity.value != row.severity:
         row.severity = body.severity.value
         changed.append("severity")
@@ -248,7 +265,7 @@ def check_image(data: EvidenceIn) -> None:
         raise AppError(422, "image_needed", "A screenshot needs its image and its type")
     try:
         raw = base64.b64decode(data.body, validate=True)
-    except binascii.Error, ValueError:
+    except ValueError:
         raise AppError(422, "bad_image", "The image is not valid base64") from None
     if len(raw) > MAX_IMAGE:
         raise AppError(422, "image_too_large", "A screenshot may be 2 MB at most")
@@ -256,6 +273,26 @@ def check_image(data: EvidenceIn) -> None:
         data.mime == "image/webp" and raw[8:12] != b"WEBP"
     ):
         raise AppError(422, "bad_image", "The file is not the kind of image it says")
+
+
+async def _evidence_content(
+    session: AsyncSession, finding: Finding, data: EvidenceIn
+) -> tuple[str | None, str | None, uuid.UUID | None]:
+    body, mime, result_id = data.body, data.mime, data.result_id
+    if data.kind == "result":
+        found = await session.get(PentestResult, result_id) if result_id else None
+        if found is None or found.pentest_id != finding.pentest_id:
+            raise AppError(422, "result_not_found", "Pick a result of this pentest")
+        return None, None, result_id
+
+    result_id = None
+    if data.kind == "screenshot":
+        check_image(data)
+    elif not body or len(body) > 100_000:
+        raise AppError(422, "evidence_needed", "Write the evidence, up to 100,000 characters")
+    else:
+        mime = None
+    return body, mime, result_id
 
 
 async def add_evidence(
@@ -268,20 +305,8 @@ async def add_evidence(
     )
     if (count or 0) >= MAX_EVIDENCE_PER_FINDING:
         raise AppError(409, "too_much_evidence", "A finding keeps 100 pieces of evidence at most")
-    body, mime, result_id, sealed = data.body, data.mime, data.result_id, data.sealed
-    if data.kind == "result":
-        found = await session.get(PentestResult, result_id) if result_id else None
-        if found is None or found.pentest_id != finding.pentest_id:
-            raise AppError(422, "result_not_found", "Pick a result of this pentest")
-        body, mime = None, None
-    else:
-        result_id = None
-        if data.kind == "screenshot":
-            check_image(data)
-        elif not body or len(body) > 100_000:
-            raise AppError(422, "evidence_needed", "Write the evidence, up to 100,000 characters")
-        else:
-            mime = None
+    body, mime, result_id = await _evidence_content(session, finding, data)
+    sealed = data.sealed
     if sealed is None:
         sealed = bool(body) and data.kind != "screenshot" and looks_secret(body)
     row = FindingEvidence(

@@ -22,6 +22,7 @@ _EMPTY_OBJECT = sa.text("'{}'::jsonb")
 _FINDING_ID = "finding.id"
 _RESULT_ID = "pentest_result.id"
 _STATUSES = "'new', 'confirmed', 'false_positive', 'accepted_risk', 'fixed', 'retest_needed'"
+_SET_NULL = "SET NULL"
 
 
 def upgrade() -> None:
@@ -80,13 +81,13 @@ def upgrade() -> None:
             ["result_id"],
             [_RESULT_ID],
             name=op.f("fk_finding_result_id_pentest_result"),
-            ondelete="SET NULL",
+            ondelete=_SET_NULL,
         ),
         sa.ForeignKeyConstraint(
             ["merged_into"],
             [_FINDING_ID],
             name=op.f("fk_finding_merged_into_finding"),
-            ondelete="SET NULL",
+            ondelete=_SET_NULL,
         ),
         sa.PrimaryKeyConstraint("id", name=op.f("pk_finding")),
         sa.UniqueConstraint("pentest_id", "number", name=op.f("uq_finding_pentest_id")),
@@ -120,7 +121,7 @@ def upgrade() -> None:
             ["result_id"],
             [_RESULT_ID],
             name=op.f("fk_finding_evidence_result_id_pentest_result"),
-            ondelete="SET NULL",
+            ondelete=_SET_NULL,
         ),
         sa.PrimaryKeyConstraint("id", name=op.f("pk_finding_evidence")),
     )

@@ -22,6 +22,21 @@ from app.findings.service import (
 )
 
 
+def _mark_seen(session: AsyncSession, known: Finding, verdict: Verification) -> None:
+    add_event(session, known.id, "seen_again", None, verification=verdict)
+    if verdict == "confirmed" and known.status in ("fixed", "retest_needed"):
+        add_event(
+            session,
+            known.id,
+            "status",
+            None,
+            before=known.status,
+            after="confirmed",
+            note="",
+        )
+        known.status = "confirmed"
+
+
 async def record(
     session: AsyncSession,
     *,
@@ -49,18 +64,7 @@ async def record(
             )
         )
         if known is not None:
-            add_event(session, known.id, "seen_again", None, verification=verdict)
-            if verdict == "confirmed" and known.status in ("fixed", "retest_needed"):
-                add_event(
-                    session,
-                    known.id,
-                    "status",
-                    None,
-                    before=known.status,
-                    after="confirmed",
-                    note="",
-                )
-                known.status = "confirmed"
+            _mark_seen(session, known, verdict)
             continue
         cited = [steps[n] for n in dict.fromkeys(claim.evidence) if n in steps]
         row = await create_finding(

@@ -48,6 +48,7 @@ CSV_COLUMNS = (
 _FORMULA = ("=", "+", "-", "@", "\t", "\r")
 _CWE = re.compile(r"cwe-(\d{1,5})", re.IGNORECASE)
 _SLUG = re.compile(r"[^a-z0-9]+")
+StringList = list[str]
 
 
 def _evidence_of(rows: Iterable[FindingEvidence]) -> list[dict[str, object]]:
@@ -96,10 +97,10 @@ def export_csv(items: list[dict[str, object]]) -> str:
     for item in items:
         evidence = cast("list[dict[str, object]]", item["evidence"])
         row = dict(item) | {
-            "tests": " ".join(cast("list[str]", item["test_ids"])),
-            "category": category_of(cast("list[str]", item["test_ids"])),
-            "cwe": " ".join(cast("list[str]", item["cwe"])),
-            "references": " ".join(cast("list[str]", item["references"])),
+            "tests": " ".join(cast(StringList, item["test_ids"])),
+            "category": category_of(cast(StringList, item["test_ids"])),
+            "cwe": " ".join(cast(StringList, item["cwe"])),
+            "references": " ".join(cast(StringList, item["references"])),
             "evidence": "; ".join(f"{e['kind']}: {e['title']}" for e in evidence),
         }
         writer.writerow([_safe(row[name]) for name in CSV_COLUMNS])
@@ -110,7 +111,7 @@ def export_sarif(items: list[dict[str, object]], *, version: str) -> str:
     rules: dict[str, dict[str, object]] = {}
     results: list[dict[str, object]] = []
     for item in items:
-        cwe = cast("list[str]", item["cwe"])
+        cwe = cast(StringList, item["cwe"])
         rule_id = cwe[0] if cwe else f"BLINDSPOT-{_SLUG.sub('-', str(item['title']).lower())[:40]}"
         rules.setdefault(
             rule_id,

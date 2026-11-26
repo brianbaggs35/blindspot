@@ -35,6 +35,7 @@ METHODOLOGY_ID = "methodology.id"
 PENTEST_ID = "pentest.id"
 EMPTY_LIST = text("'[]'::jsonb")
 EMPTY_OBJECT = text("'{}'::jsonb")
+SET_NULL = "SET NULL"
 
 __all__ = [
     "AgentPrompt",
@@ -266,7 +267,7 @@ class UsageLedger(UUIDPrimaryKey, Base):
         DateTime(timezone=True), default=utc_now, server_default=func.now(), index=True
     )
     provider_id: Mapped[uuid.UUID | None] = mapped_column(
-        Uuid, ForeignKey("ai_provider.id", ondelete="SET NULL"), default=None, index=True
+        Uuid, ForeignKey("ai_provider.id", ondelete=SET_NULL), default=None, index=True
     )
     provider_name: Mapped[str] = mapped_column(String(64))
     model_id: Mapped[str] = mapped_column(String(200))
@@ -745,7 +746,7 @@ class Finding(UUIDPrimaryKey, Timestamps, SoftDelete, CreatedBy, Base):
     references: Mapped[Any] = mapped_column(JSONB, default=list, server_default=EMPTY_LIST)
     source: Mapped[str] = mapped_column(String(8), default="manual", server_default="manual")
     result_id: Mapped[uuid.UUID | None] = mapped_column(
-        Uuid, ForeignKey("pentest_result.id", ondelete="SET NULL"), default=None
+        Uuid, ForeignKey("pentest_result.id", ondelete=SET_NULL), default=None
     )
     verification: Mapped[str] = mapped_column(
         String(12), default="unverified", server_default="unverified"
@@ -753,7 +754,7 @@ class Finding(UUIDPrimaryKey, Timestamps, SoftDelete, CreatedBy, Base):
     verified_by: Mapped[str | None] = mapped_column(String(8), default=None)
     verified_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), default=None)
     merged_into: Mapped[uuid.UUID | None] = mapped_column(
-        Uuid, ForeignKey(FINDING_ID, ondelete="SET NULL"), default=None
+        Uuid, ForeignKey(FINDING_ID, ondelete=SET_NULL), default=None
     )
 
 
@@ -778,7 +779,7 @@ class FindingEvidence(UUIDPrimaryKey, Timestamps, CreatedBy, Base):
     mime: Mapped[str | None] = mapped_column(String(32), default=None)
     sealed: Mapped[bool] = mapped_column(default=False, server_default=false())
     result_id: Mapped[uuid.UUID | None] = mapped_column(
-        Uuid, ForeignKey("pentest_result.id", ondelete="SET NULL"), default=None
+        Uuid, ForeignKey("pentest_result.id", ondelete=SET_NULL), default=None
     )
 
 

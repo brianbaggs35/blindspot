@@ -38,10 +38,9 @@ async function submit() {
       { format: format.value, content: content.value },
     );
     open.value = false;
-    emit(
-      "imported",
-      `${String(done.created)} imported${done.skipped > 0 ? `, ${String(done.skipped)} skipped` : ""}.`,
-    );
+    const imported = `${String(done.created)} imported`;
+    const skipped = done.skipped > 0 ? `, ${String(done.skipped)} skipped` : "";
+    emit("imported", `${imported}${skipped}.`);
   } catch (error) {
     failure.value = describe(error);
   } finally {
