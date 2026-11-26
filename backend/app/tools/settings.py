@@ -157,6 +157,30 @@ def _docker(
     return True, Status.READY, ""
 
 
+def _availability(
+    manifest: Manifest, setting: ToolSetting | None, probe: Probe
+) -> tuple[dict[Where, str | None], dict[Where, tuple[Status, str]]]:
+    path, local_problem = _local(manifest, setting, probe)
+    usable, docker_status, docker_problem = _docker(manifest, setting, probe)
+    available = {Where.LOCAL: path, Where.DOCKER: "docker" if usable else None}
+    problems = {
+        Where.LOCAL: (Status.BINARY_NOT_FOUND, local_problem),
+        Where.DOCKER: (docker_status, docker_problem),
+    }
+    return available, problems
+
+
+def _other_available(failed: Where, available: dict[Where, str | None]) -> Where | None:
+    return next(
+        (
+            where
+            for where in (Where.LOCAL, Where.DOCKER)
+            if where is not failed and available[where]
+        ),
+        None,
+    )
+
+
 def resolve(
     manifest: Manifest, setting: ToolSetting | None, default: RunMode, probe: Probe
 ) -> Resolution:
@@ -166,33 +190,21 @@ def resolve(
     if manifest.execution == "builtin":
         return Resolution(Where.BUILTIN, Status.READY, "", False, None, None)
     order = _order(manifest, setting, default)
-    problems: list[tuple[Where, Status, str]] = []
-    available: dict[Where, str | None] = {}
-    for where in (Where.LOCAL, Where.DOCKER):
-        if where is Where.LOCAL:
-            path, why = _local(manifest, setting, probe)
-            available[where] = path
-            if path is None:
-                problems.append((where, Status.BINARY_NOT_FOUND, why))
-        else:
-            usable, status, why = _docker(manifest, setting, probe)
-            available[where] = "docker" if usable else None
-            if not usable:
-                problems.append((where, status, why))
+    available, problems = _availability(manifest, setting, probe)
     for index, where in enumerate(order):
-        if available[where] is not None:
+        path = available[where]
+        if path is not None:
             return Resolution(
                 where,
                 Status.READY,
                 "",
                 index > 0,
                 None,
-                available[Where.LOCAL] if where is Where.LOCAL else None,
+                path if where is Where.LOCAL else None,
             )
     first = order[0]
-    _, status, why = next(one for one in problems if one[0] is first)
-    other = next((w for w in (Where.LOCAL, Where.DOCKER) if w is not first and available[w]), None)
-    return Resolution(None, status, why, False, other, None)
+    status, why = problems[first]
+    return Resolution(None, status, why, False, _other_available(first, available), None)
 
 
 def limits_of(manifest: Manifest, setting: ToolSetting | None) -> Limits:

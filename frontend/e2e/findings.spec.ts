@@ -119,7 +119,7 @@ test.describe("Pentest findings (administrator)", () => {
     const dialog = page.getByRole("dialog");
     await pickOption(dialog, page, "Keep this finding", /Weak lockout policy/);
     await dialog.getByRole("button", { name: "Merge" }).click();
-    await expect(page.getByText(/Merged into F-1/)).toBeVisible();
+    await expect(page.getByText("Merged into F-1.", { exact: true })).toBeVisible();
     await expect(page.getByText(/it was merged into another one/)).toBeVisible();
 
     await page.getByRole("link", { name: "All findings" }).click();
